@@ -8,6 +8,25 @@
 
 ---
 
+## ⚠️ 重要工作指导
+
+**见 CLAUDE.md** — Claude 与用户的分工原则
+
+### 尤其注意:
+- 📝 **编码责任**: 所有核心实现代码（`src/qlog/**`）由用户编写
+- 🤖 **Claude 角色**: 仅提供讲解、审查、脚本维护
+- 🔧 **脚本使用时机**:
+  - `format_code.sh` — 每次修改后、Every 提交前
+  - `build.sh` — 每日编译验证
+  - `test.sh` — 功能测试
+  - `run_sanitizers.sh thread` — Milestone 完成时
+
+→ **不是每次完成 Milestone 就 format，而是按工作流进行**
+
+→ 详见 **CLAUDE.md** 第 2-5 章
+
+---
+
 ## 阶段概览
 
 ```
