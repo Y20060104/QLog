@@ -1,0 +1,86 @@
+---
+Language:        Cpp
+Standard:        c++20
+IndentWidth:     4
+UseTab:          Never
+TabWidth:        4
+BasedOnStyle:    LLVM
+
+# Spacing and indentation
+ColumnLimit:                     100
+ContinuationIndentWidth:         4
+BreakBeforeBraces:               Allman
+AlignAfterOpenBracket:           BlockIndent
+AlignOperands:                   Align
+AlignEscapedNewlines:            Left
+AlignTrailingComments:           true
+AllowShortBlocksOnASingleLine:   false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine:    false
+AllowShortLambdasOnASingleLine:  false
+
+# Pointer alignment
+PointerAlignment:                Left
+
+# Namespace
+NamespaceIndentation:            None
+CompactNamespaces:               false
+
+# Functions
+BinPackParameters:               false
+BinPackArguments:                false
+AllowAllParametersOfDeclarationOnNextLine: true
+
+# Includes
+SortIncludes:                    true
+IncludeBlocks:                   Regroup
+IncludeCategories:
+  - Regex:           '^[<"](qlog|src)/'
+    Priority:        1
+  - Regex:           '^<.*\.h[p]*>'
+    Priority:        2
+  - Regex:           '^<.*>'
+    Priority:        3
+  - Regex:           '.*'
+    Priority:        4
+
+# Line breaks
+ReflowComments:                  true
+BreakStringLiterals:             true
+BreakConstructorInitializers:    BeforeComma
+
+# Access modifiers
+AccessModifierOffset:            -4
+
+# Spacing
+SpaceAfterCStyleCast:            false
+SpaceAfterTemplateKeyword:       false
+SpaceBeforeCpp11BracedList:      false
+SpacesInAngles:                  false
+SpaceInEmptyParentheses:         false
+SpaceInEmptyBlock:               false
+
+# Alignment
+AlignConsecutiveAssignments:     false
+AlignConsecutiveDeclarations:    false
+AlignConsecutiveMacros:          false
+
+# Penalties
+PenaltyBreakAssignment:          2
+PenaltyBreakBeforeFirstCallParameter: 1
+PenaltyBreakComment:             300
+PenaltyBreakFirstLessLess:       120
+PenaltyBreakString:              1000
+PenaltyExcessCharacter:          1000000
+PenaltyIndentedWhitespace:       0
+PenaltyReturnTypeOnItsOwnLine:   60
+
+# Macros
+MacroBlockBegin:                 ''
+MacroBlockEnd:                   ''
+
+# Other
+DeriveLineEnding:                true
+EndOfLine:                       LF

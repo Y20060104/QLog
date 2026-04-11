@@ -1,0 +1,79 @@
+# QLog 项目的 Git 忽略配置
+
+# 构建和临时文件
+build*/
+Build*/
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+*.app
+
+# CMake 生成的文件
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+
+# IDE 配置
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.project
+.cproject
+.settings/
+
+# 编译器生成的文件
+*.d
+*.gch
+*.pch
+*.gcda
+*.gcno
+*.gcov
+
+# 性能分析
+perf.data
+perf.data.old
+*.prof
+*.callgrind
+
+# 调试文件
+*.dSYM/
+*.su
+*.gdb_history
+
+# Python 生成
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# 日志文件
+*.log
+log/
+logs/
+
+# 压缩和备份
+*.tar.gz
+*.zip
+*.rar
+*.bak
+*.tmp
+
+# 依赖项缓存
+.conan2/
+vcpkg_installed/
+
+# 本地开发配置（不跟踪）
+local_config.sh
+.env
+.env.local
