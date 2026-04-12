@@ -85,7 +85,7 @@ M9-M12 (Week 10-12): 崩溃恢复 + 多语言绑定 + 性能调优
 - [ ] `src/qlog/primitives/aligned_alloc.h` — Cache-line 64bytes 对齐分配器
 - [ ] `src/qlog/primitives/platform_thread.h` — 跨平台 thread 包装
 - [ ] `src/qlog/primitives/condition_variable.h` — CV + mutex 包装
-- [ ] 单元测试 (test/cpp/test_atomic.cpp, test_spin_lock.cpp)
+- [ ] 单元测试 (test/cpp/test_atomic.cpp, test_spin_lock.cpp) — ⚠️ 编译警告已修复
 
 **技术难点**:
 - [ ] MESI 协议 + false sharing 理解与实现
@@ -298,4 +298,5 @@ _（随开发推进在此记录）_
 | 日期 | 变更 | 责任人 |
 |------|------|--------|
 | 2026-04-11 | 项目初始化, STATE.md 创建, RULES.md 详细化 | - |
+| 2026-04-12 | 修复 M0 单元测试编译警告（test_atomic.cpp, test_spin_lock.cpp） | - |
 | | | |

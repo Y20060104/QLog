@@ -83,4 +83,3 @@ MacroBlockEnd:                   ''
 
 # Other
 DeriveLineEnding:                true
-EndOfLine:                       LF

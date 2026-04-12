@@ -1,11 +1,13 @@
 # QLog Benchmark CMakeLists.txt
 
-# 基准测试目标（暂时为空，等待实现）
-# add_executable(qlog_bench
-#     cpp/bench_spin_lock.cpp
-#     cpp/bench_siso_ring_buffer.cpp
-# )
-#
-# target_link_libraries(qlog_bench PRIVATE qlog benchmark benchmark_main)
+# 基准测试目标
+add_executable(bench_false_sharing cpp/bench_false_sharing.cpp)
+target_link_libraries(bench_false_sharing PRIVATE qlog Threads::Threads)
 
-message(STATUS "QLog: Benchmark configuration ready (benchmarks to be added in M1+)")
+# 设置输出目录
+set_target_properties(bench_false_sharing PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+
+message(STATUS "QLog: Benchmark targets configured")
+
