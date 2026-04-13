@@ -74,29 +74,42 @@ M9-M12 (Week 10-12): 崩溃恢复 + 多语言绑定 + 性能调优
 
 ---
 
-### 🔄 M0: 底层无锁原语 (进行中)
+### 🔄 M0: 底层无锁原语 (进行中 — 70% 完成)
 
 **目标**: 建立后续模块所依赖的原语库
 
 **关键任务**:
-- [ ] `src/qlog/primitives/atomic.h` — `std::atomic` 包装 + memory_order 显式化
-- [ ] `src/qlog/primitives/spin_lock.h` — 互斥自旋锁
+- [x] `src/qlog/primitives/cpu_relax.h` — 平台特定的 CPU 放松指令
+- [~] `src/qlog/primitives/atomic.h` — `std::atomic` 包装 ⚠️ 需改进 Memory Order + API
+- [x] `src/qlog/primitives/spin_lock.h` — 互斥自旋锁 ✅ 符合规范
 - [ ] `src/qlog/primitives/spin_lock_rw.h` — 读写自旋锁
 - [ ] `src/qlog/primitives/aligned_alloc.h` — Cache-line 64bytes 对齐分配器
 - [ ] `src/qlog/primitives/platform_thread.h` — 跨平台 thread 包装
 - [ ] `src/qlog/primitives/condition_variable.h` — CV + mutex 包装
-- [ ] 单元测试 (test/cpp/test_atomic.cpp, test_spin_lock.cpp) — ⚠️ 编译警告已修复
 
 **技术难点**:
-- [ ] MESI 协议 + false sharing 理解与实现
-- [ ] memory_order 语义正确性（acquire/release vs seq_cst）
+- [x] MESI 协议 + false sharing 理解 ✅
+- [~] memory_order 语义 ⚠️ atomic.h 默认值需改进
 - [ ] 跨平台原子操作差异（x86 vs ARM vs RISC-V）
 - [ ] 自旋锁与 mutex 性能权衡
 
 **验证标准**:
-- [ ] ThreadSanitizer 通过（0 data race）
-- [ ] spin_lock vs std::mutex 性能对比 (目标: > 1M ops/s 竞争场景)
+- [~] ThreadSanitizer 通过（0 data race） ⚠️ 等待 atomic.h/aligned_alloc 完成
+- [~] spin_lock vs std::mutex 性能对比 ⚠️ 目标: > 1M ops/s
 - [ ] 所有原语通过 stress test (8 线程 × 10秒)
+
+**M0 进度详情**:
+| 模块 | 状态 | 设计符合性 | 备注 |
+|------|------|-----------|------|
+| atomic.h | ⚠️ 需改进 | 60% | 违反 RULES 3.5（默认 seq_cst）；缺 CAS/fetch_add |
+| spin_lock.h | ✅ 完成 | 95% | memory_order 正确；需补充更多测试 |
+| cpu_relax.h | ✅ 完成 | 100% | 跨平台支持正确 |
+| aligned_alloc.h | ❌ 空文件 | 0% | M1/M3 阻塞关键；需优先实现 |
+| platform::thread | ❌ 未开始 | 0% | M7 Worker 依赖 |
+| condition_variable | ❌ 未开始 | 0% | M7 Worker 依赖 |
+| spin_lock_rw | ❌ 未开始 | 0% | M3 可选优化 |
+
+**📌 详见 M0_DESIGN_REVIEW.md —— 完整设计审查与不符合规范分析**
 
 ---
 
@@ -299,4 +312,4 @@ _（随开发推进在此记录）_
 |------|------|--------|
 | 2026-04-11 | 项目初始化, STATE.md 创建, RULES.md 详细化 | - |
 | 2026-04-12 | 修复 M0 单元测试编译警告（test_atomic.cpp, test_spin_lock.cpp） | - |
-| | | |
+| 2026-04-13 | M0 设计审查：发现 atomic.h Memory Order 违反规范，aligned_alloc.h 空文件。生成 M0_DESIGN_REVIEW.md, M0_NEXT_STEPS.md, M0_SUMMARY.md；更新 STATE.md M0 进度表 | Claude |
