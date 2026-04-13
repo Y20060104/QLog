@@ -22,11 +22,11 @@ public:
     atomic& operator=(atomic&&) = delete;
 
     // 定义基础操作，
-    T load(std::memory_order order = std::memory_order_acquire) const
+    T load(std::memory_order order) const
     {
         return value_.load(order);
     }
-    void store(T value, std::memory_order order = std::memory_order_release)
+    void store(T value, std::memory_order order)
     {
         return value_.store(value, order);
     }
@@ -68,27 +68,31 @@ public:
         return value_.compare_exchange_strong(expected, desired, success, failure);
     }
 
-    T fetch_add(T number, std::memory_order order = std::memory_order_relaxed)
+    T fetch_add(T number, std::memory_order order)
     {
         return value_.fetch_add(number, order);
     }
 
-    T fetch_sub(T number, std::memory_order order = std::memory_order_relaxed)
+    T fetch_sub(T number, std::memory_order order)
     {
         return value_.fetch_sub(number, order);
     }
 
-    T fetch_and(T mask, std::memory_order order = std::memory_order_relaxed)
+    T fetch_and(T mask, std::memory_order order)
     {
         return value_.fetch_and(mask, order);
     }
 
-    T fetch_or(T mask, std::memory_order order = std::memory_order_relaxed)
+    T fetch_or(T mask, std::memory_order order)
     {
         return value_.fetch_or(mask, order);
     }
 
-    T exchange(T desired, std::memory_order order = std::memory_order_acq_rel)
+    T fetch_xor(T val, std::memory_order order)
+    {
+        return value_.fetch_xor(val, order);
+    }
+    T exchange(T desired, std::memory_order order)
     {
         return value_.exchange(desired, order);
     }
