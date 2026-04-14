@@ -18,12 +18,19 @@ set(QLOG_PRIMITIVES_SOURCES
     qlog/primitives/condition_variable.cpp
 )
 
+# M1 Buffer (SPSC ring buffer)
+set(QLOG_BUFFER_SOURCES
+    qlog/buffer/spsc_ring_buffer.h
+    qlog/buffer/spsc_ring_buffer.cpp
+)
+
 # ============================================================================
 # Main QLog Library
 # ============================================================================
 
 add_library(qlog STATIC
     ${QLOG_PRIMITIVES_SOURCES}
+    ${QLOG_BUFFER_SOURCES}
 )
 
 # Set C++ standard and compile options
@@ -54,4 +61,5 @@ target_compile_options(qlog PRIVATE -fvisibility=hidden)
 
 message(STATUS "QLog: Main library configured with:")
 message(STATUS "  - Primitives: ${QLOG_PRIMITIVES_SOURCES}")
+message(STATUS "  - Buffer: ${QLOG_BUFFER_SOURCES}")
 

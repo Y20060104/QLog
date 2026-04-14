@@ -57,5 +57,17 @@ set_target_properties(test_condition_variable PROPERTIES
 )
 add_test(NAME condition_variable_tests COMMAND test_condition_variable)
 
-message(STATUS "QLog: M0 test targets configured (atomic, spin_lock, spin_lock_rw, aligned_alloc, platform_thread, condition_variable)")
+# M1 单元测试 - SPSC Ring Buffer
+add_executable(test_spsc_ring_buffer cpp/test_spsc_ring_buffer.cpp)
+target_link_libraries(test_spsc_ring_buffer PRIVATE qlog Threads::Threads)
+target_include_directories(test_spsc_ring_buffer PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}
+)
+set_target_properties(test_spsc_ring_buffer PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+add_test(NAME spsc_ring_buffer_tests COMMAND test_spsc_ring_buffer)
 
+message(STATUS "QLog: M0 test targets configured (atomic, spin_lock, spin_lock_rw, aligned_alloc, platform_thread, condition_variable)")
+message(STATUS "QLog: M1 test targets configured (spsc_ring_buffer)")

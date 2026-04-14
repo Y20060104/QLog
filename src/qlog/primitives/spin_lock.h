@@ -1,3 +1,4 @@
+#pragma once
 #include <atomic>
 
 #include "cpu_relax.h"

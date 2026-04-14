@@ -23,7 +23,7 @@ void test_atomic_basic_load_store()
 
     // TODO: 问题 2
     // 验证：store 后 load 出来的值是 20 吗？
-    assert(x.load() == 20);
+    assert(x.load(std::memory_order_seq_cst) == 20);
 
     std::cout << "✓ Basic load/store passed" << std::endl;
 }
