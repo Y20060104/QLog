@@ -363,7 +363,8 @@ void test_performance_comparison()
     }
 
     auto write_end = std::chrono::high_resolution_clock::now();
-    auto write_time = std::chrono::duration_cast<std::chrono::microseconds>(write_end - start).count();
+    auto write_time =
+        std::chrono::duration_cast<std::chrono::microseconds>(write_end - start).count();
 
     // 读取
     int read_count = 0;

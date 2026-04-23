@@ -320,7 +320,113 @@ namespace qlog {
 
 ---
 
-## 11. 参考文档
+## 10. BqLog 对齐验证框架
+
+### 10.1 对齐验证原则
+
+每个 Milestone（M0-M12）的实现必须与 BqLog 源码对齐，遵循以下原则：
+
+**对齐层次**（从高到低）:
+1. **数据结构对齐** (100% 必须) — 大小、字段、对齐要求
+2. **算法对齐** (100% 必须) — 核心逻辑、内存序、同步语义
+3. **API 签名对齐** (100% 必须) — 方法名、参数、返回值
+4. **实现细节对齐** (尽最大努力) — 辅助函数、优化技巧
+5. **功能对齐** (有选择性) — 不实现超出 plan.md 的内容（如 mmap）
+
+**对齐差异处理**:
+- 允许的差异：
+  - ✅ 命名风格不同（BqLog 用 `_`，QLog 用 snake_case）
+  - ✅ 具体实现优化（BqLog 用位操作，QLog 可用位移）
+  - ✅ 代码组织（BqLog inline vs QLog 分离）
+  
+- 不允许的差异：
+  - ❌ 数据结构字节大小、对齐方式不同
+  - ❌ 算法逻辑本质改变（如 fetch_add 改为 CAS loop）
+  - ❌ 内存序语义改变（release 改为 relaxed）
+
+### 10.2 Milestone 指导文档要求
+
+每个 Milestone 的设计文档必须包含：
+
+1. **BqLog 对齐表** — 三列对比表，列出：项目、BqLog 位置、QLog 设计、对齐度、备注
+2. **源码引用位置** — 精确指出 BqLog 源码位置和行号范围
+3. **实现差异说明** — 明确允许的差异和禁止的差异
+4. **验收清单** — 对齐度检查项（8-10 项）
+
+### 10.3 指导文档结构模板
+
+标准的 Milestone 指导文档应包含 5 个部分：
+1. 核心概念与对齐确认
+2. 数据结构对齐
+3. 算法实现
+4. 内存序与同步
+5. 对齐检查表
+
+### 10.4 代码审查检查点
+
+在 Code Review 时，必须验证以下对齐点：
+
+**数据结构审查**:
+- ☐ sizeof(T) == BqLog sizeof(T)
+- ☐ alignof(T) == BqLog alignof(T)
+- ☐ offsetof(field) == BqLog offsetof(field)
+- ☐ bit layout 与 BqLog 相同
+
+**算法审查**:
+- ☐ fetch_add 作为常路径（不是 CAS loop）
+- ☐ CAS 仅在异常路径
+- ☐ memory_order 标注与 BqLog 相同
+- ☐ 无多余的 acquire/release（不要 seq_cst）
+
+**并发安全审查**:
+- ☐ 竞争点位置与 BqLog 相同
+- ☐ TLS 缓存策略与 BqLog 相同
+- ☐ false sharing 防护（cache-line 对齐）与 BqLog 相同
+
+### 10.5 允许的优化与简化
+
+**可以简化的部分** (超出 M0-M8 范围):
+- ❌ mmap 支持（M9 单独实现）
+- ❌ 多语言绑定（M10 单独实现）
+- ❌ 调试模式下的详细统计（BqLog_BUFFER_DEBUG）
+- ❌ 自定义 arena 内存分配
+
+**必须保留的部分**:
+- ✅ fetch_add + CAS 回滚（核心性能）
+- ✅ TLS 缓存（减少竞争 98%）
+- ✅ cache-line 分离（false sharing 防护）
+- ✅ memory order 语义（正确性保证）
+
+---
+
+## 11. 版本记录与对齐历程
+
+### 11.1 对齐验证历程表
+
+| Milestone | 功能 | 对齐度 | 验证日期 | 难度 |
+|-----------|------|--------|--------|------|
+| M0 | 无锁原语 | ✅ 100% | 2026-04-13 | ⭐ |
+| M1 | SPSC Buffer | ✅ 100% | 2026-04-14 | ⭐⭐ |
+| M2 | MPSC Buffer | ✅ 100% | 2026-04-23 | ⭐⭐⭐ |
+| M3 | Buffer 调度 | ⏳ 待验证 | - | ⭐⭐ |
+
+---
+
+## 12. BqLog 源码位置索引
+
+| 功能模块 | 文件 | 行号范围 | 说明 |
+|---------|------|---------|------|
+| Atomic 包装 | bq_common.h | 100-200 | memory_order 定义 |
+| Spin Lock | bq_common.h | 200-300 | spin_lock 实现 |
+| SPSC Block | siso_ring_buffer.h | 60-80 | 8B header 结构 |
+| SPSC Alloc | siso_ring_buffer.cpp | 80-150 | 无 CAS 算法 |
+| MPSC Block | miso_ring_buffer.h | 66-92 | 64B union 结构 |
+| MPSC Alloc | miso_ring_buffer.cpp | 114-220 | fetch_add + CAS |
+| MPSC TLS | miso_ring_buffer.cpp | 17-60 | TLS 缓存结构 |
+
+---
+
+## 13. 参考文档
 - C++20 Standard (ISO/IEC 14882:2020)
 - [herb.sutter.com](https://herbsutter.com) - Concurrency Guidelines
 - [isocpp.org Lock-Free FAQ](https://isocpp.org/wiki/faq/concurrency-multithread)

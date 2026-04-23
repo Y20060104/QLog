@@ -74,6 +74,11 @@ public:
         return value_.fetch_add(number, order);
     }
 
+    T fetch_add_relaxed(T number)
+    {
+        return value_.fetch_add(number, std::memory_order_relaxed);
+    }
+
     T fetch_sub(T number, std::memory_order order)
     {
         return value_.fetch_sub(number, order);

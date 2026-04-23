@@ -19,9 +19,12 @@ set(QLOG_PRIMITIVES_SOURCES
 )
 
 # M1 Buffer (SPSC ring buffer)
+# M2 Buffer (MPSC ring buffer)
 set(QLOG_BUFFER_SOURCES
     qlog/buffer/spsc_ring_buffer.h
     qlog/buffer/spsc_ring_buffer.cpp
+    qlog/buffer/mpsc_ring_buffer.h
+    qlog/buffer/mpsc_ring_buffer.cpp
 )
 
 # ============================================================================

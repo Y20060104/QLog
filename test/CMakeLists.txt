@@ -69,5 +69,18 @@ set_target_properties(test_spsc_ring_buffer PROPERTIES
 )
 add_test(NAME spsc_ring_buffer_tests COMMAND test_spsc_ring_buffer)
 
+# M2 单元测试 - MPSC Ring Buffer
+add_executable(test_mpsc_ring_buffer cpp/test_mpsc_ring_buffer.cpp)
+target_link_libraries(test_mpsc_ring_buffer PRIVATE qlog Threads::Threads)
+target_include_directories(test_mpsc_ring_buffer PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}
+)
+set_target_properties(test_mpsc_ring_buffer PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+add_test(NAME mpsc_ring_buffer_tests COMMAND test_mpsc_ring_buffer)
+
 message(STATUS "QLog: M0 test targets configured (atomic, spin_lock, spin_lock_rw, aligned_alloc, platform_thread, condition_variable)")
 message(STATUS "QLog: M1 test targets configured (spsc_ring_buffer)")
+message(STATUS "QLog: M2 test targets configured (mpsc_ring_buffer)")
