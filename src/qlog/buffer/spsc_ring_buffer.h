@@ -31,19 +31,18 @@ static_assert(sizeof(block_header) == 8, "block_header must be 8 bytes for align
 class spsc_ring_buffer
 {
 private:
-    alignas(k_cache_line_size) atomic<uint32_t> write_cursor_; // 原子写游标
+    uint32_t wt_write_cursor_cached_; // 写线程缓存的写游标
+    uint32_t wt_read_cursor_cached_;  // 写线程缓存的读游标
+    uint8_t write_padding_[k_cache_line_size - 2 * sizeof(uint32_t)];
 
-    uint32_t write_cursor_cached_; // 缓存的写游标
-    uint32_t read_cursor_cached_;  // 写线程缓存的读游标
-
-    // padding 确保write 占一整行cacheline
-    uint8_t write_padding_[k_cache_line_size - 3 * sizeof(uint32_t)];
-
-    alignas(k_cache_line_size) atomic<uint32_t> read_cursor_;
-
-    uint32_t read_write_cursor_cached_; // 读线程缓存的写游标
-
+    uint32_t rt_write_cursor_cached_; // 读线程缓存的写游标
+    uint32_t rt_read_cursor_cached_;  // 读线程缓存的读游标
     uint8_t read_padding_[k_cache_line_size - 2 * sizeof(uint32_t)];
+
+    alignas(k_cache_line_size) atomic<uint32_t> write_cursor_; // 原子写游标
+    uint8_t write_padding2_[k_cache_line_size - sizeof(write_cursor_)];
+    alignas(k_cache_line_size) atomic<uint32_t> read_cursor_;
+    uint8_t read_padding3_[k_cache_line_size - sizeof(read_cursor_)];
 
     // 共享元数据
     // 缓冲区管理

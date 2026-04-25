@@ -263,7 +263,7 @@ void test_dual_thread_stress()
     const int num_entries = 10000;
     int write_count = 0;
     int read_count = 0;
-    bool producer_done = false;
+    qlog::atomic<bool> producer_done = false;
 
     // 生产者线程
     auto producer = [&]()
@@ -286,7 +286,7 @@ void test_dual_thread_stress()
                 std::this_thread::yield();
             }
         }
-        producer_done = true;
+        producer_done.store_release(true);
     };
 
     // 消费者线程
@@ -308,7 +308,7 @@ void test_dual_thread_stress()
             else
             {
                 // 没有数据，等待生产者
-                if (producer_done && read_count >= num_entries)
+                if (producer_done.load_acquire() && read_count >= num_entries)
                 {
                     break;
                 }
