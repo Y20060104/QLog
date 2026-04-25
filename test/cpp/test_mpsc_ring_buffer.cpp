@@ -651,95 +651,91 @@ void test_performance_benchmark()
 {
     std::cout << "\n[Test 12] Performance Benchmark (Concurrent)\n";
 
-    constexpr int kNumEntries = 100'000;
+    constexpr int kNumEntries = 10'000'000;
     constexpr uint32_t kEntrySize = 64u;
-
+    
+    // 实例化缓冲区
     qlog::mpsc_ring_buffer buffer(16u * 1024u * 1024u);
 
-    // ✅ Fix 1：atomic 消除数据竞争
-    std::atomic<int> write_count{0};
-    std::atomic<int> read_count{0};
-    // ✅ Fix 2：producer_done 标志，保证消费者可安全退出
-    std::atomic<bool> producer_done{false};
+    // ✅ 修复冲突 B：使用原子变量，并强制缓存行对齐以隔离干扰
+    struct alignas(64) SharedState {
+        std::atomic<int> write_count{0};
+        alignas(64) std::atomic<int> read_count{0};
+        alignas(64) std::atomic<bool> producer_done{false};
+    } state;
 
-    auto start_time = std::chrono::high_resolution_clock::now();
+    // 同步点：确保两个线程几乎同时开始跑，计时更准
+    std::atomic<bool> start_gate{false};
 
     // ── 生产者线程 ────────────────────────────────────────
-    std::thread t_producer(
-        [&]()
-        {
-            for (int i = 0; i < kNumEntries; ++i)
-            {
-                while (true)
-                {
-                    qlog::write_handle handle = buffer.alloc_write_chunk(kEntrySize);
-                    if (handle.success)
-                    {
-                        // 写入序号，便于完整性校验
-                        std::memcpy(handle.data, &i, sizeof(i));
-                        buffer.commit_write_chunk(handle);
-                        write_count.fetch_add(1, std::memory_order_relaxed);
-                        break;
-                    }
+    std::thread t_producer([&]() {
+        while (!start_gate.load(std::memory_order_acquire)); // 旋塞等待信号
+        
+        for (int i = 0; i < kNumEntries; ++i) {
+            while (true) {
+                qlog::write_handle handle = buffer.alloc_write_chunk(kEntrySize);
+                if (handle.success) {
+                    // 模拟写入数据
+                    std::memcpy(handle.data, &i, sizeof(i));
+                    buffer.commit_write_chunk(handle);
+                    state.write_count.fetch_add(1, std::memory_order_relaxed);
+                    break;
+                }
+                std::this_thread::yield(); // 缓冲区满时退让
+            }
+        }
+        // ✅ 关键同步：使用 release 语义通知生产完成
+        state.producer_done.store(true, std::memory_order_release);
+    });
+
+    // ── 消费者线程 ────────────────────────────────────────
+    std::thread t_consumer([&]() {
+        while (!start_gate.load(std::memory_order_acquire));
+        
+        while (true) {
+            qlog::read_handle handle = buffer.read_chunk();
+            if (handle.success) {
+                buffer.commit_read_chunk(handle);
+                state.read_count.fetch_add(1, std::memory_order_relaxed);
+            } else {
+                // ✅ 修复退出逻辑：先检查状态，再尝试最后一次 drain
+                if (state.producer_done.load(std::memory_order_acquire)) {
+                    // 再次尝试读取，确保在收到 done 信号到最后一次检查之间的残留数据被处理
+                    qlog::read_handle last_drain = buffer.read_chunk();
+                    if (!last_drain.success) break; 
+                    
+                    buffer.commit_read_chunk(last_drain);
+                    state.read_count.fetch_add(1, std::memory_order_relaxed);
+                } else {
                     std::this_thread::yield();
                 }
             }
-            // ✅ Fix 2：通知消费者生产已完成
-            producer_done.store(true, std::memory_order_release);
         }
-    );
+    });
 
-    // ── 消费者线程 ────────────────────────────────────────
-    std::thread t_consumer(
-        [&]()
-        {
-            // ✅ Fix 3：双重退出条件，防止死锁
-            while (read_count.load(std::memory_order_relaxed) < kNumEntries)
-            {
-                qlog::read_handle handle = buffer.read_chunk();
-                if (handle.success)
-                {
-                    buffer.commit_read_chunk(handle);
-                    read_count.fetch_add(1, std::memory_order_relaxed);
-                }
-                else
-                {
-                    // ✅ Fix 3：生产者完成且缓冲区为空，说明不会再有新数据
-                    if (producer_done.load(std::memory_order_acquire))
-                    {
-                        // 再 drain 一次，处理 producer_done 和 read_chunk 之间的窗口
-                        qlog::read_handle drain = buffer.read_chunk();
-                        if (!drain.success)
-                            break;
-                        buffer.commit_read_chunk(drain);
-                        read_count.fetch_add(1, std::memory_order_relaxed);
-                    }
-                    else
-                    {
-                        std::this_thread::yield();
-                    }
-                }
-            }
-        }
-    );
+    // 启动测试计时
+    auto start_time = std::chrono::high_resolution_clock::now();
+    start_gate.store(true, std::memory_order_release);
 
-    // ✅ Fix 4：join 之后再取时间和计数，happens-before 已建立
     t_producer.join();
     t_consumer.join();
-
     auto end_time = std::chrono::high_resolution_clock::now();
-    auto total_time_us =
-        std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
-    const double ns_per_entry =
-        (total_time_us > 0) ? (static_cast<double>(total_time_us) * 1000.0 / kNumEntries) : 0.0;
 
-    std::cout << "  Processed " << kNumEntries << " entries concurrently in " << total_time_us
-              << " µs\n";
+    // ──────────────────────────────────────────────────────
+    // 结果计算
+    // ──────────────────────────────────────────────────────
+    auto total_time_us = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
+    const double ns_per_entry = (kNumEntries > 0) ? (static_cast<double>(total_time_us) * 1000.0 / kNumEntries) : 0.0;
+
+    std::cout << "  Processed " << kNumEntries << " entries concurrently in " << total_time_us << " µs\n";
     std::cout << "  -> " << ns_per_entry << " ns/entry (End-to-End Latency)\n";
 
-    TEST_EQ(write_count.load(), kNumEntries, "should write all entries");
-    TEST_EQ(read_count.load(), kNumEntries, "should read all entries");
-    TEST_ASSERT(ns_per_entry < 1000.0, "processing should be < 1000 ns/entry");
+    // 验证数据完整性
+    TEST_EQ(state.write_count.load(), kNumEntries, "Total write count mismatch");
+    TEST_EQ(state.read_count.load(), kNumEntries, "Total read count mismatch");
+    
+    // TSan 环境下可以放宽到 2000ns，正常环境下应 < 100ns
+    TEST_TRUE(ns_per_entry < 100.0, "Performance is too low, check for false sharing or TSan overhead");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -39,16 +39,12 @@ union alignas(CACHE_LINE_SIZE) block
         inline uint32_t get_block_num() const
         {
             // 按小端序组装 3 个字节
-            return (uint32_t(block_num_[0])) | (uint32_t(block_num_[1]) << 8) |
-                   (uint32_t(block_num_[2]) << 16);
+            return (*(const uint32_t*)block_num_) & (0xFFFFFF);
         }
 
         inline void set_block_num(uint32_t num)
         {
-            // 按小端序拆解 32 位整数到 3 个字节
-            block_num_[0] = num & 0xFF;
-            block_num_[1] = (num >> 8) & 0xFF;
-            block_num_[2] = (num >> 16) & 0xFF;
+             *(uint32_t*)block_num_ = num;
         }
     } chunk_head;
 

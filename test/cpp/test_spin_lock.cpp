@@ -32,59 +32,46 @@ void test_spin_lock_basic()
 // ============================================================================
 // Test 2: Mutual Exclusion (互斥性)
 // ============================================================================
-
 void test_spin_lock_mutual_exclusion()
 {
     std::cout << "Test: spin_lock mutual exclusion..." << std::endl;
 
     qlog::spin_lock lock;
-    int critical_section_count = 0; // 计数同时进入临界区的线程数
+    // ✅ 修复：使用原子变量，避免测试逻辑本身的 Data Race
+    std::atomic<int> critical_section_count{0}; 
     const int THREAD_COUNT = 4;
+    const int ITERS = 10000; // 增加次数以更容易暴露问题
 
     std::thread threads[THREAD_COUNT];
 
-    for (int i = 0; i < THREAD_COUNT; ++i)
-    {
-        threads[i] = std::thread(
-            [&]()
-            {
-                for (int j = 0; j < 1000; ++j)
-                {
-                    lock.lock();
+    for (int i = 0; i < THREAD_COUNT; ++i) {
+        threads[i] = std::thread([&]() {
+            for (int j = 0; j < ITERS; ++j) {
+                lock.lock();
 
-                    // TODO: 问题 2
-                    // 进入临界区，计数器+1
-                    critical_section_count++;
-
-                    // TODO: 问题 3
-                    // 验证：计数器最多只能是 1 吗？
-                    // 不是的话说明两个线程同时进入了临界区（互斥失败）
-                    assert(critical_section_count == 1);
-
-                    // TODO: 问题 4
-                    // 在临界区内做一些工作（否则too fast优化器可能优化掉）
-                    uint64_t x = 0;
-                    for (int k = 0; k < 100; ++k)
-                        x++;
-                    // TODO: 问题 5
-                    // 离开临界区，计数器-1
-                    critical_section_count--;
-
-                    lock.unlock();
+                // 进锁后立刻增加
+                int current = ++critical_section_count;
+                
+                // ✅ 验证：如果锁有效，此时计数器必须绝对等于 1
+                if (current != 1) {
+                    std::cerr << "Mutual exclusion failed! Count: " << current << std::endl;
+                    assert(false);
                 }
+
+                // 模拟临界区工作
+                std::this_thread::yield(); 
+
+                // 离开前减少
+                --critical_section_count;
+                
+                lock.unlock();
             }
-        );
+        });
     }
 
-    for (int i = 0; i < THREAD_COUNT; ++i)
-    {
-        threads[i].join();
-    }
+    for (int i = 0; i < THREAD_COUNT; ++i) threads[i].join();
 
-    // TODO: 问题 6
-    // 所有线程都离开了，计数器应该是 0
     assert(critical_section_count == 0);
-
     std::cout << "✓ Mutual exclusion passed" << std::endl;
 }
 

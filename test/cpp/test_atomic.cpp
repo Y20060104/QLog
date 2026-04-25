@@ -90,19 +90,11 @@ void test_atomic_concurrent_access()
         threads[i] = std::thread(
             [&]()
             {
-                for (int j = 0; j < ITERATIONS; ++j)
-                {
-                    // TODO: 问题 4
-                    // 需要用原子操作递增计数器吗？
-                    // 或者这里是在测试"不用原子操作会怎样"？
-                    // 想想：如果不用 qlog::atomic，直接 int++，会发生什么？
-
-                    // 方案 A：用 atomic（应该没问题）
-                    int old_val = counter.load(std::memory_order_relaxed);
-                    counter.store(old_val + 1, std::memory_order_relaxed);
-
-                    // 方案 B：或者直接尝试不同的 memory_order
-                }
+               for (int j = 0; j < ITERATIONS; ++j)
+{
+    // 这是一条指令完成的操作，不会被中间打断
+    counter.fetch_add(1, std::memory_order_relaxed);
+}
             }
         );
     }
