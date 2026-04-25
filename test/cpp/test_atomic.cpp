@@ -90,11 +90,11 @@ void test_atomic_concurrent_access()
         threads[i] = std::thread(
             [&]()
             {
-               for (int j = 0; j < ITERATIONS; ++j)
-{
-    // 这是一条指令完成的操作，不会被中间打断
-    counter.fetch_add(1, std::memory_order_relaxed);
-}
+                for (int j = 0; j < ITERATIONS; ++j)
+                {
+                    // 这是一条指令完成的操作，不会被中间打断
+                    counter.fetch_add(1, std::memory_order_relaxed);
+                }
             }
         );
     }

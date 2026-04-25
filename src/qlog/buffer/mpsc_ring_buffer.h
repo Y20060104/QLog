@@ -44,7 +44,7 @@ union alignas(CACHE_LINE_SIZE) block
 
         inline void set_block_num(uint32_t num)
         {
-             *(uint32_t*)block_num_ = num;
+            *(uint32_t*)block_num_ = num;
         }
     } chunk_head;
 

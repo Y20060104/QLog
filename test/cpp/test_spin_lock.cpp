@@ -38,38 +38,45 @@ void test_spin_lock_mutual_exclusion()
 
     qlog::spin_lock lock;
     // ✅ 修复：使用原子变量，避免测试逻辑本身的 Data Race
-    std::atomic<int> critical_section_count{0}; 
+    std::atomic<int> critical_section_count{0};
     const int THREAD_COUNT = 4;
     const int ITERS = 10000; // 增加次数以更容易暴露问题
 
     std::thread threads[THREAD_COUNT];
 
-    for (int i = 0; i < THREAD_COUNT; ++i) {
-        threads[i] = std::thread([&]() {
-            for (int j = 0; j < ITERS; ++j) {
-                lock.lock();
+    for (int i = 0; i < THREAD_COUNT; ++i)
+    {
+        threads[i] = std::thread(
+            [&]()
+            {
+                for (int j = 0; j < ITERS; ++j)
+                {
+                    lock.lock();
 
-                // 进锁后立刻增加
-                int current = ++critical_section_count;
-                
-                // ✅ 验证：如果锁有效，此时计数器必须绝对等于 1
-                if (current != 1) {
-                    std::cerr << "Mutual exclusion failed! Count: " << current << std::endl;
-                    assert(false);
+                    // 进锁后立刻增加
+                    int current = ++critical_section_count;
+
+                    // ✅ 验证：如果锁有效，此时计数器必须绝对等于 1
+                    if (current != 1)
+                    {
+                        std::cerr << "Mutual exclusion failed! Count: " << current << std::endl;
+                        assert(false);
+                    }
+
+                    // 模拟临界区工作
+                    std::this_thread::yield();
+
+                    // 离开前减少
+                    --critical_section_count;
+
+                    lock.unlock();
                 }
-
-                // 模拟临界区工作
-                std::this_thread::yield(); 
-
-                // 离开前减少
-                --critical_section_count;
-                
-                lock.unlock();
             }
-        });
+        );
     }
 
-    for (int i = 0; i < THREAD_COUNT; ++i) threads[i].join();
+    for (int i = 0; i < THREAD_COUNT; ++i)
+        threads[i].join();
 
     assert(critical_section_count == 0);
     std::cout << "✓ Mutual exclusion passed" << std::endl;

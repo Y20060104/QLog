@@ -224,7 +224,6 @@ M9-M12 (Week 10-12): 崩溃恢复 + 多语言绑定 + 性能调优
 **参考资源**:
 - 🔗 BqLog 源码：`/home/qq344/BqLog/src/bq_log/types/buffer/miso_ring_buffer.{h,cpp}`
 - 🔗 QLog 规范：`/home/qq344/QLog/claude/RULES.md`
-- 🔗 **从这里开始**：`/home/qq344/QLog/claude/M2_MPSC_ALIGNED_IMPLEMENTATION.md` ⭐
 
 
 
