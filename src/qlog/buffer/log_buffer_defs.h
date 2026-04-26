@@ -1,5 +1,6 @@
 #pragma once
 
+#include "qlog/buffer/mpsc_ring_buffer.h"
 #include "qlog/primitives/aligned_alloc.h"
 #include "qlog/primitives/atomic.h"
 
@@ -52,20 +53,18 @@ class log_buffer;
 struct alignas(64) log_tls_buffer_info
 {
     uint64_t last_update_epoch_ms_ = 0;
-    uint64_t update_times = 0;
+    uint64_t update_times_ = 0;
     spsc_ring_buffer* cur_hp_buffer_ =
         nullptr; // HP 路径：当前线程使用的 spsc_ring_buffer（nullptr 表示用 LP 路径）
     log_buffer* owner_buffer_ = nullptr; // 反向引用，析构时需要找到 log_buffer 做清理
-    bool is_thread_finishedd_ = false; // 线程退出标记 & 生命周期保护（用于安全析构）
+    bool is_thread_finished_ = false; // 线程退出标记 & 生命周期保护（用于安全析构）
 
     // LP 路径 pending write handle 在 alloc 与 commit 之间缓存，避免重建
-    bool has_pending_lp_write_ = false;
-    uint32_t pending_lp_cursor_ = 0;
-    uint32_t pending_lp_blocks_ = 0;
+    write_handle pending_lp_wh_;
 
     char padding0_
         [64 - sizeof(uint64_t) * 2 - sizeof(spsc_ring_buffer*) - sizeof(log_buffer*) -
-         sizeof(bool) * 2 - sizeof(bool) * 2 - sizeof(uint32_t) * 2];
+         sizeof(bool) - sizeof(write_handle)];
 
     // 写线程频繁递增 current_write_seq_，独占 cache line 防止 false sharing
     alignas(64) struct

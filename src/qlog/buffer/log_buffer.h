@@ -33,7 +33,7 @@ public:
 
     // 消费者接口（单线程）
     [[nodiscard]] const void* read_chunk(uint32_t& out_size);
-    void* commit_read_chunk(const void* data_ptr);
+    void commit_read_chunk(const void* data_ptr);
 
     // 等待所有已提交数据可被消费（用于 flush/force_flush）
     void flush();
@@ -65,6 +65,7 @@ private:
     spsc_ring_buffer* get_or_create_hp_buffer(log_tls_buffer_info& tls_info);
     // 获取（或创建）当前线程的 TLS 状态
     log_tls_buffer_info& get_tls_buffer_info();
+    void on_thread_exit(log_tls_buffer_info* info);
 
     // 消费者
     // 从 LP buffer 读取并验证 context

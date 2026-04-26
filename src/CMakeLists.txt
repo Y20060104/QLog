@@ -25,6 +25,9 @@ set(QLOG_BUFFER_SOURCES
     qlog/buffer/spsc_ring_buffer.cpp
     qlog/buffer/mpsc_ring_buffer.h
     qlog/buffer/mpsc_ring_buffer.cpp
+    qlog/buffer/log_buffer_defs.h
+    qlog/buffer/log_buffer.h
+    qlog/buffer/log_buffer.cpp
 )
 
 # ============================================================================
