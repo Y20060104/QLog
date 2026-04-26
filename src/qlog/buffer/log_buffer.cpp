@@ -3,10 +3,34 @@
 #include <cassert>
 #include <chrono>
 #include <cstring>
+#include <mutex>
+#include <shared_mutex>
 
 namespace qlog
 {
 
+log_buffer::log_buffer(
+    uint32_t lp_capacity_bytes,
+    uint32_t hp_capacity_per_thread_bytes,
+    uint64_t hp_threshould
+)
+    : lp_buffer_(lp_capacity_bytes) // <--- 直接在这里调用 mpsc_ring_buffer 的带参构造
+    , hp_capacity_per_thread_(hp_capacity_per_thread_bytes)
+    , hp_threshold_(hp_threshould)
+{
+    // lp_buffer_ 已经在上面的初始化列表中完成了初始化，不需要调用 init() 了
+}
+
+log_buffer::~log_buffer()
+{
+    // 释放 hp_pool_ 中的动态内存
+    std::unique_lock<spin_lock_rw> wlock(hp_pool_lock_);
+    for (auto* entry : hp_pool_)
+    {
+        delete entry;
+    }
+    hp_pool_.clear();
+}
 // TLS 变量定义
 thread_local log_tls_buffer_info* log_buffer::tls_current_info_ = nullptr;
 
@@ -107,13 +131,7 @@ void log_buffer::commit_write_chunk(void* data_ptr)
     else
     {
         // LP路径
-        // 用户拿到的是 data_ptr = context_head 后的地址
-        // lp 的 write_handle 需要 context_head 起始地址
-        // 因此：实际 lp_data = data_ptr - sizeof(context_head)
-        tls.pending_lp_wh_.data =
-            static_cast<uint8_t*>(data_ptr) - static_cast<ptrdiff_t>(sizeof(context_head));
-        lp_buffer_.commit_write_chunk(tls.pending_lp_wh_
-        ); // 应该修改log_buffer_def.h的tls结构吧原结构没有wh
+        lp_buffer_.commit_write_chunk(tls.pending_lp_wh_);
     }
 }
 
@@ -159,16 +177,32 @@ void log_buffer::on_thread_exit(log_tls_buffer_info* info)
     // 标记 HP buffer 为inactive
     if (info->cur_hp_buffer_ != nullptr)
     {
-        // hp_entry 的 is_active 设为 false，消费者排干后释放
+        std::shared_lock<spin_lock_rw> rlock(hp_pool_lock_);
+        for (hp_buffer_entry* entry : hp_pool_)
+        {
+            if (entry->tls_info == info)
+            {
+                entry->is_active = false;
+                break;
+            }
+        }
         info->cur_hp_buffer_ = nullptr;
     }
+    constexpr uint32_t k_finish_payload_size = 0;
+    const uint32_t total_alloc =
+        k_finish_payload_size + static_cast<uint32_t>(sizeof(context_head));
 
-    // 写入LP finish
-    uint64_t now_ms = 0;
-    void* ptr = alloc_write_chunk(0, now_ms);
-    if (ptr != nullptr)
+    write_handle wh = lp_buffer_.alloc_write_chunk(total_alloc);
+    if (wh.success)
     {
-        commit_write_chunk(ptr);
+        auto* ctx = reinterpret_cast<context_head*>(wh.data);
+        ctx->version_ = 0;
+        ctx->is_thread_finished_ = true;
+        ctx->is_external_ref_ = false;
+        ctx->seq_ = info->wt_data_.current_write_seq_++;
+        ctx->set_tls_info_ptr(info);
+
+        lp_buffer_.commit_write_chunk(wh);
     }
 }
 
@@ -179,9 +213,9 @@ const void* log_buffer::read_chunk(uint32_t& out_size)
         // 用锁遍历HP pool
         // BqLog: group_list 遍历；QLog M3: 简单 vector 遍历
         // 问题：我没有再spinlock下实现这个锁没有实现 C++ 标准要求的 lock_shared() 和
-        // unlock_shared() 方法，检查BqLog实现方法 std::shared_lock<spin_lock_rw>
-        // rlock(hp_pool_lock_);
-        size_t n = hp_pool_.size();
+        // unlock_shared() 方法，检查BqLog实现方法
+        std::shared_lock<spin_lock_rw> rlock(hp_pool_lock_);
+        const size_t n = hp_pool_.size();
         for (size_t i = 0; i < n; ++i)
         {
             size_t idx =
@@ -197,48 +231,69 @@ const void* log_buffer::read_chunk(uint32_t& out_size)
                 rt_state_.last_read_src_ = active_read_src::hp;
                 // 大小需要从 spsc block_header 中取
                 // 这里调用 spsc 的辅助方法获取 data_size
-                // out_size=entry->buffer;// ？这里实现不正确
+                out_size = entry->buffer.last_read_data_size();
                 return ptr;
             }
         }
     }
+    return rt_read_from_lp(out_size);
+}
 
-    // 读 LP buffer
+const void* log_buffer::rt_read_from_lp(uint32_t& out_size)
+{
+    while (true)
     {
         read_handle rh = lp_buffer_.read_chunk();
         if (!rh.success)
         {
+            // LP buffer为空 本轮无数据
             return nullptr;
         }
-        // 验证context_head
+
+        // 解析context_head
         const auto* ctx = reinterpret_cast<const context_head*>(rh.data);
 
-        if (!rt_verify_lp_context(*ctx))
+        // 获取TLS状态
+        auto* tls_info = reinterpret_cast<log_tls_buffer_info*>(ctx->get_tls_ptr());
+        if (tls_info == nullptr)
         {
-            // 顺序不对：当前 entry 属于某线程但该线程有更早的 entry 还没到
-            // 不消费，放回（BqLog: discard_read_chunk）
+            // 无效context 跳过
             lp_buffer_.commit_read_chunk(rh);
+            continue;
+        }
+        const uint32_t expected_seq = tls_info->rt_data_.current_read_seq_;
+
+        // seq校验
+        if (ctx->seq_ == expected_seq)
+        {
+            tls_info->rt_data_.current_read_seq_++;
+            if (ctx->is_thread_finished_)
+            {
+                lp_buffer_.commit_read_chunk(rh
+                );               // 1. 消费这条 finish 标记（推进 mpsc read_cursor）
+                delete tls_info; // 2. 延迟释放 TLS（消费者负责，生产者线程已退出）
+                continue; // 3. 继续循环，尝试读下一条（finish 标记无用户数据）
+            }
+            // 正常数据
+            // 缓存完整read_handle
+            rt_state_.pending_lp_rh_ = rh;
+            rt_state_.pending_lp_ptr_ = rh.data + sizeof(context_head);
+            rt_state_.last_read_src_ = active_read_src::lp;
+            // 返回用户数据 跳过context_head 前缀
+            out_size = rh.data_size - static_cast<uint32_t>(sizeof(context_head));
+            return rt_state_.pending_lp_ptr_;
+        }
+        else if (ctx->seq_ > expected_seq)
+        {
+            // 更早的entry还没有到
             return nullptr;
         }
-
-        // context_head 验证通过
-        rt_state_.pending_lp_ptr_ = rh.data;
-        rt_state_.last_read_src_ = active_read_src::lp;
-
-        // 更新expected_seq
-        auto* tls_info = reinterpret_cast<log_tls_buffer_info*>(ctx->get_tls_ptr());
-        tls_info->rt_data_.current_read_seq_++;
-
-        // 处理线程退出标记
-        if (ctx->is_thread_finished_)
+        else
         {
-            delete tls_info;
+            // 过期了
             lp_buffer_.commit_read_chunk(rh);
-            // 递归调用读下一条（此条是 finish 标记，无用户数据）
-            // 问题：递归调用开销也不小吧？ BqLog源码是如何实现的？
+            continue;
         }
-        out_size = rh.data_size - static_cast<uint32_t>(sizeof(context_head));
-        return rh.data + sizeof(context_head);
     }
 }
 
@@ -282,17 +337,9 @@ void log_buffer::commit_read_chunk(const void* data_ptr)
     }
     case active_read_src::lp:
     {
-        const uint8_t* lp_data_start = static_cast<const uint8_t*>(rt_state_.pending_hp_ptr_);
-        read_handle rh;
-        rh.success = true;
-        rh.data = const_cast<uint8_t*>(lp_data_start);
-        rh.cursor = 0; // mpsc 的 cursor 需要从内部状态恢复
-        rh.data_size = 0;
-        rh.block_count = 0;
-        // 实际实现中，需要将 rh.cursor 和 rh.block_count 缓存到 rt_state_
-        // 应该如何实现？
-        lp_buffer_.commit_read_chunk(rh);
+        lp_buffer_.commit_read_chunk(rt_state_.pending_lp_rh_);
         rt_state_.pending_lp_ptr_ = nullptr;
+        rt_state_.pending_lp_rh_.success = false;
         break;
     }
     default:
@@ -316,7 +363,7 @@ spsc_ring_buffer* log_buffer::get_or_create_hp_buffer(log_tls_buffer_info& tls_i
         // 加写锁，将新 entry 添加到 pool
         // BqLog: 对应 group_list::alloc_new_block()
         // 我原本实现没有write_guard啊 你这样设计需要修改我的原实现吧
-        // spin_lock_write_guard wg(hp_pool_lock_);
+        std::unique_lock<spin_lock_rw> wlock(hp_pool_lock_);
         hp_pool_.push_back(entry);
     }
     return &entry->buffer;

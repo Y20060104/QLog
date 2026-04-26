@@ -86,5 +86,8 @@ public:
     {
         return block_count_;
     }
+    // 返回上次 read_chunk() 读到的数据字节数（不含 block_header）
+    // 必须在 read_chunk() 返回非 nullptr 后、commit_read_chunk() 之前调用
+    uint32_t last_read_data_size() const;
 };
 } // namespace qlog

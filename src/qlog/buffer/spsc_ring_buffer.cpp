@@ -129,4 +129,18 @@ spsc_ring_buffer::~spsc_ring_buffer()
     }
 }
 
+uint32_t spsc_ring_buffer::last_read_data_size() const
+{
+    if (!buffer_)
+    {
+        return 0;
+    }
+    // rt_read_cursor_cached_指向当前未消费的块的起始位置
+    // 该块的block_header.data_size就是用户数据的大小
+    const uint8_t* header_ptr = buffer_ + (rt_read_cursor_cached_ << k_block_size_log2);
+    return reinterpret_cast<const block_header*>(header_ptr)->data_size;
+}
+// ⚠️ 调用时机约束：此方法只能在 read_chunk() 返回非 nullptr 后、commit_read_chunk() 之前调用。
+//  如果 read_chunk() 返回 nullptr，调用结果未定义。
+
 } // namespace qlog

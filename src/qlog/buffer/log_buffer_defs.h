@@ -62,10 +62,6 @@ struct alignas(64) log_tls_buffer_info
     // LP 路径 pending write handle 在 alloc 与 commit 之间缓存，避免重建
     write_handle pending_lp_wh_;
 
-    char padding0_
-        [64 - sizeof(uint64_t) * 2 - sizeof(spsc_ring_buffer*) - sizeof(log_buffer*) -
-         sizeof(bool) - sizeof(write_handle)];
-
     // 写线程频繁递增 current_write_seq_，独占 cache line 防止 false sharing
     alignas(64) struct
     {

@@ -229,19 +229,16 @@ M9-M12 (Week 10-12): 崩溃恢复 + 多语言绑定 + 性能调优
 
 ---
 
-### ⏳ M3: 双路 Buffer 调度器 (未开始)
-
-**目标**: 实现 `log_buffer`，根据线程频率自动路由到 HP 或 LP buffer（详见 plan.md M3 章节）
-
-**关键任务**（参见 plan.md）:
-- [ ] 设计 TLS 结构 `log_tls_buffer_info`：写侧和读侧分离到不同 cache line
-- [ ] 实现线程频率检测（首次写入注册为 HP，超过阈值降级为 LP）
-- [ ] HP 路径：为每个线程分配独立 `spsc_ring_buffer` block
-- [ ] LP 路径：所有低频线程共享一个 `mpsc_ring_buffer`
-- [ ] 实现 `oversize_buffer`：超大 entry 的临时缓冲区，spin-lock RW 保护，1s 后回收
-- [ ] 实现统一的 `alloc_write_chunk()` / `commit_write_chunk()` 接口（内部路由）
-- [ ] 实现读侧遍历：`read_chunk()` 按序消费 HP + LP buffer
-
+### ✅ M3: 双路 Buffer 调度器 (完成 ✅)
+- [x] alloc_write_chunk 频率检测 + HP/LP 路由 ✅
+- [x] commit_write_chunk LP/HP 路径正确 ✅
+- [x] read_chunk while(true) 循环（BqLog 对齐）✅
+- [x] commit_read_chunk LP cursor 正确还原 ✅
+- [x] 线程退出 is_thread_finished 处理 ✅
+- [x] hp_pool_ 读写锁保护 ✅
+- [x] context_head 透明（上层无感知）✅
+- [ ] TSan 0 races 
+- [ ] ASan 0 errors 
 **验证标准**:
 - [ ] 混合场景测试：高频线程走 HP，低频线程走 LP，消费者能正确合并
 - [ ] 内存占用：10 线程 × 200 万条日志，log_buffer 自身 < 2MB
