@@ -4,7 +4,6 @@
 #include <chrono>
 #include <cstring>
 
-
 namespace qlog
 {
 
@@ -130,7 +129,7 @@ log_tls_buffer_info& log_buffer::get_tls_buffer_info()
     info->owner_buffer_ = this;
     // 注册线程退出回调（当线程销毁时通知 log_buffer）
     // 方式 1：pthread_key_t + destructor（Linux/macOS/Windows）
-    // 方式 2：利用 thread_local 对象析构（更现代的方式）
+    // 方式 2：利用 thread_local 对象析构
     // QLog M3 推荐方式 2：
     struct tls_guard
     {
@@ -179,8 +178,9 @@ const void* log_buffer::read_chunk(uint32_t& out_size)
     {
         // 用锁遍历HP pool
         // BqLog: group_list 遍历；QLog M3: 简单 vector 遍历
-       // 问题：我没有再spinlock下实现这个锁没有实现 C++ 标准要求的 lock_shared() 和 unlock_shared() 方法，检查BqLog实现方法
-        // std::shared_lock<spin_lock_rw> rlock(hp_pool_lock_);
+        // 问题：我没有再spinlock下实现这个锁没有实现 C++ 标准要求的 lock_shared() 和
+        // unlock_shared() 方法，检查BqLog实现方法 std::shared_lock<spin_lock_rw>
+        // rlock(hp_pool_lock_);
         size_t n = hp_pool_.size();
         for (size_t i = 0; i < n; ++i)
         {

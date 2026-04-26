@@ -102,6 +102,32 @@ public:
     {
         state_.fetch_and(~WRITE_BIT, std::memory_order_release);
     }
+
+    void lock_shared()
+    {
+        read_lock();
+    }
+
+    void unlock_shared()
+    {
+        read_unlock();
+    }
+    void lock()
+    {
+        write_lock();
+    }
+    void unlock()
+    {
+        write_unlock();
+    }
+
+    bool try_lock()
+    {
+        uint32_t state=state_.load_relaxed();
+        if(state&WRITE_BIT)return false;
+        uint32_t desired=state|WRITE_BIT;
+        return state_.compare_exchange_strong(state,desired,std::memory_order_acquire,std::memory_order_relaxed);
+    }
 };
 
 } // namespace qlog

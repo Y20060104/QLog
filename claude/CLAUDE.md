@@ -417,7 +417,7 @@ $ git tag -a m0 -m "Milestone 0: Lock-free primitives"
 "看起来 false sharing 可能是问题...
 你的 hot_data_ 是否 cache-line aligned？"
 
-💡 建议优化:
+💡 建议优化(参考BqLog如果有更优的性能才提出建议):
 "试试使用 padding 分离读写游标...
 或者调整 memory_order..."
 

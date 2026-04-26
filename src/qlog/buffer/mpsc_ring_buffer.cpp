@@ -177,7 +177,6 @@ read_handle mpsc_ring_buffer::read_chunk()
     uint32_t current_read_cursor = cursors_.read_cursor.load_relaxed();
     bool finished = false;
 
-    // ⭐ 完全对标 BqLog 第 354-396 行的 data_traverse 实现
     while (!finished)
     {
         block* current_block = &blocks_[current_read_cursor & block_count_mask_];
@@ -187,14 +186,14 @@ read_handle mpsc_ring_buffer::read_chunk()
         switch (status)
         {
         case block_status::invalid:
-            // ⭐ 跳过 wrap-around 的占位块（对标 BqLog 第 372-377 行）
+            //  跳过 wrap-around 的占位块
             break;
         case block_status::unused:
-            // ⭐ 遇到 unused 直接退出，缓冲空了（对标 BqLog 第 378-380 行）
+            //  遇到 unused 直接退出，缓冲空
             finished = true;
             break;
         case block_status::used:
-            // ⭐ 找到有效数据，返回（对标 BqLog 第 381-386 行）
+            //  找到有效数据，返回
             handle.success = true;
             handle.cursor = current_read_cursor;
             handle.data = current_block->chunk_head.data;
@@ -205,10 +204,10 @@ read_handle mpsc_ring_buffer::read_chunk()
             break;
         }
 
-        // ⭐ 移动到下一块（对标 BqLog 第 391 行）
+        // 移动到下一块
         current_read_cursor = current_read_cursor + block_num;
 
-        // ⭐ 防止扫描超过缓冲范围（对标 BqLog 第 392-394 行）
+        //  防止扫描超过缓冲范围
         if ((current_read_cursor - cursors_.read_cursor.load_relaxed()) >= block_count_)
         {
             finished = true;
