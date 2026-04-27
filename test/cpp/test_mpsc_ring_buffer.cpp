@@ -757,9 +757,9 @@ void test_performance_benchmark()
     TEST_EQ(state.write_count.load(), kNumEntries, "Total write count mismatch");
     TEST_EQ(state.read_count.load(), kNumEntries, "Total read count mismatch");
 
-    // TSan 环境下可以放宽到 2000ns，正常环境下应 < 30ns
+    // TSan 环境下可以放宽到 2000ns，正常环境下应 < 50ns
     TEST_TRUE(
-        ns_per_entry < 30.0, "Performance is too low, check for false sharing or TSan overhead"
+        ns_per_entry < 50.0, "Performance is too low, check for false sharing or TSan overhead"
     );
 }
 

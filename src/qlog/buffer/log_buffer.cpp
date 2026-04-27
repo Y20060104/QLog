@@ -9,17 +9,16 @@
 namespace qlog
 {
 
-log_buffer::log_buffer(
+    log_buffer::log_buffer(
     uint32_t lp_capacity_bytes,
     uint32_t hp_capacity_per_thread_bytes,
     uint64_t hp_threshould
 )
-    : lp_buffer_(lp_capacity_bytes) // <--- 直接在这里调用 mpsc_ring_buffer 的带参构造
+    : lp_buffer_(lp_capacity_bytes)
     , hp_capacity_per_thread_(hp_capacity_per_thread_bytes)
     , hp_threshold_(hp_threshould)
-{
-    // lp_buffer_ 已经在上面的初始化列表中完成了初始化，不需要调用 init() 了
-}
+{}
+
 
 log_buffer::~log_buffer()
 {
@@ -30,6 +29,13 @@ log_buffer::~log_buffer()
         delete entry;
     }
     hp_pool_.clear();
+}
+log_tls_buffer_info::~log_tls_buffer_info()
+{
+    // 防御性清零：防止析构后通过野指针访问已释放内存
+    // on_thread_exit() 已将 cur_hp_buffer_ 设为 nullptr；此处再次确认
+    cur_hp_buffer_ = nullptr;
+    owner_buffer_  = nullptr;
 }
 // TLS 变量定义
 thread_local log_tls_buffer_info* log_buffer::tls_current_info_ = nullptr;
@@ -154,7 +160,9 @@ log_tls_buffer_info& log_buffer::get_tls_buffer_info()
         log_tls_buffer_info* info;
         ~tls_guard()
         {
-            if (info && info->owner_buffer_)
+            if (info != nullptr
+                && info->owner_buffer_ != nullptr
+                && !info->is_thread_finished_)
             {
                 info->owner_buffer_->on_thread_exit(info);
             }
@@ -367,5 +375,10 @@ spsc_ring_buffer* log_buffer::get_or_create_hp_buffer(log_tls_buffer_info& tls_i
         hp_pool_.push_back(entry);
     }
     return &entry->buffer;
+}
+
+void log_buffer::flush()
+{
+    std::atomic_thread_fence(std::memory_order_seq_cst);
 }
 } // namespace qlog
