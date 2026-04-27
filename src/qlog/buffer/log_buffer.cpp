@@ -84,15 +84,26 @@ void* log_buffer::alloc_write_chunk(uint32_t size, uint64_t current_time_ms_)
             tls.cur_hp_buffer_ = get_or_create_hp_buffer(tls);
         }
 
-        void* ptr = tls.cur_hp_buffer_->alloc_write_chunk(size);
-        if (ptr != nullptr)
+        // 检查HP buffer是否成功创建（可能分配失败）
+        if (tls.cur_hp_buffer_ != nullptr)
         {
-            return ptr;
+            void* ptr = tls.cur_hp_buffer_->alloc_write_chunk(size);
+            if (ptr != nullptr)
+            {
+                return ptr;
+            }
+
+            // HP buffer满:不阻塞，降级为LP
+            // Bqlog auto_expand时重新申请块 这里简化直接降级
+            tls.cur_hp_buffer_ = nullptr;
+        }
+        else
+        {
+            // HP buffer创建失败，强制标记为低频以避免重复尝试
+            tls.last_update_epoch_ms_ = current_time_ms_;
+            tls.update_times_ = 0;
         }
 
-        // HP buffer满:不阻塞，降级为LP
-        // Bqlog auto_expand时重新申请块 这里简化直接降级
-        tls.cur_hp_buffer_ = nullptr;
         is_high_freq = false;
     }
 
@@ -104,7 +115,7 @@ void* log_buffer::alloc_write_chunk(uint32_t size, uint64_t current_time_ms_)
     if (!wh.success)
     {
         // 空间不足 根据策略丢弃或者返回nullptr
-        lp_buffer_.commit_write_chunk(wh); // 释放占位
+        // 注意：不调用 commit，因为没有成功的分配
         return nullptr;
     }
 
@@ -151,6 +162,8 @@ log_tls_buffer_info& log_buffer::get_tls_buffer_info()
     // 慢路径 为当前进程创建TLS状态
     auto* info = new log_tls_buffer_info();
     info->owner_buffer_ = this;
+    // 清除可能来自其他 log_buffer 实例的 HP buffer 指针（防止 use-after-free）
+    info->cur_hp_buffer_ = nullptr;
     // 注册线程退出回调（当线程销毁时通知 log_buffer）
     // 方式 1：pthread_key_t + destructor（Linux/macOS/Windows）
     // 方式 2：利用 thread_local 对象析构
@@ -289,6 +302,8 @@ const void* log_buffer::rt_read_from_lp(uint32_t& out_size)
             rt_state_.last_read_src_ = active_read_src::lp;
             // 返回用户数据 跳过context_head 前缀
             out_size = rh.data_size - static_cast<uint32_t>(sizeof(context_head));
+            // 确保 pending_lp_rh_ 被标记为有效
+            rt_state_.pending_lp_rh_.success = true;
             return rt_state_.pending_lp_ptr_;
         }
         else if (ctx->seq_ > expected_seq)
@@ -338,14 +353,21 @@ void log_buffer::commit_read_chunk(const void* data_ptr)
     case active_read_src::hp:
     {
         // HP 路径直接调用 spsc commit_read_chunk
-        rt_state_.pending_hp_entry_->buffer.commit_read_chunk();
-        rt_state_.pending_hp_ptr_ = nullptr;
-        rt_state_.pending_hp_entry_ = nullptr;
+        if (rt_state_.pending_hp_entry_ != nullptr)
+        {
+            rt_state_.pending_hp_entry_->buffer.commit_read_chunk();
+            rt_state_.pending_hp_ptr_ = nullptr;
+            rt_state_.pending_hp_entry_ = nullptr;
+        }
         break;
     }
     case active_read_src::lp:
     {
-        lp_buffer_.commit_read_chunk(rt_state_.pending_lp_rh_);
+        // 只有当 pending_lp_rh_ 有效时才提交
+        if (rt_state_.pending_lp_rh_.success)
+        {
+            lp_buffer_.commit_read_chunk(rt_state_.pending_lp_rh_);
+        }
         rt_state_.pending_lp_ptr_ = nullptr;
         rt_state_.pending_lp_rh_.success = false;
         break;

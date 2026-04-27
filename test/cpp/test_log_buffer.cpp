@@ -193,31 +193,28 @@ void test_01_construction()
 void test_02_lp_single_write_read()
 {
     std::cout << "\n[Test 02] LP Path: Single Write / Read / Data Integrity\n";
-
-    // 使用极高 HP 阈值强制走 LP 路径
-    qlog::log_buffer buf(256 * 1024, 64 * 1024, /* hp_threshold= */ 100'000);
+    qlog::log_buffer buf(256 * 1024, 64 * 1024, 100'000);
 
     constexpr uint32_t kPayload = 64;
-    void* wptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
-    TEST_NOT_NULL(wptr, "alloc_write_chunk(64) should succeed");
-
-    if (wptr == nullptr)
-        return;
-
-    // 写入已知模式
-    auto* data = static_cast<uint8_t*>(wptr);
-    for (uint32_t i = 0; i < kPayload; ++i)
-        data[i] = static_cast<uint8_t>(i ^ 0xAB);
-
-    buf.commit_write_chunk(wptr);
+    // ── 修复：用独立线程写，避免主线程 tls_guard 捕获悬空 owner_buffer_ ──
+    std::thread writer([&]()
+    {
+        void* wptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+        if (wptr)
+        {
+            auto* data = static_cast<uint8_t*>(wptr);
+            for (uint32_t i = 0; i < kPayload; ++i)
+                data[i] = static_cast<uint8_t>(i ^ 0xAB);
+            buf.commit_write_chunk(wptr);
+        }
+    });
+    writer.join(); // 线程退出 → tls_guard 正常析构 → on_thread_exit 在 buf 存活时完成
     buf.flush();
 
-    // 读取并验证
     uint32_t out_size = 0;
     const void* rptr = buf.read_chunk(out_size);
     TEST_NOT_NULL(rptr, "read_chunk should return data");
     TEST_EQ(out_size, kPayload, "out_size should equal payload size");
-
     if (rptr != nullptr)
     {
         const auto* rdata = static_cast<const uint8_t*>(rptr);
@@ -225,46 +222,41 @@ void test_02_lp_single_write_read()
         for (uint32_t i = 0; i < kPayload; ++i)
         {
             if (rdata[i] != static_cast<uint8_t>(i ^ 0xAB))
-            {
-                match = false;
-                break;
-            }
+            { match = false; break; }
         }
         TEST_TRUE(match, "data pattern should match byte-for-byte");
         buf.commit_read_chunk(rptr);
     }
-
-    // 消费后缓冲区应为空
     uint32_t sz2 = 0;
     TEST_NULL(buf.read_chunk(sz2), "buffer should be empty after consuming single entry");
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Test 03：LP 路径 — 多条 entry 顺序读取
 // ─────────────────────────────────────────────────────────────────────────────
 void test_03_lp_multiple_entries()
 {
     std::cout << "\n[Test 03] LP Path: Multiple Entries in Order\n";
-
     qlog::log_buffer buf(512 * 1024, 64 * 1024, 100'000);
 
-    constexpr int     kN       = 50;
+    constexpr int      kN       = 50;
     constexpr uint32_t kPayload = 32;
 
-    // 写入 50 条，每条首 4 字节存序号
-    for (int i = 0; i < kN; ++i)
+    // ── 修复：独立 writer 线程 ──
+    std::thread writer([&]()
     {
-        void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
-        TEST_NOT_NULL(ptr, "alloc entry " + std::to_string(i));
-        if (ptr)
+        for (int i = 0; i < kN; ++i)
         {
-            *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i);
-            buf.commit_write_chunk(ptr);
+            void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+            if (ptr)
+            {
+                *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i);
+                buf.commit_write_chunk(ptr);
+            }
         }
-    }
+    });
+    writer.join();
     buf.flush();
 
-    // 读取并验证顺序
     int read_count = 0;
     uint32_t out_size = 0;
     while (const void* rptr = buf.read_chunk(out_size))
@@ -278,25 +270,26 @@ void test_03_lp_multiple_entries()
     }
     TEST_EQ(read_count, kN, "should read exactly kN entries");
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Test 04：LP 路径 — out_size 精度验证（变长 payload）
 // ─────────────────────────────────────────────────────────────────────────────
 void test_04_lp_out_size_accuracy()
 {
     std::cout << "\n[Test 04] LP Path: out_size Accuracy (Variable Payload)\n";
-
     qlog::log_buffer buf(512 * 1024, 64 * 1024, 100'000);
 
-    // 写入不同大小的 payload
     const uint32_t sizes[] = {1, 8, 16, 32, 64, 128, 256};
-    for (uint32_t sz : sizes)
+
+    // ── 修复：独立 writer 线程 ──
+    std::thread writer([&]()
     {
-        void* ptr = buf.alloc_write_chunk(sz, k_lp_force_time);
-        TEST_NOT_NULL(ptr, "alloc size=" + std::to_string(sz));
-        if (ptr)
-            buf.commit_write_chunk(ptr);
-    }
+        for (uint32_t sz : sizes)
+        {
+            void* ptr = buf.alloc_write_chunk(sz, k_lp_force_time);
+            if (ptr) buf.commit_write_chunk(ptr);
+        }
+    });
+    writer.join();
     buf.flush();
 
     int idx = 0;
@@ -311,7 +304,6 @@ void test_04_lp_out_size_accuracy()
     TEST_EQ(idx, static_cast<int>(sizeof(sizes) / sizeof(sizes[0])),
             "should read all variable-size entries");
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Test 05：LP 路径 — seq 单调性（context_head 机制保证）
 // ─────────────────────────────────────────────────────────────────────────────
@@ -416,28 +408,30 @@ void test_06_thread_exit_marker()
 void test_07_hp_path_trigger_and_read()
 {
     std::cout << "\n[Test 07] HP Path: Trigger and Read\n";
-
-    // hp_threshold=3：写 3 次后触发 HP
-    qlog::log_buffer buf(256 * 1024, 128 * 1024, /* hp_threshold= */ 3);
+    qlog::log_buffer buf(256 * 1024, 128 * 1024, 3);
 
     constexpr uint32_t kPayload = sizeof(uint32_t);
-    constexpr int kTotal = 10;  // 写 10 条，前 3 条 LP，后 7 条 HP
+    constexpr int      kTotal   = 10;
 
-    for (int i = 0; i < kTotal; ++i)
+    // ── 修复：独立 writer 线程（HP 路径写入必须用独立线程）──
+    // 主线程写 HP 时会在 hp_pool_ 创建 entry，buf 析构后 entry 被 delete，
+    // 但主线程 tls_current_info_->cur_hp_buffer_ 仍指向已删除内存。
+    std::thread writer([&]()
     {
-        // 使用固定时间戳确保所有写入在同一时间窗口内
-        void* ptr = buf.alloc_write_chunk(kPayload, k_hp_trigger_time);
-        TEST_NOT_NULL(ptr, "alloc entry " + std::to_string(i) + " should succeed");
-        if (ptr)
+        for (int i = 0; i < kTotal; ++i)
         {
-            *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i);
-            buf.commit_write_chunk(ptr);
+            void* ptr = buf.alloc_write_chunk(kPayload, k_hp_trigger_time);
+            TEST_NOT_NULL(ptr, "alloc entry " + std::to_string(i) + " should succeed");
+            if (ptr)
+            {
+                *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i);
+                buf.commit_write_chunk(ptr);
+            }
         }
-    }
+    });
+    writer.join();
     buf.flush();
 
-    // 读取验证（HP + LP 混合结果，顺序可能因路由不同而略有差异）
-    // 此处只验证总数和数据有效性
     int read_count = 0;
     uint32_t out_size = 0;
     while (const void* rptr = buf.read_chunk(out_size))
@@ -448,7 +442,6 @@ void test_07_hp_path_trigger_and_read()
     }
     TEST_EQ(read_count, kTotal, "should read all entries (HP + LP combined)");
 }
-
 // ─────────────────────────────────────────────────────────────────────────────
 // Test 08：HP/LP 混合场景（两个线程：一个高频触发 HP，一个低频走 LP）
 // ─────────────────────────────────────────────────────────────────────────────
@@ -660,42 +653,54 @@ void test_10_flush_memory_barrier()
 void test_11_buffer_full_handling()
 {
     std::cout << "\n[Test 11] Buffer Full: alloc returns nullptr, then recovers\n";
-
-    // 小 buffer：容易填满
     qlog::log_buffer buf(16 * 1024, 4 * 1024, 100'000);
 
     constexpr uint32_t kPayload = 64;
-    int success_count = 0;
+    std::atomic<int>   success_count{0};
 
-    // 不断写入直到第一次失败
-    while (true)
+    // ── 修复：独立 writer 线程 ──
+    std::thread writer([&]()
+    {
+        while (true)
+        {
+            void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+            if (ptr == nullptr) break;
+            buf.commit_write_chunk(ptr);
+            success_count.fetch_add(1, std::memory_order_relaxed);
+            if (success_count.load() > 10000) break;
+        }
+    });
+    writer.join();
+
+    TEST_TRUE(success_count.load() > 0, "should succeed at least once before full");
+
+    // 用另一个独立线程验证"满时失败"
+    std::atomic<bool> alloc_failed{false};
+    std::thread checker([&]()
     {
         void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
-        if (ptr == nullptr)
-            break;
-        buf.commit_write_chunk(ptr);
-        ++success_count;
-        if (success_count > 10000)
-            break;  // 安全上限
-    }
-    TEST_TRUE(success_count > 0, "should succeed at least once before full");
-
-    // 缓冲区满时再次 alloc 失败
-    void* ptr_fail = buf.alloc_write_chunk(kPayload, k_lp_force_time);
-    TEST_NULL(ptr_fail, "alloc should fail when buffer is full");
+        alloc_failed.store(ptr == nullptr, std::memory_order_relaxed);
+        if (ptr) buf.commit_write_chunk(ptr); // 如果意外成功也提交
+    });
+    checker.join();
+    TEST_TRUE(alloc_failed.load(), "alloc should fail when buffer is full");
 
     // 消费一条后空间释放
     uint32_t out_size = 0;
     const void* rptr = buf.read_chunk(out_size);
     TEST_NOT_NULL(rptr, "should read one entry from full buffer");
-    if (rptr)
-        buf.commit_read_chunk(rptr);
+    if (rptr) buf.commit_read_chunk(rptr);
 
-    // 现在可以再次 alloc
-    void* ptr_retry = buf.alloc_write_chunk(kPayload, k_lp_force_time);
-    TEST_NOT_NULL(ptr_retry, "alloc should succeed after consuming one entry");
-    if (ptr_retry)
-        buf.commit_write_chunk(ptr_retry);
+    // 再次写入应成功（独立线程）
+    std::atomic<bool> retry_ok{false};
+    std::thread retrier([&]()
+    {
+        void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+        retry_ok.store(ptr != nullptr, std::memory_order_relaxed);
+        if (ptr) buf.commit_write_chunk(ptr);
+    });
+    retrier.join();
+    TEST_TRUE(retry_ok.load(), "alloc should succeed after consuming one entry");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -104,7 +104,7 @@ private:
         const void* pending_lp_ptr_ = nullptr; // 等待 return 的 LP entry
         const void* pending_hp_ptr_ = nullptr; // 等待 return 的 HP entry
         hp_buffer_entry* pending_hp_entry_ = nullptr;
-        read_handle pending_lp_rh_; // 用于commit_read_chunk还原cursor
+        read_handle pending_lp_rh_{};          // 用于commit_read_chunk还原cursor（显式初始化）
         active_read_src last_read_src_ = active_read_src::none;
     } rt_state_;
 };
