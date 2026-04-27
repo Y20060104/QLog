@@ -36,8 +36,17 @@ bool spsc_ring_buffer::init(size_t capacity)
 
 void* spsc_ring_buffer::alloc_write_chunk(size_t size)
 {
+    if (buffer_ == nullptr || block_count_ == 0)
+    {
+        return nullptr;
+    }
+
     uint32_t size_required = size + sizeof(block_header);
     uint32_t blocks_needed = (size_required + (k_block_size - 1)) >> k_block_size_log2;
+    if (blocks_needed == 0 || blocks_needed > block_count_)
+    {
+        return nullptr;
+    }
 
     // 检查空间（缓存路径）
     uint32_t left_space = wt_read_cursor_cached_ + block_count_ - wt_write_cursor_cached_;
@@ -54,8 +63,8 @@ void* spsc_ring_buffer::alloc_write_chunk(size_t size)
     }
 
     // 写入 header
-    uint8_t* header_ptr =
-        buffer_ + (wt_write_cursor_cached_ << k_block_size_log2); // 左移计算字节地址
+    uint32_t write_index = wt_write_cursor_cached_ % static_cast<uint32_t>(block_count_);
+    uint8_t* header_ptr = buffer_ + (write_index << k_block_size_log2); // 环回到 ring 内地址
     auto* header = reinterpret_cast<block_header*>(header_ptr);
     header->block_count = blocks_needed;
     header->data_size = size;
@@ -67,7 +76,13 @@ void* spsc_ring_buffer::alloc_write_chunk(size_t size)
 
 void spsc_ring_buffer::commit_write_chunk()
 {
-    uint8_t* header_ptr = buffer_ + (wt_write_cursor_cached_ << k_block_size_log2);
+    if (buffer_ == nullptr || block_count_ == 0)
+    {
+        return;
+    }
+
+    uint32_t write_index = wt_write_cursor_cached_ % static_cast<uint32_t>(block_count_);
+    uint8_t* header_ptr = buffer_ + (write_index << k_block_size_log2);
     const auto* header = reinterpret_cast<const block_header*>(header_ptr);
     uint32_t blocks_allocated = header->block_count;
 
@@ -81,6 +96,11 @@ void spsc_ring_buffer::commit_write_chunk()
 // 读端实现
 const void* spsc_ring_buffer::read_chunk()
 {
+    if (buffer_ == nullptr || block_count_ == 0)
+    {
+        return nullptr;
+    }
+
     if (rt_write_cursor_cached_ == rt_read_cursor_cached_)
     {
         // 没有新数据，尝试更新缓存
@@ -92,13 +112,20 @@ const void* spsc_ring_buffer::read_chunk()
         return nullptr;
     }
 
-    uint8_t* header_ptr = buffer_ + (rt_read_cursor_cached_ << k_block_size_log2);
+    uint32_t read_index = rt_read_cursor_cached_ % static_cast<uint32_t>(block_count_);
+    uint8_t* header_ptr = buffer_ + (read_index << k_block_size_log2);
     return header_ptr + sizeof(block_header);
 }
 
 void spsc_ring_buffer::commit_read_chunk()
 {
-    uint8_t* header_ptr = buffer_ + (rt_read_cursor_cached_ << k_block_size_log2);
+    if (buffer_ == nullptr || block_count_ == 0)
+    {
+        return;
+    }
+
+    uint32_t read_index = rt_read_cursor_cached_ % static_cast<uint32_t>(block_count_);
+    uint8_t* header_ptr = buffer_ + (read_index << k_block_size_log2);
     const auto* header = reinterpret_cast<const block_header*>(header_ptr);
     uint32_t blocks_read = header->block_count;
 
@@ -131,13 +158,14 @@ spsc_ring_buffer::~spsc_ring_buffer()
 
 uint32_t spsc_ring_buffer::last_read_data_size() const
 {
-    if (!buffer_)
+    if (!buffer_ || block_count_ == 0)
     {
         return 0;
     }
     // rt_read_cursor_cached_指向当前未消费的块的起始位置
     // 该块的block_header.data_size就是用户数据的大小
-    const uint8_t* header_ptr = buffer_ + (rt_read_cursor_cached_ << k_block_size_log2);
+    uint32_t read_index = rt_read_cursor_cached_ % static_cast<uint32_t>(block_count_);
+    const uint8_t* header_ptr = buffer_ + (read_index << k_block_size_log2);
     return reinterpret_cast<const block_header*>(header_ptr)->data_size;
 }
 // ⚠️ 调用时机约束：此方法只能在 read_chunk() 返回非 nullptr 后、commit_read_chunk() 之前调用。

@@ -213,6 +213,13 @@ void log_buffer::on_thread_exit(log_tls_buffer_info* info)
     const uint32_t total_alloc =
         k_finish_payload_size + static_cast<uint32_t>(sizeof(context_head));
 
+    // 当 LP 处于临界水位时，避免 finish marker 抢占最后几个 block，
+    // 否则可能导致“消费一条后仍无法继续写入”的恢复失败。
+    if (lp_buffer_.available_write_blocks() <= 2)
+    {
+        return;
+    }
+
     write_handle wh = lp_buffer_.alloc_write_chunk(total_alloc);
     if (wh.success)
     {

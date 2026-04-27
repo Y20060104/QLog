@@ -1,0 +1,351 @@
+╔══════════════════════════════════════════╗
+║   QLog M3 log_buffer Unit Tests         ║
+╚══════════════════════════════════════════╝
+
+[Test 01] Construction & Destruction
+  ✅ PASS: construction and destruction complete without crash
+
+[Test 02] LP Path: Single Write / Read / Data Integrity
+  ✅ PASS: read_chunk should return data
+  ✅ PASS: out_size should equal payload size
+  ✅ PASS: data pattern should match byte-for-byte
+  ✅ PASS: buffer should be empty after consuming single entry
+
+[Test 03] LP Path: Multiple Entries in Order
+  ✅ PASS: entry value should equal read order index 0
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 1
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 2
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 3
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 4
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 5
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 6
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 7
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 8
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 9
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 10
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 11
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 12
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 13
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 14
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 15
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 16
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 17
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 18
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 19
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 20
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 21
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 22
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 23
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 24
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 25
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 26
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 27
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 28
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 29
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 30
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 31
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 32
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 33
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 34
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 35
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 36
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 37
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 38
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 39
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 40
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 41
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 42
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 43
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 44
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 45
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 46
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 47
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 48
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: entry value should equal read order index 49
+  ✅ PASS: out_size should be consistent
+  ✅ PASS: should read exactly kN entries
+
+[Test 04] LP Path: out_size Accuracy (Variable Payload)
+  ✅ PASS: out_size should match written size 1
+  ✅ PASS: out_size should match written size 8
+  ✅ PASS: out_size should match written size 16
+  ✅ PASS: out_size should match written size 32
+  ✅ PASS: out_size should match written size 64
+  ✅ PASS: out_size should match written size 128
+  ✅ PASS: out_size should match written size 256
+  ✅ PASS: should read all variable-size entries
+
+[Test 05] LP Path: Seq Monotonicity (context_head)
+  ✅ PASS: seq should be monotonically increasing: 0
+  ✅ PASS: seq should be monotonically increasing: 1
+  ✅ PASS: seq should be monotonically increasing: 2
+  ✅ PASS: seq should be monotonically increasing: 3
+  ✅ PASS: seq should be monotonically increasing: 4
+  ✅ PASS: seq should be monotonically increasing: 5
+  ✅ PASS: seq should be monotonically increasing: 6
+  ✅ PASS: seq should be monotonically increasing: 7
+  ✅ PASS: seq should be monotonically increasing: 8
+  ✅ PASS: seq should be monotonically increasing: 9
+  ✅ PASS: seq should be monotonically increasing: 10
+  ✅ PASS: seq should be monotonically increasing: 11
+  ✅ PASS: seq should be monotonically increasing: 12
+  ✅ PASS: seq should be monotonically increasing: 13
+  ✅ PASS: seq should be monotonically increasing: 14
+  ✅ PASS: seq should be monotonically increasing: 15
+  ✅ PASS: seq should be monotonically increasing: 16
+  ✅ PASS: seq should be monotonically increasing: 17
+  ✅ PASS: seq should be monotonically increasing: 18
+  ✅ PASS: seq should be monotonically increasing: 19
+  ✅ PASS: seq should be monotonically increasing: 20
+  ✅ PASS: seq should be monotonically increasing: 21
+  ✅ PASS: seq should be monotonically increasing: 22
+  ✅ PASS: seq should be monotonically increasing: 23
+  ✅ PASS: seq should be monotonically increasing: 24
+  ✅ PASS: seq should be monotonically increasing: 25
+  ✅ PASS: seq should be monotonically increasing: 26
+  ✅ PASS: seq should be monotonically increasing: 27
+  ✅ PASS: seq should be monotonically increasing: 28
+  ✅ PASS: seq should be monotonically increasing: 29
+  ✅ PASS: seq should be monotonically increasing: 30
+  ✅ PASS: seq should be monotonically increasing: 31
+  ✅ PASS: seq should be monotonically increasing: 32
+  ✅ PASS: seq should be monotonically increasing: 33
+  ✅ PASS: seq should be monotonically increasing: 34
+  ✅ PASS: seq should be monotonically increasing: 35
+  ✅ PASS: seq should be monotonically increasing: 36
+  ✅ PASS: seq should be monotonically increasing: 37
+  ✅ PASS: seq should be monotonically increasing: 38
+  ✅ PASS: seq should be monotonically increasing: 39
+  ✅ PASS: seq should be monotonically increasing: 40
+  ✅ PASS: seq should be monotonically increasing: 41
+  ✅ PASS: seq should be monotonically increasing: 42
+  ✅ PASS: seq should be monotonically increasing: 43
+  ✅ PASS: seq should be monotonically increasing: 44
+  ✅ PASS: seq should be monotonically increasing: 45
+  ✅ PASS: seq should be monotonically increasing: 46
+  ✅ PASS: seq should be monotonically increasing: 47
+  ✅ PASS: seq should be monotonically increasing: 48
+  ✅ PASS: seq should be monotonically increasing: 49
+  ✅ PASS: seq should be monotonically increasing: 50
+  ✅ PASS: seq should be monotonically increasing: 51
+  ✅ PASS: seq should be monotonically increasing: 52
+  ✅ PASS: seq should be monotonically increasing: 53
+  ✅ PASS: seq should be monotonically increasing: 54
+  ✅ PASS: seq should be monotonically increasing: 55
+  ✅ PASS: seq should be monotonically increasing: 56
+  ✅ PASS: seq should be monotonically increasing: 57
+  ✅ PASS: seq should be monotonically increasing: 58
+  ✅ PASS: seq should be monotonically increasing: 59
+  ✅ PASS: seq should be monotonically increasing: 60
+  ✅ PASS: seq should be monotonically increasing: 61
+  ✅ PASS: seq should be monotonically increasing: 62
+  ✅ PASS: seq should be monotonically increasing: 63
+  ✅ PASS: seq should be monotonically increasing: 64
+  ✅ PASS: seq should be monotonically increasing: 65
+  ✅ PASS: seq should be monotonically increasing: 66
+  ✅ PASS: seq should be monotonically increasing: 67
+  ✅ PASS: seq should be monotonically increasing: 68
+  ✅ PASS: seq should be monotonically increasing: 69
+  ✅ PASS: seq should be monotonically increasing: 70
+  ✅ PASS: seq should be monotonically increasing: 71
+  ✅ PASS: seq should be monotonically increasing: 72
+  ✅ PASS: seq should be monotonically increasing: 73
+  ✅ PASS: seq should be monotonically increasing: 74
+  ✅ PASS: seq should be monotonically increasing: 75
+  ✅ PASS: seq should be monotonically increasing: 76
+  ✅ PASS: seq should be monotonically increasing: 77
+  ✅ PASS: seq should be monotonically increasing: 78
+  ✅ PASS: seq should be monotonically increasing: 79
+  ✅ PASS: seq should be monotonically increasing: 80
+  ✅ PASS: seq should be monotonically increasing: 81
+  ✅ PASS: seq should be monotonically increasing: 82
+  ✅ PASS: seq should be monotonically increasing: 83
+  ✅ PASS: seq should be monotonically increasing: 84
+  ✅ PASS: seq should be monotonically increasing: 85
+  ✅ PASS: seq should be monotonically increasing: 86
+  ✅ PASS: seq should be monotonically increasing: 87
+  ✅ PASS: seq should be monotonically increasing: 88
+  ✅ PASS: seq should be monotonically increasing: 89
+  ✅ PASS: seq should be monotonically increasing: 90
+  ✅ PASS: seq should be monotonically increasing: 91
+  ✅ PASS: seq should be monotonically increasing: 92
+  ✅ PASS: seq should be monotonically increasing: 93
+  ✅ PASS: seq should be monotonically increasing: 94
+  ✅ PASS: seq should be monotonically increasing: 95
+  ✅ PASS: seq should be monotonically increasing: 96
+  ✅ PASS: seq should be monotonically increasing: 97
+  ✅ PASS: seq should be monotonically increasing: 98
+  ✅ PASS: seq should be monotonically increasing: 99
+  ✅ PASS: should have read all kN entries in order
+
+[Test 06] Thread Exit Marker (is_thread_finished auto-consumed)
+  ✅ PASS: value should match index 0
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: value should match index 1
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: value should match index 2
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: value should match index 3
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: value should match index 4
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: value should match index 5
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: value should match index 6
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: value should match index 7
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: value should match index 8
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: value should match index 9
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: should read exactly kN user entries (finish marker NOT exposed)
+  ✅ PASS: subsequent read_chunk should return nullptr
+
+[Test 07] HP Path: Trigger and Read
+  ✅ PASS: alloc entry 0 should succeed
+  ✅ PASS: alloc entry 1 should succeed
+  ✅ PASS: alloc entry 2 should succeed
+  ✅ PASS: alloc entry 3 should succeed
+  ✅ PASS: alloc entry 4 should succeed
+  ✅ PASS: alloc entry 5 should succeed
+  ✅ PASS: alloc entry 6 should succeed
+  ✅ PASS: alloc entry 7 should succeed
+  ✅ PASS: alloc entry 8 should succeed
+  ✅ PASS: alloc entry 9 should succeed
+  ✅ PASS: out_size should equal kPayload for HP entry
+  ✅ PASS: out_size should equal kPayload for HP entry
+  ✅ PASS: out_size should equal kPayload for HP entry
+  ✅ PASS: out_size should equal kPayload for HP entry
+  ✅ PASS: out_size should equal kPayload for HP entry
+  ✅ PASS: out_size should equal kPayload for HP entry
+  ✅ PASS: out_size should equal kPayload for HP entry
+  ✅ PASS: out_size should equal kPayload for HP entry
+  ✅ PASS: out_size should equal kPayload for HP entry
+  ✅ PASS: out_size should equal kPayload for HP entry
+  ✅ PASS: should read all entries (HP + LP combined)
+
+[Test 08] HP/LP Mixed: One High-Freq Thread + One Low-Freq Thread
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: out_size should equal kPayload
+  ✅ PASS: should read all written entries (HP + LP)
+
+[Test 09] Multi-Producer LP Stress (10 threads × 1000 entries)
+  ✅ PASS: multi-producer: should read all 10000 entries
+  ✅ PASS: total_written should equal expected
+
+[Test 10] flush() Memory Barrier Semantics
+  ✅ PASS: after flush, all writes should be visible to consumer
+
+[Test 11] Buffer Full: alloc returns nullptr, then recovers
+  ✅ PASS: should succeed at least once before full
+  ✅ PASS: alloc should fail when buffer is full
+  ✅ PASS: should read one entry from full buffer
+  ❌ FAIL [line 703]: alloc should succeed after consuming one entry

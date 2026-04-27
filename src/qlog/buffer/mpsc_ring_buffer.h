@@ -38,19 +38,23 @@ union alignas(CACHE_LINE_SIZE) block
         // 内联getter/setter
         inline uint32_t get_block_num() const
         {
-            // 按小端序组装 3 个字节
-            return (*(const uint32_t*)block_num_) & (0xFFFFFF);
+            // 按小端序从 3 字节恢复 block_num，避免未对齐/别名 UB
+            return static_cast<uint32_t>(block_num_[0])
+                | (static_cast<uint32_t>(block_num_[1]) << 8)
+                | (static_cast<uint32_t>(block_num_[2]) << 16);
         }
 
         inline void set_block_num(uint32_t num)
         {
-            *(uint32_t*)block_num_ = num;
+            block_num_[0] = static_cast<uint8_t>(num & 0xFFu);
+            block_num_[1] = static_cast<uint8_t>((num >> 8) & 0xFFu);
+            block_num_[2] = static_cast<uint8_t>((num >> 16) & 0xFFu);
         }
     } chunk_head;
 
     uint8_t raw_data[CACHE_LINE_SIZE]; // 占位 确保block为64字节
 };
-// static_assert(sizeof(block)==64,"block size must equal cache line");
+static_assert(sizeof(block) == CACHE_LINE_SIZE, "block size must equal cache line");
 static_assert(alignof(block) == 64, "block must be cache-line aligned");
 
 struct alignas(CACHE_LINE_SIZE) cursor_set
@@ -117,6 +121,7 @@ public:
 
     // 工具函数
     void reset();
+    uint32_t available_write_blocks() const;
     uint32_t capacity() const
     {
         return block_count_ * CACHE_LINE_SIZE;

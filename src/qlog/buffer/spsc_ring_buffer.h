@@ -31,12 +31,12 @@ static_assert(sizeof(block_header) == 8, "block_header must be 8 bytes for align
 class spsc_ring_buffer
 {
 private:
-    uint32_t wt_write_cursor_cached_; // 写线程缓存的写游标
-    uint32_t wt_read_cursor_cached_;  // 写线程缓存的读游标
+    uint32_t wt_write_cursor_cached_ = 0; // 写线程缓存的写游标
+    uint32_t wt_read_cursor_cached_ = 0;  // 写线程缓存的读游标
     uint8_t write_padding_[k_cache_line_size - 2 * sizeof(uint32_t)];
 
-    uint32_t rt_write_cursor_cached_; // 读线程缓存的写游标
-    uint32_t rt_read_cursor_cached_;  // 读线程缓存的读游标
+    uint32_t rt_write_cursor_cached_ = 0; // 读线程缓存的写游标
+    uint32_t rt_read_cursor_cached_ = 0;  // 读线程缓存的读游标
     uint8_t read_padding_[k_cache_line_size - 2 * sizeof(uint32_t)];
 
     alignas(k_cache_line_size) atomic<uint32_t> write_cursor_; // 原子写游标
@@ -46,9 +46,9 @@ private:
 
     // 共享元数据
     // 缓冲区管理
-    uint8_t* buffer_;       // 分配来自M0
-    size_t capacity_bytes_; // 总容量
-    size_t block_count_;    // 总块数
+    uint8_t* buffer_ = nullptr; // 分配来自M0
+    size_t capacity_bytes_ = 0; // 总容量
+    size_t block_count_ = 0;    // 总块数
 
     // 私有函数工具 # 去BQLog查一下有没有相关实现
     size_t calculate_blocks_needed(size_t data_size);

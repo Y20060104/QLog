@@ -62,9 +62,31 @@ void mpsc_ring_buffer::reset()
     cursors_.read_cursor.store_relaxed(0);
 }
 
+uint32_t mpsc_ring_buffer::available_write_blocks() const
+{
+    if (block_count_ == 0)
+    {
+        return 0;
+    }
+
+    const uint32_t write_cursor = cursors_.write_cursor.load_acquire();
+    const uint32_t read_cursor = cursors_.read_cursor.load_acquire();
+    const uint32_t used = write_cursor - read_cursor;
+    if (used >= block_count_)
+    {
+        return 0;
+    }
+    return static_cast<uint32_t>(block_count_ - used);
+}
+
 write_handle mpsc_ring_buffer::alloc_write_chunk(uint32_t size)
 {
     write_handle handle;
+
+    if (blocks_ == nullptr || block_count_ == 0)
+    {
+        return handle;
+    }
 
     const uint32_t header_size = offsetof(block::chunk_head_def, data);
     uint32_t total_size = size + header_size;
@@ -91,13 +113,9 @@ write_handle mpsc_ring_buffer::alloc_write_chunk(uint32_t size)
         current_write = cursors_.write_cursor.load_acquire();
         uint32_t new_write = current_write + need_block_count;
 
-        if ((new_write - read_cursor_cache) > block_count_)
+        if ((new_write - read_cursor_cache) >= block_count_)
         {
             read_cursor_cache = cursors_.read_cursor.load_acquire();
-            if ((new_write - read_cursor_cache) > block_count_)
-            {
-                return handle; // 确实满了，返回失败
-            }
         }
 
         current_write = cursors_.write_cursor.fetch_add_relaxed(need_block_count);
@@ -117,7 +135,13 @@ write_handle mpsc_ring_buffer::alloc_write_chunk(uint32_t size)
                         std::memory_order_relaxed
                     ))
                 {
-                    return handle;
+                    // 回滚后再读取一次 read_cursor，避免刚释放空间时的假阴性失败
+                    read_cursor_cache = cursors_.read_cursor.load_acquire();
+                    if ((next_write - read_cursor_cache) >= block_count_)
+                    {
+                        return handle;
+                    }
+                    continue;
                 }
                 // CAS 失败，说明有其他线程修改了 write_cursor，跳出内层 while
                 break;
@@ -142,6 +166,7 @@ write_handle mpsc_ring_buffer::alloc_write_chunk(uint32_t size)
             // 内存不连续（wrap-around），标记为 invalid 块后重新尝试
             block* wrap_block = &blocks_[start_idx];
             wrap_block->chunk_head.set_block_num(block_count_ - start_idx);
+            wrap_block->chunk_head.data_size = 0;
             wrap_block->chunk_head.status = block_status::invalid;
             continue;
         }
@@ -166,33 +191,53 @@ void mpsc_ring_buffer::commit_write_chunk(const write_handle& handle)
     }
 
     block* target_block = &blocks_[handle.cursor & block_count_mask_];
+    std::atomic_thread_fence(std::memory_order_release);
     target_block->chunk_head.status = block_status::used;
-    atomic_signal_fence(std::memory_order_release);
 }
 
 read_handle mpsc_ring_buffer::read_chunk()
 {
     read_handle handle;
 
-    uint32_t current_read_cursor = cursors_.read_cursor.load_relaxed();
-    bool finished = false;
+    if (blocks_ == nullptr || block_count_ == 0)
+    {
+        return handle;
+    }
 
-    while (!finished)
+    const uint32_t start_read_cursor = cursors_.read_cursor.load_relaxed();
+    uint32_t current_read_cursor = start_read_cursor;
+    uint32_t scanned_blocks = 0;
+
+    while (scanned_blocks < block_count_)
     {
         block* current_block = &blocks_[current_read_cursor & block_count_mask_];
-        uint32_t block_num = current_block->chunk_head.get_block_num();
         block_status status = current_block->chunk_head.status;
 
         switch (status)
         {
         case block_status::invalid:
+        {
             //  跳过 wrap-around 的占位块
+            uint32_t block_num = current_block->chunk_head.get_block_num();
+            if (block_num == 0)
+            {
+                block_num = 1;
+            }
+            current_read_cursor += block_num;
+            scanned_blocks += block_num;
             break;
+        }
         case block_status::unused:
             //  遇到 unused 直接退出，缓冲空
-            finished = true;
-            break;
+            return handle;
         case block_status::used:
+        {
+            std::atomic_thread_fence(std::memory_order_acquire);
+            uint32_t block_num = current_block->chunk_head.get_block_num();
+            if (block_num == 0)
+            {
+                return handle;
+            }
             //  找到有效数据，返回
             handle.success = true;
             handle.cursor = current_read_cursor;
@@ -200,19 +245,14 @@ read_handle mpsc_ring_buffer::read_chunk()
             handle.data_size = current_block->chunk_head.data_size;
             handle.block_count = block_num;
             return handle;
+        }
         default:
+            current_read_cursor += 1;
+            scanned_blocks += 1;
             break;
         }
-
-        // 移动到下一块
-        current_read_cursor = current_read_cursor + block_num;
-
-        //  防止扫描超过缓冲范围
-        if ((current_read_cursor - cursors_.read_cursor.load_relaxed()) >= block_count_)
-        {
-            finished = true;
-        }
     }
+
     return handle;
 }
 
@@ -226,6 +266,7 @@ void mpsc_ring_buffer::commit_read_chunk(const read_handle& handle)
     block* current_block = &blocks_[handle.cursor & block_count_mask_];
     current_block->chunk_head.status = block_status::unused;
     current_block->chunk_head.set_block_num(0);
+    current_block->chunk_head.data_size = 0;
 
     uint32_t new_read_cursor = handle.cursor + handle.block_count;
     cursors_.read_cursor.store_release(new_read_cursor);
