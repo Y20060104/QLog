@@ -116,6 +116,11 @@ write_handle mpsc_ring_buffer::alloc_write_chunk(uint32_t size)
         if ((new_write - read_cursor_cache) >= block_count_)
         {
             read_cursor_cache = cursors_.read_cursor.load_acquire();
+            if((new_write-read_cursor_cache)>block_count_)
+            {
+                return handle;
+            }
+
         }
 
         current_write = cursors_.write_cursor.fetch_add_relaxed(need_block_count);
@@ -124,7 +129,7 @@ write_handle mpsc_ring_buffer::alloc_write_chunk(uint32_t size)
         while ((next_write - read_cursor_cache) >= block_count_)
         {
             read_cursor_cache = cursors_.read_cursor.load_acquire();
-            if ((next_write - read_cursor_cache) >= block_count_)
+            if ((next_write - read_cursor_cache) > block_count_)
             {
                 // 缓冲真的满了，尝试回滚
                 uint32_t expected = next_write;
@@ -135,24 +140,13 @@ write_handle mpsc_ring_buffer::alloc_write_chunk(uint32_t size)
                         std::memory_order_relaxed
                     ))
                 {
-                    // 回滚后再读取一次 read_cursor，避免刚释放空间时的假阴性失败
-                    read_cursor_cache = cursors_.read_cursor.load_acquire();
-                    if ((next_write - read_cursor_cache) >= block_count_)
-                    {
-                        return handle;
-                    }
-                    continue;
+                    return handle;
                 }
                 // CAS 失败，说明有其他线程修改了 write_cursor，跳出内层 while
-                break;
             }
         }
 
-        // 如果内层 while 中 CAS 失败或条件仍然满足，continue 重新尝试
-        if ((next_write - read_cursor_cache) >= block_count_)
-        {
-            continue;
-        }
+    
 
         uint32_t start_idx = current_write & block_count_mask_;
         uint32_t end_idx = next_write & block_count_mask_;
@@ -161,15 +155,13 @@ write_handle mpsc_ring_buffer::alloc_write_chunk(uint32_t size)
         {
             break; // 内存连续，成功分配
         }
-        else
-        {
+       
             // 内存不连续（wrap-around），标记为 invalid 块后重新尝试
             block* wrap_block = &blocks_[start_idx];
             wrap_block->chunk_head.set_block_num(block_count_ - start_idx);
             wrap_block->chunk_head.data_size = 0;
             wrap_block->chunk_head.status = block_status::invalid;
-            continue;
-        }
+        
     }
     block* new_block = &blocks_[current_write & block_count_mask_];
     new_block->chunk_head.set_block_num(need_block_count);
