@@ -81,9 +81,6 @@ set_target_properties(test_mpsc_ring_buffer PROPERTIES
 )
 add_test(NAME mpsc_ring_buffer_tests COMMAND test_mpsc_ring_buffer)
 
-message(STATUS "QLog: M0 test targets configured (atomic, spin_lock, spin_lock_rw, aligned_alloc, platform_thread, condition_variable)")
-message(STATUS "QLog: M1 test targets configured (spsc_ring_buffer)")
-message(STATUS "QLog: M2 test targets configured (mpsc_ring_buffer)")
 
 # M3 单元测试 - log_buffer
 add_executable(test_log_buffer cpp/test_log_buffer.cpp)
@@ -97,4 +94,23 @@ set_target_properties(test_log_buffer PROPERTIES
 )
 add_test(NAME log_buffer_tests COMMAND test_log_buffer)
 
+
+# M4 单元测试 - format_hash
+add_executable(test_format_hash cpp/test_format_hash.cpp)
+target_link_libraries(test_format_hash PRIVATE qlog Threads::Threads)
+target_include_directories(test_format_hash PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}
+)
+set_target_properties(test_format_hash PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+add_test(NAME format_hash_tests COMMAND test_format_hash)
+
+
+
+message(STATUS "QLog: M0 test targets configured (atomic, spin_lock, spin_lock_rw, aligned_alloc, platform_thread, condition_variable)")
+message(STATUS "QLog: M1 test targets configured (spsc_ring_buffer)")
+message(STATUS "QLog: M2 test targets configured (mpsc_ring_buffer)")
 message(STATUS "QLog: M3 test targets configured (log_buffer)")
+message(STATUS "QLog: M4 test targets configured (format_hash)")

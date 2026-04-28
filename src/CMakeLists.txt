@@ -20,6 +20,7 @@ set(QLOG_PRIMITIVES_SOURCES
 
 # M1 Buffer (SPSC ring buffer)
 # M2 Buffer (MPSC ring buffer)
+# M3 Buffer (Log buffer)
 set(QLOG_BUFFER_SOURCES
     qlog/buffer/spsc_ring_buffer.h
     qlog/buffer/spsc_ring_buffer.cpp
@@ -30,6 +31,13 @@ set(QLOG_BUFFER_SOURCES
     qlog/buffer/log_buffer.cpp
 )
 
+# M4 Serialization (Format Hash)
+set(QLOG_SERIALIZATION_SOURCES
+    qlog/serialization/format_hash.h
+    qlog/serialization/format_hash.cpp
+)
+
+
 # ============================================================================
 # Main QLog Library
 # ============================================================================
@@ -37,6 +45,7 @@ set(QLOG_BUFFER_SOURCES
 add_library(qlog STATIC
     ${QLOG_PRIMITIVES_SOURCES}
     ${QLOG_BUFFER_SOURCES}
+    ${QLOG_SERIALIZATION_SOURCES}
 )
 
 # Set C++ standard and compile options
@@ -68,4 +77,5 @@ target_compile_options(qlog PRIVATE -fvisibility=hidden)
 message(STATUS "QLog: Main library configured with:")
 message(STATUS "  - Primitives: ${QLOG_PRIMITIVES_SOURCES}")
 message(STATUS "  - Buffer: ${QLOG_BUFFER_SOURCES}")
+message(STATUS "  - Serialization: ${QLOG_SERIALIZATION_SOURCES}")
 

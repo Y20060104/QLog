@@ -501,7 +501,7 @@
 | M0 | 无锁原语 | ✅ 100% | bq_common/ | RULES.md | ✅ 完成 |
 | M1 | SPSC Buffer | ✅ 100% | siso_ring_buffer.h/cpp | M1_*.md | ✅ 完成 |
 | M2 | MPSC Buffer | ✅ 100% | miso_ring_buffer.h/cpp | M2_MPSC_*.md | ✅ 完成 |
-| M3 | 双路调度 | ⏳ 待验证| log_buffer.h/cpp | M3_*.md | ⏳ 待开始 |
+| M3 | 双路调度 | ✅ 100%| log_buffer.h/cpp | M3_*.md |✅ 100%|
 | M4 | 二进制序列化 | ⏳ 待验证 | entry.h/cpp | M4_*.md | ⏳ 待开始 |
 | M5 | 格式化引擎 | ⏳ 待验证 | layout.h/cpp | M5_*.md | ⏳ 待开始 |
 | M6 | Appender 体系 | ⏳ 待验证 | appender.h/cpp | M6_*.md | ⏳ 待开始 |
