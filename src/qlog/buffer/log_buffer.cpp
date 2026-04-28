@@ -5,6 +5,7 @@
 #include <cstring>
 #include <mutex>
 #include <shared_mutex>
+#include <thread>
 
 namespace qlog
 {
@@ -213,25 +214,24 @@ void log_buffer::on_thread_exit(log_tls_buffer_info* info)
     const uint32_t total_alloc =
         k_finish_payload_size + static_cast<uint32_t>(sizeof(context_head));
 
-    // 当 LP 处于临界水位时，避免 finish marker 抢占最后几个 block，
-    // 否则可能导致“消费一条后仍无法继续写入”的恢复失败。
-    if (lp_buffer_.available_write_blocks() <= 2)
-    {
-        return;
+    constexpr int MaxRetries = 0;
+    while(MaxRetries<1024){
+        write_handle wh=lp_buffer_.alloc_write_chunk(total_alloc);
+        if(wh.success){
+            auto* ctx=reinterpret_cast<context_head*>(wh.data);
+            ctx->version_=0;
+            ctx->is_thread_finished_=true;
+            ctx->is_external_ref_=false;
+            ctx->seq_=info->wt_data_.current_write_seq_++;
+            ctx->set_tls_info_ptr(info);
+
+            lp_buffer_.commit_write_chunk(wh);
+            return ;
+        }
+        std::this_thread::yield();
     }
 
-    write_handle wh = lp_buffer_.alloc_write_chunk(total_alloc);
-    if (wh.success)
-    {
-        auto* ctx = reinterpret_cast<context_head*>(wh.data);
-        ctx->version_ = 0;
-        ctx->is_thread_finished_ = true;
-        ctx->is_external_ref_ = false;
-        ctx->seq_ = info->wt_data_.current_write_seq_++;
-        ctx->set_tls_info_ptr(info);
 
-        lp_buffer_.commit_write_chunk(wh);
-    }
 }
 
 const void* log_buffer::read_chunk(uint32_t& out_size)
@@ -297,8 +297,7 @@ const void* log_buffer::rt_read_from_lp(uint32_t& out_size)
             tls_info->rt_data_.current_read_seq_++;
             if (ctx->is_thread_finished_)
             {
-                lp_buffer_.commit_read_chunk(rh
-                );               // 1. 消费这条 finish 标记（推进 mpsc read_cursor）
+                lp_buffer_.commit_read_chunk(rh);               // 1. 消费这条 finish 标记（推进 mpsc read_cursor）
                 delete tls_info; // 2. 延迟释放 TLS（消费者负责，生产者线程已退出）
                 continue; // 3. 继续循环，尝试读下一条（finish 标记无用户数据）
             }

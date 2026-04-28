@@ -10,6 +10,7 @@
 
 namespace qlog
 {
+       constexpr int MaxRetries = 1024;
 class alignas(64) log_buffer
 {
 public:
