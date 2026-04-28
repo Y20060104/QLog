@@ -71,8 +71,7 @@ struct tls_buffer_info
     uint32_t read_cursor_cache;
     bool is_new_created = true;
 };
-// // 使用方式
-// static thread_local tls_buffer_info tls_info;
+
 
 struct write_handle
 {

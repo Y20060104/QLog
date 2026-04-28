@@ -93,7 +93,7 @@ write_handle mpsc_ring_buffer::alloc_write_chunk(uint32_t size)
     if (blocks_ == nullptr || block_count_ == 0)
         return handle;
 
-    const uint32_t header_size = offsetof(block::chunk_head_def, data);
+    const uint32_t header_size = static_cast<uint32_t>(reinterpret_cast<size_t>(&(((block::chunk_head_def*)0)->data)));
     const uint32_t total_size  = size + header_size;
     const uint32_t need_block_count =
         (total_size + CACHE_LINE_SIZE - 1u) >> CACHE_LINE_SIZE_LOG2;
