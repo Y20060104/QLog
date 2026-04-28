@@ -63,26 +63,26 @@ struct TestResult
 
 static TestResult g_result;
 
-#define TEST_ASSERT(cond, msg)                                                        \
-    do                                                                                \
-    {                                                                                 \
-        if (!(cond))                                                                  \
-        {                                                                             \
-            std::cerr << "  ❌ FAIL [line " << __LINE__ << "]: " << msg << "\n";      \
-            g_result.failed++;                                                        \
-        }                                                                             \
-        else                                                                          \
-        {                                                                             \
-            std::cout << "  ✅ PASS: " << msg << "\n";                                \
-            g_result.passed++;                                                        \
-        }                                                                             \
+#define TEST_ASSERT(cond, msg)                                                   \
+    do                                                                           \
+    {                                                                            \
+        if (!(cond))                                                             \
+        {                                                                        \
+            std::cerr << "  ❌ FAIL [line " << __LINE__ << "]: " << msg << "\n"; \
+            g_result.failed++;                                                   \
+        }                                                                        \
+        else                                                                     \
+        {                                                                        \
+            std::cout << "  ✅ PASS: " << msg << "\n";                           \
+            g_result.passed++;                                                   \
+        }                                                                        \
     } while (0)
 
-#define TEST_TRUE(cond, msg)  TEST_ASSERT((cond), msg)
+#define TEST_TRUE(cond, msg) TEST_ASSERT((cond), msg)
 #define TEST_FALSE(cond, msg) TEST_ASSERT(!(cond), msg)
-#define TEST_EQ(a, b, msg)    TEST_ASSERT((a) == (b), msg)
+#define TEST_EQ(a, b, msg) TEST_ASSERT((a) == (b), msg)
 #define TEST_NOT_NULL(p, msg) TEST_ASSERT((p) != nullptr, msg)
-#define TEST_NULL(p, msg)     TEST_ASSERT((p) == nullptr, msg)
+#define TEST_NULL(p, msg) TEST_ASSERT((p) == nullptr, msg)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 辅助工具
@@ -91,12 +91,10 @@ static TestResult g_result;
 // 返回当前稳定时钟毫秒数（单调递增，适合 alloc_write_chunk 的 current_time_ms 参数）
 static uint64_t now_ms()
 {
-    return static_cast<uint64_t>(
-        std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::steady_clock::now().time_since_epoch()
-        )
-            .count()
-    );
+    return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                                     std::chrono::steady_clock::now().time_since_epoch()
+    )
+                                     .count());
 }
 
 // HP 路径触发时间戳：大于初始窗口 (0 + 1000ms)，确保第一次调用触发区间重置
@@ -113,9 +111,8 @@ static constexpr uint64_t k_lp_force_time = 5000;
 //   payload    — 每条 entry 的 payload 大小（字节）
 //   time_ms    — 传入 alloc_write_chunk 的时间戳
 //   tag        — 写入每条 entry 首字节的标识（便于后续验证）
-static int write_n_entries(
-    qlog::log_buffer& buf, int n, uint32_t payload, uint64_t time_ms, uint8_t tag = 0
-)
+static int
+write_n_entries(qlog::log_buffer& buf, int n, uint32_t payload, uint64_t time_ms, uint8_t tag = 0)
 {
     int count = 0;
     for (int i = 0; i < n; ++i)
@@ -125,8 +122,7 @@ static int write_n_entries(
             break;
         static_cast<uint8_t*>(ptr)[0] = tag;
         if (payload >= 4)
-            *reinterpret_cast<uint32_t*>(static_cast<uint8_t*>(ptr) + 0) =
-                static_cast<uint32_t>(i);
+            *reinterpret_cast<uint32_t*>(static_cast<uint8_t*>(ptr) + 0) = static_cast<uint32_t>(i);
         buf.commit_write_chunk(ptr);
         ++count;
     }
@@ -135,9 +131,7 @@ static int write_n_entries(
 
 // 辅助：从 buffer 读出所有可读 entry，返回读取条数
 // 消费者接口；验证 out_size 满足 expected_payload（0 表示不验证）
-static int drain_all(
-    qlog::log_buffer& buf, uint32_t expected_payload = 0, bool verify_seq = false
-)
+static int drain_all(qlog::log_buffer& buf, uint32_t expected_payload = 0, bool verify_seq = false)
 {
     int count = 0;
     uint32_t out_size = 0;
@@ -197,17 +191,19 @@ void test_02_lp_single_write_read()
 
     constexpr uint32_t kPayload = 64;
     // ── 修复：用独立线程写，避免主线程 tls_guard 捕获悬空 owner_buffer_ ──
-    std::thread writer([&]()
-    {
-        void* wptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
-        if (wptr)
+    std::thread writer(
+        [&]()
         {
-            auto* data = static_cast<uint8_t*>(wptr);
-            for (uint32_t i = 0; i < kPayload; ++i)
-                data[i] = static_cast<uint8_t>(i ^ 0xAB);
-            buf.commit_write_chunk(wptr);
+            void* wptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+            if (wptr)
+            {
+                auto* data = static_cast<uint8_t*>(wptr);
+                for (uint32_t i = 0; i < kPayload; ++i)
+                    data[i] = static_cast<uint8_t>(i ^ 0xAB);
+                buf.commit_write_chunk(wptr);
+            }
         }
-    });
+    );
     writer.join(); // 线程退出 → tls_guard 正常析构 → on_thread_exit 在 buf 存活时完成
     buf.flush();
 
@@ -222,7 +218,10 @@ void test_02_lp_single_write_read()
         for (uint32_t i = 0; i < kPayload; ++i)
         {
             if (rdata[i] != static_cast<uint8_t>(i ^ 0xAB))
-            { match = false; break; }
+            {
+                match = false;
+                break;
+            }
         }
         TEST_TRUE(match, "data pattern should match byte-for-byte");
         buf.commit_read_chunk(rptr);
@@ -238,22 +237,24 @@ void test_03_lp_multiple_entries()
     std::cout << "\n[Test 03] LP Path: Multiple Entries in Order\n";
     qlog::log_buffer buf(512 * 1024, 64 * 1024, 100'000);
 
-    constexpr int      kN       = 50;
+    constexpr int kN = 50;
     constexpr uint32_t kPayload = 32;
 
     // ── 修复：独立 writer 线程 ──
-    std::thread writer([&]()
-    {
-        for (int i = 0; i < kN; ++i)
+    std::thread writer(
+        [&]()
         {
-            void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
-            if (ptr)
+            for (int i = 0; i < kN; ++i)
             {
-                *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i);
-                buf.commit_write_chunk(ptr);
+                void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+                if (ptr)
+                {
+                    *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i);
+                    buf.commit_write_chunk(ptr);
+                }
             }
         }
-    });
+    );
     writer.join();
     buf.flush();
 
@@ -262,8 +263,11 @@ void test_03_lp_multiple_entries()
     while (const void* rptr = buf.read_chunk(out_size))
     {
         uint32_t val = *reinterpret_cast<const uint32_t*>(rptr);
-        TEST_EQ(static_cast<int>(val), read_count,
-                "entry value should equal read order index " + std::to_string(read_count));
+        TEST_EQ(
+            static_cast<int>(val),
+            read_count,
+            "entry value should equal read order index " + std::to_string(read_count)
+        );
         TEST_EQ(out_size, kPayload, "out_size should be consistent");
         buf.commit_read_chunk(rptr);
         ++read_count;
@@ -281,14 +285,17 @@ void test_04_lp_out_size_accuracy()
     const uint32_t sizes[] = {1, 8, 16, 32, 64, 128, 256};
 
     // ── 修复：独立 writer 线程 ──
-    std::thread writer([&]()
-    {
-        for (uint32_t sz : sizes)
+    std::thread writer(
+        [&]()
         {
-            void* ptr = buf.alloc_write_chunk(sz, k_lp_force_time);
-            if (ptr) buf.commit_write_chunk(ptr);
+            for (uint32_t sz : sizes)
+            {
+                void* ptr = buf.alloc_write_chunk(sz, k_lp_force_time);
+                if (ptr)
+                    buf.commit_write_chunk(ptr);
+            }
         }
-    });
+    );
     writer.join();
     buf.flush();
 
@@ -296,13 +303,17 @@ void test_04_lp_out_size_accuracy()
     uint32_t out_size = 0;
     while (const void* rptr = buf.read_chunk(out_size))
     {
-        TEST_EQ(out_size, sizes[idx],
-                "out_size should match written size " + std::to_string(sizes[idx]));
+        TEST_EQ(
+            out_size, sizes[idx], "out_size should match written size " + std::to_string(sizes[idx])
+        );
         buf.commit_read_chunk(rptr);
         ++idx;
     }
-    TEST_EQ(idx, static_cast<int>(sizeof(sizes) / sizeof(sizes[0])),
-            "should read all variable-size entries");
+    TEST_EQ(
+        idx,
+        static_cast<int>(sizeof(sizes) / sizeof(sizes[0])),
+        "should read all variable-size entries"
+    );
 }
 // ─────────────────────────────────────────────────────────────────────────────
 // Test 05：LP 路径 — seq 单调性（context_head 机制保证）
@@ -315,20 +326,22 @@ void test_05_lp_seq_monotonicity()
     qlog::log_buffer buf(512 * 1024, 64 * 1024, 100'000);
 
     constexpr int kN = 100;
-    std::thread producer([&]()
-    {
-        for (int i = 0; i < kN; ++i)
+    std::thread producer(
+        [&]()
         {
-            void* ptr = buf.alloc_write_chunk(sizeof(int), k_lp_force_time);
-            if (ptr)
+            for (int i = 0; i < kN; ++i)
             {
-                *static_cast<int*>(ptr) = i;
-                buf.commit_write_chunk(ptr);
+                void* ptr = buf.alloc_write_chunk(sizeof(int), k_lp_force_time);
+                if (ptr)
+                {
+                    *static_cast<int*>(ptr) = i;
+                    buf.commit_write_chunk(ptr);
+                }
             }
+            // 线程退出 → tls_guard::~tls_guard() → on_thread_exit() → finish 标记
         }
-        // 线程退出 → tls_guard::~tls_guard() → on_thread_exit() → finish 标记
-    });
-    producer.join();  // 确保 finish 标记已写入
+    );
+    producer.join(); // 确保 finish 标记已写入
     buf.flush();
 
     // 消费者读取：顺序应严格递增
@@ -337,7 +350,9 @@ void test_05_lp_seq_monotonicity()
     while (const void* rptr = buf.read_chunk(out_size))
     {
         int val = *static_cast<const int*>(rptr);
-        TEST_EQ(val, expected, "seq should be monotonically increasing: " + std::to_string(expected));
+        TEST_EQ(
+            val, expected, "seq should be monotonically increasing: " + std::to_string(expected)
+        );
         buf.commit_read_chunk(rptr);
         ++expected;
     }
@@ -357,22 +372,24 @@ void test_06_thread_exit_marker()
 
     qlog::log_buffer buf(256 * 1024, 64 * 1024, 100'000);
 
-    constexpr int     kN       = 10;
+    constexpr int kN = 10;
     constexpr uint32_t kPayload = sizeof(int);
 
-    std::thread producer([&]()
-    {
-        for (int i = 0; i < kN; ++i)
+    std::thread producer(
+        [&]()
         {
-            void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
-            if (ptr)
+            for (int i = 0; i < kN; ++i)
             {
-                *static_cast<int*>(ptr) = i;
-                buf.commit_write_chunk(ptr);
+                void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+                if (ptr)
+                {
+                    *static_cast<int*>(ptr) = i;
+                    buf.commit_write_chunk(ptr);
+                }
             }
+            // 退出时 tls_guard 写 finish 标记到 LP buffer
         }
-        // 退出时 tls_guard 写 finish 标记到 LP buffer
-    });
+    );
     producer.join();
     buf.flush();
 
@@ -411,24 +428,26 @@ void test_07_hp_path_trigger_and_read()
     qlog::log_buffer buf(256 * 1024, 128 * 1024, 3);
 
     constexpr uint32_t kPayload = sizeof(uint32_t);
-    constexpr int      kTotal   = 10;
+    constexpr int kTotal = 10;
 
     // ── 修复：独立 writer 线程（HP 路径写入必须用独立线程）──
     // 主线程写 HP 时会在 hp_pool_ 创建 entry，buf 析构后 entry 被 delete，
     // 但主线程 tls_current_info_->cur_hp_buffer_ 仍指向已删除内存。
-    std::thread writer([&]()
-    {
-        for (int i = 0; i < kTotal; ++i)
+    std::thread writer(
+        [&]()
         {
-            void* ptr = buf.alloc_write_chunk(kPayload, k_hp_trigger_time);
-            TEST_NOT_NULL(ptr, "alloc entry " + std::to_string(i) + " should succeed");
-            if (ptr)
+            for (int i = 0; i < kTotal; ++i)
             {
-                *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i);
-                buf.commit_write_chunk(ptr);
+                void* ptr = buf.alloc_write_chunk(kPayload, k_hp_trigger_time);
+                TEST_NOT_NULL(ptr, "alloc entry " + std::to_string(i) + " should succeed");
+                if (ptr)
+                {
+                    *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i);
+                    buf.commit_write_chunk(ptr);
+                }
             }
         }
-    });
+    );
     writer.join();
     buf.flush();
 
@@ -452,43 +471,47 @@ void test_08_hp_lp_mixed()
     // hp_threshold=5：写 5 次触发 HP
     qlog::log_buffer buf(512 * 1024, 128 * 1024, /* hp_threshold= */ 5);
 
-    constexpr int     kHighFreqN = 50;   // 高频线程写入条数
-    constexpr int     kLowFreqN  = 10;   // 低频线程写入条数
-    constexpr uint32_t kPayload  = sizeof(uint32_t);
+    constexpr int kHighFreqN = 50; // 高频线程写入条数
+    constexpr int kLowFreqN = 10;  // 低频线程写入条数
+    constexpr uint32_t kPayload = sizeof(uint32_t);
 
     std::atomic<int> total_written{0};
 
     // 高频线程：固定时间戳，第 5 次起触发 HP
-    std::thread high_freq([&]()
-    {
-        for (int i = 0; i < kHighFreqN; ++i)
+    std::thread high_freq(
+        [&]()
         {
-            void* ptr = buf.alloc_write_chunk(kPayload, k_hp_trigger_time);
-            if (ptr)
+            for (int i = 0; i < kHighFreqN; ++i)
             {
-                *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i) | 0x80000000u;
-                buf.commit_write_chunk(ptr);
-                total_written.fetch_add(1, std::memory_order_relaxed);
+                void* ptr = buf.alloc_write_chunk(kPayload, k_hp_trigger_time);
+                if (ptr)
+                {
+                    *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i) | 0x80000000u;
+                    buf.commit_write_chunk(ptr);
+                    total_written.fetch_add(1, std::memory_order_relaxed);
+                }
             }
         }
-    });
+    );
 
     // 低频线程：使用递增时间戳，每次都在新的时间窗口，写入次数不累积 → 始终 LP
-    std::thread low_freq([&]()
-    {
-        for (int i = 0; i < kLowFreqN; ++i)
+    std::thread low_freq(
+        [&]()
         {
-            // 每次用新时间戳（递增超过 1000ms），确保每次都触发区间重置 → 始终低频
-            uint64_t t = k_hp_trigger_time + static_cast<uint64_t>(i + 1) * 2000;
-            void* ptr = buf.alloc_write_chunk(kPayload, t);
-            if (ptr)
+            for (int i = 0; i < kLowFreqN; ++i)
             {
-                *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i) | 0x40000000u;
-                buf.commit_write_chunk(ptr);
-                total_written.fetch_add(1, std::memory_order_relaxed);
+                // 每次用新时间戳（递增超过 1000ms），确保每次都触发区间重置 → 始终低频
+                uint64_t t = k_hp_trigger_time + static_cast<uint64_t>(i + 1) * 2000;
+                void* ptr = buf.alloc_write_chunk(kPayload, t);
+                if (ptr)
+                {
+                    *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i) | 0x40000000u;
+                    buf.commit_write_chunk(ptr);
+                    total_written.fetch_add(1, std::memory_order_relaxed);
+                }
             }
         }
-    });
+    );
 
     high_freq.join();
     low_freq.join();
@@ -519,7 +542,7 @@ void test_09_multi_producer_lp_stress()
     qlog::log_buffer buf(8 * 1024 * 1024, 64 * 1024, 100'000);
 
     constexpr int kNumProducers = 10;
-    constexpr int kPerProducer  = 1000;
+    constexpr int kPerProducer = 1000;
     constexpr uint32_t kPayload = sizeof(uint32_t);
 
     std::atomic<int> total_written{0};
@@ -530,25 +553,27 @@ void test_09_multi_producer_lp_stress()
     producers.reserve(kNumProducers);
     for (int p = 0; p < kNumProducers; ++p)
     {
-        producers.emplace_back([&, p]()
-        {
-            for (int i = 0; i < kPerProducer; ++i)
+        producers.emplace_back(
+            [&, p]()
             {
-                // 每条 entry 使用递增时间戳（同线程同窗口内写 1000 次仍不触发 HP，
-                // 但使用 100'000 阈值更安全）
-                void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
-                while (ptr == nullptr)
+                for (int i = 0; i < kPerProducer; ++i)
                 {
-                    std::this_thread::yield();
-                    ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+                    // 每条 entry 使用递增时间戳（同线程同窗口内写 1000 次仍不触发 HP，
+                    // 但使用 100'000 阈值更安全）
+                    void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+                    while (ptr == nullptr)
+                    {
+                        std::this_thread::yield();
+                        ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+                    }
+                    // 高 16 位存 producer id，低 16 位存 entry index
+                    *reinterpret_cast<uint32_t*>(ptr) =
+                        (static_cast<uint32_t>(p) << 16) | static_cast<uint32_t>(i);
+                    buf.commit_write_chunk(ptr);
+                    total_written.fetch_add(1, std::memory_order_relaxed);
                 }
-                // 高 16 位存 producer id，低 16 位存 entry index
-                *reinterpret_cast<uint32_t*>(ptr) =
-                    (static_cast<uint32_t>(p) << 16) | static_cast<uint32_t>(i);
-                buf.commit_write_chunk(ptr);
-                total_written.fetch_add(1, std::memory_order_relaxed);
             }
-        });
+        );
     }
 
     // 消费者（主线程）
@@ -591,8 +616,11 @@ void test_09_multi_producer_lp_stress()
         ++read_count;
     }
 
-    TEST_EQ(read_count, total_expected,
-            "multi-producer: should read all " + std::to_string(total_expected) + " entries");
+    TEST_EQ(
+        read_count,
+        total_expected,
+        "multi-producer: should read all " + std::to_string(total_expected) + " entries"
+    );
     TEST_EQ(total_written.load(), total_expected, "total_written should equal expected");
 }
 
@@ -608,25 +636,27 @@ void test_10_flush_memory_barrier()
 
     qlog::log_buffer buf(256 * 1024, 64 * 1024, 100'000);
 
-    constexpr int     kN       = 20;
+    constexpr int kN = 20;
     constexpr uint32_t kPayload = sizeof(uint32_t);
 
     // 生产者线程写入 + flush
     std::atomic<bool> producer_flushed{false};
-    std::thread producer([&]()
-    {
-        for (int i = 0; i < kN; ++i)
+    std::thread producer(
+        [&]()
         {
-            void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
-            if (ptr)
+            for (int i = 0; i < kN; ++i)
             {
-                *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i);
-                buf.commit_write_chunk(ptr);
+                void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+                if (ptr)
+                {
+                    *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i);
+                    buf.commit_write_chunk(ptr);
+                }
             }
+            buf.flush();
+            producer_flushed.store(true, std::memory_order_release);
         }
-        buf.flush();
-        producer_flushed.store(true, std::memory_order_release);
-    });
+    );
 
     // 消费者等待 flush 信号后读取
     while (!producer_flushed.load(std::memory_order_acquire))
@@ -656,32 +686,39 @@ void test_11_buffer_full_handling()
     qlog::log_buffer buf(16 * 1024, 4 * 1024, 100'000);
 
     constexpr uint32_t kPayload = 64;
-    std::atomic<int>   success_count{0};
+    std::atomic<int> success_count{0};
 
     // ── 修复：独立 writer 线程 ──
-    std::thread writer([&]()
-    {
-        while (true)
+    std::thread writer(
+        [&]()
         {
-            void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
-            if (ptr == nullptr) break;
-            buf.commit_write_chunk(ptr);
-            success_count.fetch_add(1, std::memory_order_relaxed);
-            if (success_count.load() > 10000) break;
+            while (true)
+            {
+                void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+                if (ptr == nullptr)
+                    break;
+                buf.commit_write_chunk(ptr);
+                success_count.fetch_add(1, std::memory_order_relaxed);
+                if (success_count.load() > 10000)
+                    break;
+            }
         }
-    });
+    );
     writer.join();
 
     TEST_TRUE(success_count.load() > 0, "should succeed at least once before full");
 
     // 用另一个独立线程验证"满时失败"
     std::atomic<bool> alloc_failed{false};
-    std::thread checker([&]()
-    {
-        void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
-        alloc_failed.store(ptr == nullptr, std::memory_order_relaxed);
-        if (ptr) buf.commit_write_chunk(ptr); // 如果意外成功也提交
-    });
+    std::thread checker(
+        [&]()
+        {
+            void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+            alloc_failed.store(ptr == nullptr, std::memory_order_relaxed);
+            if (ptr)
+                buf.commit_write_chunk(ptr); // 如果意外成功也提交
+        }
+    );
     checker.join();
     TEST_TRUE(alloc_failed.load(), "alloc should fail when buffer is full");
 
@@ -689,16 +726,20 @@ void test_11_buffer_full_handling()
     uint32_t out_size = 0;
     const void* rptr = buf.read_chunk(out_size);
     TEST_NOT_NULL(rptr, "should read one entry from full buffer");
-    if (rptr) buf.commit_read_chunk(rptr);
+    if (rptr)
+        buf.commit_read_chunk(rptr);
 
     // 再次写入应成功（独立线程）
     std::atomic<bool> retry_ok{false};
-    std::thread retrier([&]()
-    {
-        void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
-        retry_ok.store(ptr != nullptr, std::memory_order_relaxed);
-        if (ptr) buf.commit_write_chunk(ptr);
-    });
+    std::thread retrier(
+        [&]()
+        {
+            void* ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+            retry_ok.store(ptr != nullptr, std::memory_order_relaxed);
+            if (ptr)
+                buf.commit_write_chunk(ptr);
+        }
+    );
     retrier.join();
     TEST_TRUE(retry_ok.load(), "alloc should succeed after consuming one entry");
 }
@@ -713,64 +754,68 @@ void test_12_performance_benchmark()
 {
     std::cout << "\n[Test 12] Performance Benchmark (1 Producer + 1 Consumer)\n";
 
-    constexpr int     kEntries  = 1'000'000;
+    constexpr int kEntries = 1'000'000;
     constexpr uint32_t kPayload = 32;
 
     qlog::log_buffer buf(32 * 1024 * 1024, 2 * 1024 * 1024, 100'000);
 
-    std::atomic<bool>  start_gate{false};
-    std::atomic<int>   write_count{0};
-    std::atomic<int>   read_count{0};
-    std::atomic<bool>  producer_done{false};
+    std::atomic<bool> start_gate{false};
+    std::atomic<int> write_count{0};
+    std::atomic<int> read_count{0};
+    std::atomic<bool> producer_done{false};
 
-    std::thread producer([&]()
-    {
-        while (!start_gate.load(std::memory_order_acquire))
-            ;
-        for (int i = 0; i < kEntries; ++i)
+    std::thread producer(
+        [&]()
         {
-            void* ptr;
-            do
+            while (!start_gate.load(std::memory_order_acquire))
+                ;
+            for (int i = 0; i < kEntries; ++i)
             {
-                ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
-                if (ptr == nullptr)
-                    std::this_thread::yield();
-            } while (ptr == nullptr);
-            *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i);
-            buf.commit_write_chunk(ptr);
-            write_count.fetch_add(1, std::memory_order_relaxed);
+                void* ptr;
+                do
+                {
+                    ptr = buf.alloc_write_chunk(kPayload, k_lp_force_time);
+                    if (ptr == nullptr)
+                        std::this_thread::yield();
+                } while (ptr == nullptr);
+                *reinterpret_cast<uint32_t*>(ptr) = static_cast<uint32_t>(i);
+                buf.commit_write_chunk(ptr);
+                write_count.fetch_add(1, std::memory_order_relaxed);
+            }
+            buf.flush();
+            producer_done.store(true, std::memory_order_release);
         }
-        buf.flush();
-        producer_done.store(true, std::memory_order_release);
-    });
+    );
 
-    std::thread consumer([&]()
-    {
-        while (!start_gate.load(std::memory_order_acquire))
-            ;
-        uint32_t out_size = 0;
-        while (read_count.load(std::memory_order_relaxed) < kEntries)
+    std::thread consumer(
+        [&]()
         {
-            const void* rptr = buf.read_chunk(out_size);
-            if (rptr != nullptr)
+            while (!start_gate.load(std::memory_order_acquire))
+                ;
+            uint32_t out_size = 0;
+            while (read_count.load(std::memory_order_relaxed) < kEntries)
+            {
+                const void* rptr = buf.read_chunk(out_size);
+                if (rptr != nullptr)
+                {
+                    buf.commit_read_chunk(rptr);
+                    read_count.fetch_add(1, std::memory_order_relaxed);
+                }
+                else
+                {
+                    if (producer_done.load(std::memory_order_acquire))
+                        break;
+                    std::this_thread::yield();
+                }
+            }
+            // 最后一次 drain（防止 producer_done 与 read 之间的竞争）
+            while (const void* rptr = buf.read_chunk(out_size))
             {
                 buf.commit_read_chunk(rptr);
                 read_count.fetch_add(1, std::memory_order_relaxed);
             }
-            else
-            {
-                if (producer_done.load(std::memory_order_acquire))
-                    break;
-                std::this_thread::yield();
-            }
         }
-        // 最后一次 drain（防止 producer_done 与 read 之间的竞争）
-        while (const void* rptr = buf.read_chunk(out_size))
-        {
-            buf.commit_read_chunk(rptr);
-            read_count.fetch_add(1, std::memory_order_relaxed);
-        }
-    });
+    );
 
     auto start_time = std::chrono::high_resolution_clock::now();
     start_gate.store(true, std::memory_order_release);
@@ -778,20 +823,17 @@ void test_12_performance_benchmark()
     producer.join();
     consumer.join();
 
-    auto end_time   = std::chrono::high_resolution_clock::now();
-    auto elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(
-                          end_time - start_time)
-                          .count();
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto elapsed_us =
+        std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time).count();
 
     TEST_EQ(write_count.load(), kEntries, "should write all entries");
-    TEST_EQ(read_count.load(),  kEntries, "should read all entries");
+    TEST_EQ(read_count.load(), kEntries, "should read all entries");
 
-    double ns_per_entry = elapsed_us > 0
-        ? static_cast<double>(elapsed_us) * 1000.0 / kEntries
-        : 0.0;
-    double entries_per_sec = elapsed_us > 0
-        ? static_cast<double>(kEntries) * 1'000'000.0 / elapsed_us
-        : 0.0;
+    double ns_per_entry =
+        elapsed_us > 0 ? static_cast<double>(elapsed_us) * 1000.0 / kEntries : 0.0;
+    double entries_per_sec =
+        elapsed_us > 0 ? static_cast<double>(kEntries) * 1'000'000.0 / elapsed_us : 0.0;
 
     std::cout << "  Throughput: " << static_cast<int>(entries_per_sec / 1e6) << "."
               << (static_cast<int>(entries_per_sec / 1e5) % 10) << "M entries/s\n";

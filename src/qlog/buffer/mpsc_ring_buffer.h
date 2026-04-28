@@ -39,9 +39,9 @@ union alignas(CACHE_LINE_SIZE) block
         inline uint32_t get_block_num() const
         {
             // 按小端序从 3 字节恢复 block_num，避免未对齐/别名 UB
-            return static_cast<uint32_t>(block_num_[0])
-                | (static_cast<uint32_t>(block_num_[1]) << 8)
-                | (static_cast<uint32_t>(block_num_[2]) << 16);
+            return static_cast<uint32_t>(block_num_[0]) |
+                   (static_cast<uint32_t>(block_num_[1]) << 8) |
+                   (static_cast<uint32_t>(block_num_[2]) << 16);
         }
 
         inline void set_block_num(uint32_t num)
