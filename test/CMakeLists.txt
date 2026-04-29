@@ -107,6 +107,28 @@ set_target_properties(test_format_hash PROPERTIES
 )
 add_test(NAME format_hash_tests COMMAND test_format_hash)
 
+add_executable(test_entry_format cpp/test_entry_format.cpp)
+target_link_libraries(test_entry_format PRIVATE qlog)
+target_include_directories(test_entry_format PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR})
+set_target_properties(test_entry_format PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+add_test(NAME entry_format_tests COMMAND test_entry_format)
+
+add_executable(test_log_filter cpp/test_log_filter.cpp)
+target_link_libraries(test_log_filter PRIVATE qlog Threads::Threads)
+target_include_directories(test_log_filter PRIVATE ${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR})
+set_target_properties(test_log_filter PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+add_test(NAME log_filter_tests COMMAND test_log_filter)
+
+add_executable(test_serializer cpp/test_serializer.cpp)
+target_link_libraries(test_serializer PRIVATE qlog)
+target_include_directories(test_serializer PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}
+)
+set_target_properties(test_serializer PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+add_test(NAME serializer_tests COMMAND test_serializer)
 
 
 message(STATUS "QLog: M0 test targets configured (atomic, spin_lock, spin_lock_rw, aligned_alloc, platform_thread, condition_variable)")
@@ -114,3 +136,6 @@ message(STATUS "QLog: M1 test targets configured (spsc_ring_buffer)")
 message(STATUS "QLog: M2 test targets configured (mpsc_ring_buffer)")
 message(STATUS "QLog: M3 test targets configured (log_buffer)")
 message(STATUS "QLog: M4 test targets configured (format_hash)")
+message(STATUS "QLog: M4 test targets configured (entry_format)")
+message(STATUS "QLog: M4 test targets configured (log_filter)")
+message(STATUS "QLog: M4 test targets configured (serializer)")

@@ -314,47 +314,271 @@
 
 **目标**：实现 `layout`，将二进制 entry 还原为人类可读的文本。
 
-### BqLog 对齐度信息（待定）
+### 📊 BqLog 对齐度分析
 
-本 Milestone 对齐信息在指导文档 `M5_LAYOUT_ALIGNED_IMPLEMENTATION.md` 中提供。
+| 项目 | BqLog 源码位置 | QLog 对齐度 | 说明 |
+|------|--------------|----------|------|
+| Python-style 格式 | layout.h:99-103 | 90% | {0}, {1:>10.2f} 等 |
+| 类型转换函数 | layout.cpp:insert_* | 90% | int/float/double/bool/string/pointer |
+| UTF-8 编码 | layout.cpp:python_style_format_content_utf8 | 100% | 主要支持 |
+| UTF-16 编码 | layout.cpp:python_style_format_content_utf16 | 0% | 可选，后期加入 |
+| SIMD 优化 | layout.cpp:*_avx2/*_neon | 0% | 可选，M12 加入 |
+| 缓冲区管理 | layout.h:format_content | 95% | 初始1024B，复用 |
+| 时区处理 | layout.cpp:insert_time | 85% | 集成 time_zone 类 |
+
+**总体对齐度**: 65-75% (去掉 SIMD 和 UTF-16)
+
+### 参考源码
+
+- **layout.h**: `/home/qq344/BqLog/src/bq_log/log/layout.h` (175 行)
+- **layout.cpp**: `/home/qq344/BqLog/src/bq_log/log/layout.cpp` (1939 行)
+- **关键接口**:
+  ```cpp
+  enum_layout_result do_layout(
+      const log_entry_handle& entry,
+      time_zone& tz,
+      const array<string>* categories
+  );
+  ```
 
 ### 任务清单
-- [ ] 实现 Python-style 格式化解析：`{}`、`{:>10.2f}`、`{:x}` 等
-- [ ] 实现各类型的文本格式化（整数、浮点、指针、bool、字符串）
-- [ ] 实现 UTF-8 / UTF-16 / UTF-32 字符串处理
-- [ ] 实现 thread name 缓存（hash map，避免重复查询）
-- [ ] 实现 timestamp 格式化（epoch ms → `YYYY-MM-DD HH:MM:SS.mmm`）
-- [ ] （进阶）实现 SIMD 加速的 `{` `}` 扫描（AVX2 / NEON）
+- [ ] format_info 结构体（对齐、宽度、精度、类型）
+- [ ] 格式字符串解析器（`{0}`, `{1:>10.2f}` 等）
+- [ ] 6个 insert_* 类型转换函数
+  - [ ] insert_integral_unsigned/signed (base 2/8/10/16)
+  - [ ] insert_decimal (float/double)
+  - [ ] insert_str_utf8
+  - [ ] insert_pointer, insert_bool
+- [ ] fill_and_alignment() 对齐填充
+- [ ] python_style_format_content() UTF-8 版本
+- [ ] do_layout() 主入口与状态机
+- [ ] 缓冲区复用 + tidy_memory()
 
 ### 验证标准
-- 格式化结果与 `std::format` / `printf` 对比，输出一致
-- SIMD 版本 vs 软件版本 benchmark，吞吐量 > 2x（长格式字符串场景）
+- 格式化结果与 Python `format()` 对齐
+- 缓冲区复用：无内存泄漏（ASan 通过）
+- 性能基准：单条日志格式化 < 1µs (Release)
+
+### 简化策略
+- ❌ SIMD 优化 (AVX2/SSE/NEON) — 保留软件版本
+- ❌ UTF-16 支持 — 仅 UTF-8
+- ❌ Legacy 版本 — 不保留
+- ✅ 缓冲区复用 — 保留
+- ✅ 时区处理 — 保留
+
+**预期代码量**: 800-900 行 (BqLog 2114 的 40%)
 
 ---
 
-## Milestone 6 — Appender 体系
+## Milestone 6 — Appender 体系（完整实现）
 
-**目标**：实现三种 appender，建立可扩展的输出插件体系。
+**目标**：实现日志输出插件体系的全部四种格式（Console、文本、原始二进制、压缩），100% 对齐 BqLog。
 
-### BqLog 对齐度信息（待定）
+### 📊 BqLog 对齐度分析
 
-本 Milestone 对齐信息在指导文档 `M6_APPENDER_ALIGNED_IMPLEMENTATION.md` 中提供。
+| 模块 | BqLog 代码量 | QLog 目标 | 对齐度 | 复杂度 | 说明 |
+|------|-------------|---------|--------|--------|------|
+| appender_base | 241 行 (86h+155cpp) | ~250 行 | 100% | ⭐⭐ | 虚基类框架 |
+| appender_console | 325 行 (80h+245cpp) | ~300 行 | 100% | ⭐ | stdout/stderr 输出 |
+| appender_file_base | 914 行 (251h+663cpp) | ~900 行 | 100% | ⭐⭐⭐ | 文件I/O、轮转、缓冲 |
+| appender_file_text | 112 行 (26h+86cpp) | ~120 行 | 100% | ⭐ | 文本格式输出 |
+| appender_file_raw | 66 行 (31h+35cpp) | ~80 行 | 100% | ⭐ | 原始二进制输出 |
+| appender_file_binary | 562 行 (179h+383cpp) | ~600 行 | 100% | ⭐⭐⭐ | 二进制格式基础 |
+| appender_file_compressed | 610 行 (105h+505cpp) | ~650 行 | 100% | ⭐⭐⭐⭐ | VLQ编码、模板缓存、压缩 |
+| **总计** | **3230 行** | **~3300-3350 行** | **100%** | | |
 
-### 任务清单
-- [ ] 实现 `appender_base`：模板方法模式，`init_impl()` / `log_impl()` / `reset_impl()`
-- [ ] 实现 `appender_console`：写 stdout，支持颜色（ANSI escape codes）
-- [ ] 实现 `appender_file_text`：写文本文件，支持按大小/时间滚动
-- [ ] 实现 `appender_file_compressed`：
-  - [ ] format template 缓存与索引
-  - [ ] thread info template 缓存
-  - [ ] VLQ 编码
-  - [ ] 二进制文件格式（item_type header + data）
-- [ ] 实现配套的 log decoder 工具（读取压缩文件，还原为文本）
-- [ ] 每个 appender 独立的 level bitmap + category mask
+**总体对齐度**: 100% (完整实现所有格式)
+
+### 参考源码
+
+- **appender_base**: `/home/qq344/BqLog/src/bq_log/log/appender/appender_base.h/cpp`
+- **appender_console**: `/home/qq344/BqLog/src/bq_log/log/appender/appender_console.h/cpp`
+- **appender_file_base**: `/home/qq344/BqLog/src/bq_log/log/appender/appender_file_base.h/cpp`
+- **appender_file_text**: `/home/qq344/BqLog/src/bq_log/log/appender/appender_file_text.h/cpp`
+- **appender_file_raw**: `/home/qq344/BqLog/src/bq_log/log/appender/appender_file_raw.h/cpp`
+- **appender_file_binary**: `/home/qq344/BqLog/src/bq_log/log/appender/appender_file_binary.h/cpp`
+- **appender_file_compressed**: `/home/qq344/BqLog/src/bq_log/log/appender/appender_file_compressed.h/cpp`
+
+### 分模块任务清单
+
+#### 1️⃣ appender_base 虚基类
+- [ ] 定义四种 appender 类型枚举：console, text_file, raw_file, compressed_file
+- [ ] 虚接口：init_impl() / reset_impl() / log_impl()
+- [ ] 配置管理：从 property_value 解析配置
+- [ ] 过滤机制：
+  - [ ] log_level_bitmap（等级过滤）
+  - [ ] categories_mask_array（分类过滤）
+- [ ] 生命周期：init() → log() → clear()
+- [ ] enable/disable 支持
+
+**关键数据结构**:
+```cpp
+class appender_base {
+    appender_type type_;
+    bq::string name_;
+    log_level_bitmap log_level_bitmap_;
+    bq::array_inline<uint8_t> categories_mask_array_;
+    layout* layout_ptr_;
+    const log_imp* parent_log_;
+};
+```
+
+#### 2️⃣ appender_console (Console 输出)
+- [ ] 输出到 stdout (info/warning) 或 stderr (error/fatal)
+- [ ] 集成 layout 格式化
+- [ ] ANSI 颜色着色（可选，level 对应不同颜色）
+- [ ] 立即输出（不缓冲）
+
+**实现要点**:
+- [ ] INFO/DEBUG → stdout (绿色)
+- [ ] WARNING → stdout (黄色)
+- [ ] ERROR/FATAL → stderr (红色)
+
+#### 3️⃣ appender_file_base (文件基类)
+- [ ] 文件 I/O 操作（open/close/write/flush）
+- [ ] 缓冲管理（内存缓冲，批量写入）
+- [ ] 文件轮转机制：
+  - [ ] 按大小轮转 (max_file_size)
+  - [ ] 按时间轮转 (daily)
+  - [ ] 保留历史文件数 (max_files_count)
+- [ ] 文件命名规则：`name.log`, `name.log.1`, `name.log.2`, etc
+- [ ] 文件打开检测（恢复已有文件）
+
+**关键参数**:
+```cpp
+uint64_t max_file_size;          // 默认 100MB
+uint32_t max_files_count;        // 最多保留
+uint32_t buffer_size;            // 缓冲区大小
+bool enable_time_rotation;       // 时间轮转
+```
+
+#### 4️⃣ appender_file_text (文本格式)
+- [ ] 继承 appender_file_base
+- [ ] 每条日志一行（自动添加 `\n`）
+- [ ] 集成 layout 格式化
+- [ ] UTF-8 编码输出
+
+**实现方式**:
+```cpp
+void log_impl(const log_entry_handle& handle) override {
+    const char* formatted = layout_ptr_->do_layout(...);
+    write(formatted);
+    write("\n");
+    flush_if_needed();
+}
+```
+
+#### 5️⃣ appender_file_raw (原始二进制)
+- [ ] 继承 appender_file_base
+- [ ] 直接写入 entry 的二进制数据
+- [ ] 无格式化，无额外信息
+
+#### 6️⃣ appender_file_binary (二进制格式基础)
+- [ ] 继承 appender_file_base
+- [ ] 定义文件格式结构：
+  - [ ] **File Header** (8 字节):
+    - uint32_t version (4B)
+    - appender_format_type format (1B, 1=raw, 2=compressed)
+    - char padding[3] (3B)
+  - [ ] **Segments** (链式结构):
+    - Segment Header (12B): next_seg_pos, seg_type, enc_type, has_key
+    - [可选] Encryption Keys (加密支持)
+    - Segment Payload (Data)
+  - [ ] **Metadata** (First Segment Only):
+    - magic_number: "2,2,7" (3B)
+    - use_local_time (1B)
+    - gmt_offset_hours/minutes (8B)
+    - time_zone_str (32B)
+    - category_count (4B)
+    - category definitions (重复)
+  - [ ] **Log Entries** (Variable)
+- [ ] 文件打开时读取并验证 metadata
+
+**关键接口**:
+```cpp
+virtual bool parse_exist_log_file(parse_file_context& context);
+virtual void on_file_open(bool is_new_created);
+virtual appender_format_type get_appender_format() const;
+```
+
+#### 7️⃣ appender_file_compressed (压缩格式，最复杂)
+- [ ] 继承 appender_file_binary
+- [ ] VLQ 编码实现：
+  - [ ] varint_encode(uint64_t)
+  - [ ] varint_decode(const uint8_t*, size_t&)
+  - [ ] 最多 4 字节表示任意 uint64_t
+- [ ] 模板缓存系统：
+  - [ ] format_templates_hash_cache_: 缓存 format string 和 level/category
+  - [ ] thread_info_hash_cache_: 缓存线程 ID 和名称
+  - [ ] 使用 hash 值作为模板索引
+- [ ] Log Entry 写入：
+  - [ ] [data_item_header]: type(1b) + len_extra(7b) + len_base(VLQ)
+  - [ ] [data]: timestamp(VLQ) + fmt_idx(VLQ) + thread_idx(VLQ) + [param_type, param...]
+- [ ] Template 写入：
+  - [ ] Format Template: [sub_type=0] + [level(1B), category_idx(VLQ), fmt_string]
+  - [ ] Thread Info Template: [sub_type=1] + [thread_idx(VLQ), thread_id(VLQ), thread_name]
+- [ ] 文件恢复：parse_log_entry / parse_formate_template / parse_thread_info_template
+
+**VLQ 编码公式**:
+```cpp
+// 编码：每字节使用高位标记是否还有后续字节
+uint8_t buf[5];
+size_t len = varint_encode(value, buf);  // 返回字节数
+
+// 解码：
+uint64_t value = 0;
+size_t offset = 0;
+varint_decode(buf, offset);  // offset 会被更新
+```
+
+**模板缓存策略**:
+```cpp
+// 计算 format 模板哈希
+uint64_t fmt_hash = hash(level, category_idx, fmt_string);
+// 查缓存
+if (format_templates_hash_cache_.find(fmt_hash) != end) {
+    fmt_idx = format_templates_hash_cache_[fmt_hash];
+} else {
+    // 新模板，写入并记录索引
+    fmt_idx = current_format_template_max_index_++;
+    write_format_template(fmt_idx, level, category_idx, fmt_string);
+    format_templates_hash_cache_[fmt_hash] = fmt_idx;
+}
+```
 
 ### 验证标准
-- 压缩文件 decoder 能完整还原所有日志条目
-- 压缩率：相同内容，压缩文件 < 文本文件的 15%
+- [ ] 编译无警告 (-Wall -Wextra)
+- [ ] appender_console 输出到 stdout (手动验证)
+- [ ] appender_file_text 产生可读文本文件
+- [ ] appender_file_raw 产生二进制文件
+- [ ] appender_file_binary 文件可被解析（自实现 parser）
+- [ ] appender_file_compressed 压缩文件 < 15% 文本大小（相同日志内容）
+- [ ] 文件轮转：达到 max_file_size 自动创建新文件
+- [ ] 过滤生效：disabled appender 不输出；level/category 过滤正确
+- [ ] 多线程安全：10 个生产者线程并发输出，无乱码、无丢失
+
+### 关键对齐点
+- ✅ 四种 appender 类型枚举值
+- ✅ 虚接口三个方法 (init_impl / reset_impl / log_impl)
+- ✅ File Header 8 字节格式
+- ✅ Segment Header 12 字节格式
+- ✅ Metadata 结构（magic_number, time_zone, categories）
+- ✅ VLQ 编码（最多 4 字节）
+- ✅ 模板缓存机制（hash_cache + index 映射）
+- ✅ 过滤 bitmap 机制
+
+### 工作分解与时间估计
+
+| 阶段 | 任务 | 工作周数 | 说明 |
+|------|------|---------|------|
+| P1 | appender_base + console + file_base | 3 | 基础框架 |
+| P2 | appender_file_text + raw | 1 | 简单格式 |
+| P3 | appender_file_binary | 2 | 结构化格式 |
+| P4 | appender_file_compressed | 2 | VLQ + 模板缓存 |
+| P5 | 单元测试 + 集成测试 | 1 | 完整覆盖 |
+| **合计** | | **6-8 周** | |
+
+**预期代码量**: 3300-3350 行 (BqLog 3230 行相当)
 
 ---
 
@@ -362,41 +586,128 @@
 
 **目标**：实现 `log_worker`，驱动异步日志处理。
 
-### BqLog 对齐度信息（待定）
+### 📊 BqLog 对齐度分析
 
-本 Milestone 对齐信息在指导文档 `M7_WORKER_ALIGNED_IMPLEMENTATION.md` 中提供。
+| 项目 | BqLog 源码位置 | QLog 对齐度 | 说明 |
+|------|--------------|----------|------|
+| log_worker 类 | log_worker.h:23-83 | 95% | 继承 platform::thread |
+| 66ms 周期 | log_worker.h:25 | 100% | process_interval_ms = 66 |
+| 条件变量唤醒 | log_worker.h:31-34 | 100% | condition_variable + mutex |
+| atomic 标志 | log_worker.h:33-34 | 100% | wait_flag / awake_flag |
+| run() 主循环 | log_worker.cpp:run() | 90% | 周期检查 + 唤醒处理 |
+| Watch dog | log_worker.h:77-82 | 85% | 线程重启监控 |
+
+**总体对齐度**: 85-95% (几乎完全对齐)
+
+### 参考源码
+
+- **log_worker**: `/home/qq344/BqLog/src/bq_log/log/log_worker.h/cpp` (206 行)
 
 ### 任务清单
-- [ ] 实现 `log_worker`（继承 `platform::thread`）
-- [ ] 实现 66ms 周期的 condition_variable 睡眠/唤醒
-- [ ] 实现 `awake()` 接口（atomic flag 避免重复唤醒）
-- [ ] 实现 `force_flush()`：同步等待所有 buffer 消费完毕
-- [ ] 实现三种线程模式：`sync`（调用线程直接处理）/ `async`（共享 worker）/ `independent`（独立 worker）
-- [ ] 实现 watch dog：检测 worker 线程异常退出并重启
+- [ ] log_worker 类
+  - [ ] 继承 platform::thread
+  - [ ] process_interval_ms = 66 常数
+  - [ ] condition_variable trigger + mutex lock
+  - [ ] atomic<bool> wait_flag / awake_flag
+- [ ] awake() 接口（立即唤醒）
+- [ ] awake_and_wait_begin/join() 配对等待
+- [ ] run() 主循环
+  - [ ] 66ms 定期唤醒
+  - [ ] 获取 log_imp 并调用 process()
+  - [ ] 支持 force_flush 模式
+- [ ] Watch dog 监控线程存活
 
 ### 验证标准
-- `force_flush()` 后，所有已提交的 entry 必须出现在 appender 输出中
-- watch dog 测试：强制 kill worker 线程，1s 内自动重启
+- 66ms 周期检查有效（日志在周期内被处理）
+- awake() 立即唤醒生效（latency < 1ms）
+- Watch dog 测试：模拟线程退出，1s 内自动重启
+
+### 核心对齐点
+- ✅ 66ms 常数不能改变
+- ✅ condition_variable + atomic 搭配
+- ✅ process_by_worker 回调接口
+
+**预期代码量**: 200-260 行 (BqLog 206 行相当)
 
 ---
 
-## Milestone 8 — log_imp 与 log_manager
+## Milestone 8 — 日志管理器 (Manager + IMP)
 
 **目标**：组装完整的 log 对象和单例管理器。
 
-### BqLog 对齐度信息（待定）
+### 📊 BqLog 对齐度分析
 
-本 Milestone 对齐信息在指导文档 `M8_MANAGER_ALIGNED_IMPLEMENTATION.md` 中提供。
+#### log_manager
+
+| 项目 | BqLog 源码位置 | QLog 对齐度 | 说明 |
+|------|--------------|----------|------|
+| 单例模式 | log_manager.h:32 | 100% | static instance() |
+| log_imp_list | log_manager.h:77 | 95% | array_inline<unique_ptr> |
+| public_worker | log_manager.h:78 | 95% | log_worker 实例 |
+| public_layout | log_manager.h:79 | 95% | layout 单例 |
+| ID 编码 | log_manager.h:50-52 | 100% | XOR magic number |
+| 过滤锁 | log_manager.h:80 | 90% | spin_lock_rw 保护 |
+
+#### log_imp
+
+| 项目 | BqLog 源码位置 | QLog 对齐度 | 说明 |
+|------|--------------|----------|------|
+| log() hot path | log_imp.cpp:log() | 100% | ring buffer 写入 |
+| process() | log_imp.cpp:process() | 95% | worker 调用处理 |
+| 过滤机制 | log_imp.h:93-96 | 100% | is_enable_for() |
+| Appender 链 | log_imp.h:appenders_ | 95% | array<unique_ptr> |
+| ID 持有 | log_imp.h:id_ | 100% | uint64_t 编码 |
+
+**总体对齐度**: 85-90% (高度对齐)
+
+### 参考源码
+
+- **log_manager**: `/home/qq344/BqLog/src/bq_log/log/log_manager.h/cpp` (378 行)
+- **log_imp**: `/home/qq344/BqLog/src/bq_log/log/log_imp.h/cpp` (698 行)
 
 ### 任务清单
-- [ ] 实现 `log_imp`：持有 log_buffer + appenders + worker + layout
-- [ ] 实现 ID 编码（XOR magic number），防止外部伪造 log_id
-- [ ] 实现 `categories_mask_array_` 和 `merged_log_level_bitmap_` 的动态更新
-- [ ] 实现 `log_manager` 单例：创建/销毁 log 对象，管理 public worker
-- [ ] 实现配置解析（JSON 或 INI 格式）
-- [ ] 实现 `reset_config()` 热更新（运行时修改 appender 配置）
+
+#### log_manager
+- [ ] 单例模式 instance()
+- [ ] create_log(name, config, categories)
+- [ ] reset_config(name, config)
+- [ ] get_log_by_id(log_id) 与 ID 编码/解码
+  - [ ] magic number: 0x24FE284C23EA5821
+- [ ] process_by_worker(log_imp*, is_force_flush)
+- [ ] force_flush_all() / try_flush_all()
+- [ ] get_public_worker() / get_public_layout()
+- [ ] uninit() 清理
+
+#### log_imp
+- [ ] 构造 + 配置解析
+- [ ] log() hot path（ring buffer 写入）
+- [ ] process() worker 调用处理
+- [ ] sync_process() 同步处理
+- [ ] is_enable_for(category_idx, level) 过滤
+- [ ] Appender 链管理
+  - [ ] add_appender() / remove_appender()
+  - [ ] set_appender_enable()
+- [ ] get_buffer() / get_worker() / get_layout()
 
 ### 验证标准
+- create_log() 返回有效的 log_id
+- get_log_by_id() 能正确还原原对象指针
+- is_enable_for() 过滤生效
+- process() 调用后日志被输出到 appender
+
+### 核心对齐点
+- ✅ ID magic number 编码（防指针伪造）
+- ✅ log_imp_list 数组存储
+- ✅ 两层过滤（category_mask + level_bitmap）
+- ✅ Worker 回调接口（process_by_worker）
+- ✅ Appender 链模式
+
+### 简化策略
+- ❌ 配置热更新复杂逻辑 — 简化版本
+- ❌ Snapshot 功能 — 不实现
+- ❌ JNI/Python API — M10+ 做
+
+**预期代码量**: 900-1100 行 (BqLog 1076 行相当)
 - 多个 log 对象并发写入，互不干扰
 - 热更新配置后，新配置立即生效，无日志丢失
 
@@ -514,23 +825,118 @@
 
 ---
 
+---
+
+## 后续 Milestone 总体规划 (M5-M12)
+
+### 📋 分阶段交付方案（更新：100% M6 对齐）
+
+#### **第一阶段 (6-9 周)**: M5 + M7
+- **目标**: 异步日志框架可用，核心流程完整
+- **内容**:
+  - ✅ M5 格式化引擎 (对齐 65-75%)
+  - ✅ M7 Worker 异步线程 (对齐 85-95%)
+  - ➜ 两个模块可并行开发
+- **输出**: 二进制 entry → 格式化文本 → Worker 批处理
+- **验证**: 单元测试 + 性能基准
+
+#### **第二阶段 (6-8 周)**: M6（完整实现 100% 对齐）
+- **目标**: 四种输出格式完全实现（Console + 文本 + 二进制 + 压缩）
+- **内容**:
+  - ✅ appender_base 虚基类 (对齐 100%)
+  - ✅ appender_console (对齐 100%)
+  - ✅ appender_file_base (对齐 100%)
+  - ✅ appender_file_text (对齐 100%)
+  - ✅ appender_file_raw (对齐 100%)
+  - ✅ appender_file_binary (对齐 100%)
+  - ✅ appender_file_compressed (对齐 100%) — VLQ编码 + 模板缓存
+  - ✅ 文件轮转机制（按大小、时间）
+- **输出**: 完整日志输出体系，支持多格式
+- **验证**: 格式化正确、轮转生效、压缩率 < 15%
+
+#### **第三阶段 (3-4 周)**: M8
+- **目标**: 完整 QLog 系统可用，与 M0-M5 集成
+- **内容**:
+  - ✅ log_manager 全局单例 (对齐 90%)
+  - ✅ log_imp 日志对象 (对齐 90%)
+  - ✅ ID 编码、过滤机制
+  - ✅ Appender 链整合
+- **输出**: 完整日志系统（hot path: ring buffer, cold path: worker）
+- **验证**: 端到端测试、多线程稳定性
+
+#### **第四阶段 (可选，4-6 周)**: M9-M12
+- M9: 崩溃恢复 (mmap 支持)
+- M10: 多语言绑定
+- M11: 代码生成器
+- M12: 性能调优
+
+### 📊 工作量与时间预估（更新）
+
+| 阶段 | Milestone | 对齐度 | 代码量 | 工作周数 | 难度 |
+|------|-----------|--------|--------|---------|------|
+| P1 | M5 | 65-75% | 800-900 | 4-6 | ⭐⭐⭐ |
+| P1 | M7 | 85-95% | 200-260 | 2-3 | ⭐⭐ |
+| P2 | M6（完整） | **100%** | **3300-3350** | **6-8** | **⭐⭐⭐⭐** |
+| P3 | M8 | 85-90% | 900-1100 | 3-4 | ⭐⭐ |
+| **P1-P3 合计** | **M5/M6/M7/M8** | **85-90%** | **~5700** | **21-27** | |
+
+### 🎯 关键决策
+
+#### M6 从 65-75% 提升到 100% 的理由
+
+- **完整性**: M6 是输出体系，不完整会影响后续的可用性
+- **对齐策略**: 既然 BqLog 实现了，QLog 应该完整复刻
+- **压缩效益**: VLQ + 模板缓存能显著减少日志文件大小（通常 < 15%）
+- **工作量可控**: 虽然 6-8 周较长，但逻辑清晰、可分阶段实现
+
+#### 对齐度选择的理由
+
+- **M5 (65-75%)**:
+  - 原因: SIMD 优化是 BqLog 的性能关键，但对 QLog 不必须
+  - 简化: 去掉 AVX2/SSE/NEON，仅软件版本
+  - 收益: 减少 ~500 行代码，功能完全等价
+
+- **M6 (100%)**:
+  - 原因: 输出体系是日志系统的关键组成，需要完整
+  - 全实现: 包含 Console、Text、Binary、Compressed 四种格式
+  - 收益: 与 BqLog 完全对齐，用户体验完整
+
+- **M7 (85-95%)**:
+  - 原因: Worker 线程设计简洁，容易完全对齐
+  - 简化: 无需简化，几乎 100% 复制 BqLog 实现
+  - 收益: 最高的对齐度和代码质量
+
+- **M8 (85-90%)**:
+  - 原因: 管理器是系统协调层，关键部分必须对齐
+  - 简化: 配置热更新可简化，Snapshot 可不做
+  - 收益: 完整系统集成，与 M0-M5 无缝配合
+
+---
+
 ## 附录 B：BqLog 源码快速查询表
 
-| 模块 | 文件 | 功能 | 行号范围 |
-|------|------|------|---------|
-| Atomic | bq_common.h | memory_order 定义 | 100-200 |
-| Spin Lock | bq_common.h | spin_lock 实现 | 200-300 |
-| SPSC Block | siso_ring_buffer.h | block 结构 | 60-80 |
-| SPSC Alloc | siso_ring_buffer.cpp | alloc 算法 | 80-150 |
-| MPSC Block | miso_ring_buffer.h | block 结构 | 66-92 |
-| MPSC Alloc | miso_ring_buffer.cpp | alloc 算法 | 114-220 |
-| MPSC TLS | miso_ring_buffer.cpp | TLS 缓存 | 17-60 |
-| Buffer 管理 | log_buffer.h/cpp | HP/LP 路由 | 参考指导 |
-| Entry 格式 | entry.h/cpp | 二进制序列化 | 参考指导 |
-| Layout | layout.h/cpp | 格式化引擎 | 参考指导 |
-| Appender | appender.h/cpp | 输出插件体系 | 参考指导 |
-| Worker | log_worker.h/cpp | 异步处理 | 参考指导 |
-| Manager | log_manager.h/cpp | 单例管理 | 参考指导 |
+| 模块 | 文件 | 功能 | 行号范围 | 代码量 |
+|------|------|------|---------|--------|
+| Atomic | bq_common/atomic/ | memory_order 定义 | 100-200 | - |
+| Spin Lock | bq_common/platform/thread/ | spin_lock 实现 | 200-300 | - |
+| SPSC Block | types/buffer/siso_ring_buffer.h | block 结构 | 60-80 | 8B header |
+| SPSC Alloc | types/buffer/siso_ring_buffer.cpp | alloc 算法 | 80-150 | - |
+| MPSC Block | types/buffer/miso_ring_buffer.h | block 结构 | 66-92 | 64B union |
+| MPSC Alloc | types/buffer/miso_ring_buffer.cpp | alloc 算法 | 114-220 | fetch_add+CAS |
+| MPSC TLS | types/buffer/miso_ring_buffer.cpp | TLS 缓存 | 17-60 | - |
+| Buffer 管理 | types/buffer/log_buffer.h/cpp | HP/LP 路由 | - | **~1100 行** |
+| Entry 格式 | log/entry_format.h/cpp | 二进制格式 | - | **~600 行** |
+| Serializer | log/serializer.h/cpp | 参数序列化 | - | **~700 行** |
+| **Layout** | **log/layout.h/cpp** | **格式化引擎** | **- ** | **2114 行** |
+| **Appender Base** | **log/appender/appender_base.h/cpp** | **虚基类** | **-** | **241 行** |
+| **Appender Console** | **log/appender/appender_console.h/cpp** | **stdout 输出** | **-** | **325 行** |
+| **Appender File Text** | **log/appender/appender_file_text.h/cpp** | **文本文件** | **-** | **112 行** |
+| **Appender File Base** | **log/appender/appender_file_base.h/cpp** | **文件基类** | **-** | **914 行** |
+| **Appender File Binary** | **log/appender/appender_file_binary.h/cpp** | **二进制** | **-** | **562 行** |
+| **Appender Compressed** | **log/appender/appender_file_compressed.h/cpp** | **压缩输出** | **-** | **610 行** |
+| **Worker** | **log/log_worker.h/cpp** | **异步处理** | **-** | **206 行** |
+| **Manager** | **log/log_manager.h/cpp** | **全局单例** | **-** | **378 行** |
+| **Log IMP** | **log/log_imp.h/cpp** | **日志对象** | **-** | **698 行** |
 
 ---
 

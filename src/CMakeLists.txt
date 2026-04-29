@@ -35,6 +35,12 @@ set(QLOG_BUFFER_SOURCES
 set(QLOG_SERIALIZATION_SOURCES
     qlog/serialization/format_hash.h
     qlog/serialization/format_hash.cpp
+    qlog/serialization/entry_format.h
+    qlog/serialization/entry_format.cpp
+    qlog/serialization/serializer.h
+    qlog/serialization/serializer.cpp
+    qlog/serialization/log_filter.h
+    qlog/serialization/log_filter.cpp
 )
 
 
