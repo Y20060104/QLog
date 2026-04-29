@@ -41,6 +41,7 @@ public:
 
 private:
     // 内部类型
+    std::vector<log_tls_buffer_info*> orphaned_tls_infos_;
 
     // HP buffer 池：每个线程有独立的 spsc_ring_buffer
     // key = TLS 指针（线程唯一标识），value = spsc 实例

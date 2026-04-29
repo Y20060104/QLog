@@ -20,7 +20,7 @@
 #if defined(_MSC_VER)
 #define QLOG_RESTRICT __restrict
 #else
-#define QLOG_RESTRICT __resrtict__
+#define QLOG_RESTRICT __restrict__
 #endif
 
 // forceinline

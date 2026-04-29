@@ -26,6 +26,9 @@ log_buffer::~log_buffer()
     for (auto* entry : hp_pool_)
         delete entry;
     hp_pool_.clear();
+    for (auto* info : orphaned_tls_infos_)
+        delete info;
+    orphaned_tls_infos_.clear();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -207,9 +210,15 @@ void log_buffer::on_thread_exit(log_tls_buffer_info* info)
         // 空间不足：yield 后重试，等待消费者推进 read_cursor
         std::this_thread::yield();
     }
-    // 超过重试上限：finish marker 写入失败（M3 已知限制）
-    // 后果：tls_info 不会被消费者 delete，造成内存泄漏。
-    // M8 log_manager 会统一管理线程生命期，届时修复。
+
+    // Retry 超出上限：finish marker 写入失败。
+    // 对标 BqLog：生产环境有 worker 线程持续消费，可无限等待。
+    // M3 降级：加入 orphan list，由 log_buffer 析构时统一释放。
+    // 前提：调用方（测试/用户）在 buf 析构前已 join 所有生产者线程。
+    {
+        std::unique_lock<spin_lock_rw> wlock(hp_pool_lock_);
+        orphaned_tls_infos_.push_back(info);
+    }
 }
 
 const void* log_buffer::read_chunk(uint32_t& out_size)

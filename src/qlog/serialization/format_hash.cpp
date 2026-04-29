@@ -294,7 +294,9 @@ bool is_hw_crc32c_enabled() noexcept
 
 #if defined(QLOG_X86) || (defined(QLOG_ARM) && defined(__ARM_FEATURE_CRC32))
 QLOG_HW_CRC_TARGET
-static uint64_t hash_hw_impl(void* dst, const void* src, size_t len, bool do_copy) noexcept
+static uint64_t hash_hw_impl(
+    void* QLOG_RESTRICT DST, const void* QLOG_RESTRICT src, size_t len, bool do_copy
+) noexcept
 {
     if (do_copy)
     {
@@ -307,7 +309,9 @@ static uint64_t hash_hw_impl(void* dst, const void* src, size_t len, bool do_cop
 }
 #endif
 
-static uint64_t hash_sw_impl(void* dst, const void* src, size_t len, bool do_copy) noexcept
+static uint64_t hash_sw_impl(
+    void* QLOG_RESTRICT dst, const void* QLOG_RESTRICT src, size_t len, bool do_copy
+) noexcept
 {
     if (do_copy)
     {
@@ -338,7 +342,8 @@ uint64_t crc32c_hash(const void* data, size_t len) noexcept
     return hash_sw_impl(nullptr, data, len, false);
 }
 
-uint64_t crc32c_memcpy_with_hash(void* dst, const void* src, size_t len) noexcept
+uint64_t
+crc32c_memcpy_with_hash(void* QLOG_RESTRICT dst, const void* QLOG_RESTRICT src, size_t len) noexcept
 {
     if (QLOG_UNLIKELY(len == 0))
     {
