@@ -77,3 +77,6 @@ vcpkg_installed/
 local_config.sh
 .env
 .env.local
+
+# 临时分析文件
+tmp/
