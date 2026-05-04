@@ -4,9 +4,9 @@
 #include <cstdint>
 
 // 平台与编译器检测
-#if defined(__x96_64__) || defined(_M_X64)
+#if defined(__x86_64__) || defined(_M_X64)
 #define QLOG_X86_64 1
-#define QLOG_X96 1
+#define QLOG_X86 1
 #elif defined(__i386__) || defined(_M_IX86)
 #define QLOG_X86 1
 #elif defined(__aarch64__) || defined(_M_ARM64)

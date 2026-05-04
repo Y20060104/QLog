@@ -66,6 +66,15 @@ struct alignas(CACHE_LINE_SIZE) cursor_set
 };
 static_assert(sizeof(cursor_set) == 2 * CACHE_LINE_SIZE, "cursor_set must be 2 must cache lines");
 
+struct alignas(CACHE_LINE_SIZE) rt_cache_t
+{
+    uint32_t read_cursor_cache = 0;
+    uint32_t read_cursor_start = 0;
+    uint8_t pad[CACHE_LINE_SIZE - 2 * sizeof(uint32_t)];
+};
+
+extern rt_cache_t rt_cache_;
+
 struct tls_buffer_info
 {
     uint32_t read_cursor_cache;
@@ -118,6 +127,7 @@ public:
     // 消费者接口
     read_handle read_chunk();
     void commit_read_chunk(const read_handle& handle);
+    void flush_read_cursor() noexcept; // 显式刷新待处理读取
 
     // 工具函数
     void reset();

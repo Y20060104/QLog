@@ -300,16 +300,27 @@ void test_buffer_full()
         TEST_TRUE(success_count > 0, "should write at least one entry before full");
         TEST_FALSE(last_failed.success, "should fail when buffer is truly full");
 
-        // ── c) 消费一条后，空间释放，可再分配 ────────────────
-        qlog::read_handle rh = buffer.read_chunk();
-        TEST_TRUE(rh.success, "should read one entry from full buffer");
-        if (rh.success)
+        // ── c) 消费足够条目后，空间释放，可再分配 ────────────────
+        // 对标 BqLog 批量 flush：仅当 pending >= block_count/4 时更新共享游标
+        // 因此消费需要足够多的条目才能触发共享 read_cursor 更新
+        int read_count = 0;
+        const uint32_t block_count = buffer.capacity() / 64u;
+        const uint32_t flush_threshold = block_count / 4; // block_count >> 2
+        while (read_count < flush_threshold)
         {
+            qlog::read_handle rh = buffer.read_chunk();
+            if (!rh.success)
+                break;
             buffer.commit_read_chunk(rh);
+            read_count++;
         }
 
+        TEST_TRUE(
+            read_count >= flush_threshold, "should consume enough entries to trigger batch flush"
+        );
+
         qlog::write_handle wh_retry = buffer.alloc_write_chunk(kDataSize);
-        TEST_TRUE(wh_retry.success, "alloc should succeed after consuming one entry");
+        TEST_TRUE(wh_retry.success, "alloc should succeed after consuming enough entries");
         if (wh_retry.success)
         {
             buffer.commit_write_chunk(wh_retry);

@@ -8,6 +8,11 @@
 namespace qlog
 {
 
+// ============================================================================
+// 全局 rt_cache_ 定义（在 mpsc_ring_buffer.h 中声明为 extern）
+// ============================================================================
+alignas(CACHE_LINE_SIZE) rt_cache_t rt_cache_{};
+
 // 内部辅助：跨线程访问 status 字段的原子包装
 
 static inline std::atomic_ref<block_status> atomic_status(block_status& s)
@@ -65,6 +70,9 @@ void mpsc_ring_buffer::reset()
     }
     cursors_.write_cursor.store_relaxed(0);
     cursors_.read_cursor.store_relaxed(0);
+
+    rt_cache_.read_cursor_cache = 0;
+    rt_cache_.read_cursor_start = 0;
 }
 
 uint32_t mpsc_ring_buffer::available_write_blocks() const
@@ -158,7 +166,7 @@ write_handle mpsc_ring_buffer::alloc_write_chunk(uint32_t size)
         // wrap-around：标记 INVALID 占位
         // 消费者 read_chunk 用 acquire 读取 status，必须有 release 配对
         block* wrap_block = &blocks_[start_idx];
-        wrap_block->chunk_head.set_block_num(block_count_ - start_idx);
+        wrap_block->chunk_head.set_block_num(need_block_count);
         wrap_block->chunk_head.data_size = 0;
         atomic_status(wrap_block->chunk_head.status)
             .store(block_status::invalid, std::memory_order_release);
@@ -196,14 +204,10 @@ read_handle mpsc_ring_buffer::read_chunk()
     if (blocks_ == nullptr || block_count_ == 0)
         return handle;
 
-    uint32_t current_read_cursor = cursors_.read_cursor.load_relaxed();
-    uint32_t scanned_blocks = 0;
-
-    while (scanned_blocks < block_count_)
+    while (true)
     {
-        block* current_block = &blocks_[current_read_cursor & block_count_mask_];
+        block* current_block = &blocks_[rt_cache_.read_cursor_cache & block_count_mask_];
 
-        // 修复：atomic_ref.load(acquire) 对标 BqLog .load_acquire()
         const block_status status =
             atomic_status(current_block->chunk_head.status).load(std::memory_order_acquire);
 
@@ -215,13 +219,16 @@ read_handle mpsc_ring_buffer::read_chunk()
             uint32_t block_num = current_block->chunk_head.get_block_num();
             if (block_num == 0)
                 block_num = 1;
-            current_read_cursor += block_num;
-            scanned_blocks += block_num;
-            break;
+            current_block->chunk_head.status = block_status::unused;
+            rt_cache_.read_cursor_cache += block_num;
+            continue;
         }
 
         case block_status::unused:
-            // 尚未提交，缓冲区到此为止
+            if (rt_cache_.read_cursor_cache != rt_cache_.read_cursor_start)
+            {
+                flush_read_cursor();
+            }
             return handle;
 
         case block_status::used:
@@ -229,11 +236,10 @@ read_handle mpsc_ring_buffer::read_chunk()
             // acquire load 已建立 happens-before：
             //   producer 写 block_num/data_size/data 均可安全读取
             uint32_t block_num = current_block->chunk_head.get_block_num();
-            if (block_num == 0)
+            if (block_num == 0) [[unlikely]]
                 return handle;
 
             handle.success = true;
-            handle.cursor = current_read_cursor;
             handle.data = current_block->chunk_head.data;
             handle.data_size = current_block->chunk_head.data_size;
             handle.block_count = block_num;
@@ -241,31 +247,44 @@ read_handle mpsc_ring_buffer::read_chunk()
         }
 
         default:
-            current_read_cursor += 1;
-            scanned_blocks += 1;
-            break;
+            return handle;
         }
     }
-
-    return handle;
 }
 
 void mpsc_ring_buffer::commit_read_chunk(const read_handle& handle)
 {
     if (!handle.success)
+    {
+        if (rt_cache_.read_cursor_cache != rt_cache_.read_cursor_start)
+        {
+            flush_read_cursor();
+        }
         return;
+    }
+    rt_cache_.read_cursor_cache += handle.block_count;
 
-    block* current_block = &blocks_[handle.cursor & block_count_mask_];
+    const uint32_t pendding = rt_cache_.read_cursor_cache - rt_cache_.read_cursor_start;
+    if (pendding >= static_cast<uint32_t>(block_count_ >> 2))
+    {
+        flush_read_cursor();
+    }
+}
 
-    // relaxed：由后续 read_cursor.store_release 建立对 producer 的可见性
-    atomic_status(current_block->chunk_head.status)
-        .store(block_status::unused, std::memory_order_relaxed);
-    current_block->chunk_head.set_block_num(0);
-    current_block->chunk_head.data_size = 0;
+void mpsc_ring_buffer::flush_read_cursor() noexcept
+{
+    const uint32_t start = rt_cache_.read_cursor_start;
+    const uint32_t end = rt_cache_.read_cursor_cache;
+    const uint32_t count = end - start;
 
-    const uint32_t new_read_cursor = handle.cursor + handle.block_count;
-    // release store：producer 的 load_acquire(read_cursor) 后可见上面的 unused 写
-    cursors_.read_cursor.store_release(new_read_cursor);
+    for (uint32_t i = 0; i < count; ++i)
+    {
+        auto& blk = blocks_[(start + i) & block_count_mask_];
+        atomic_status(blk.chunk_head.status).store(block_status::unused, std::memory_order_relaxed);
+    }
+
+    rt_cache_.read_cursor_start = end;
+    cursors_.read_cursor.store_release(end);
 }
 
 } // namespace qlog
