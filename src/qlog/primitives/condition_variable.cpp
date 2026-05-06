@@ -4,11 +4,12 @@
 #include "condition_variable.h"
 
 #ifdef _WIN32
-#  include <windows.h>
+#include <windows.h>
 #else
-#  include <cerrno>
-#  include <time.h>
-#  include <pthread.h>
+#include <pthread.h>
+#include <time.h>
+
+#include <cerrno>
 #endif
 
 namespace qlog::platform
@@ -69,17 +70,22 @@ void mutex::unlock()
 bool mutex::try_lock()
 {
 #ifdef _WIN32
-    return TryEnterCriticalSection(
-               static_cast<CRITICAL_SECTION*>(platform_data_)) != 0;
+    return TryEnterCriticalSection(static_cast<CRITICAL_SECTION*>(platform_data_)) != 0;
 #else
-    return pthread_mutex_trylock(
-               static_cast<pthread_mutex_t*>(platform_data_)) == 0;
+    return pthread_mutex_trylock(static_cast<pthread_mutex_t*>(platform_data_)) == 0;
 #endif
 }
 
 // ─── scoped_lock ─────────────────────────────────────────────────────────────
-scoped_lock::scoped_lock(mutex& m) : m_(m) { m_.lock();   }
-scoped_lock::~scoped_lock()                { m_.unlock(); }
+scoped_lock::scoped_lock(mutex& m)
+    : m_(m)
+{
+    m_.lock();
+}
+scoped_lock::~scoped_lock()
+{
+    m_.unlock();
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // condition_variable — BqLog platform/thread/bq_condition_variable.cpp 对齐
@@ -96,9 +102,9 @@ condition_variable::condition_variable()
     // BqLog: pthread_cond_init with CLOCK_MONOTONIC 属性，避免系统时钟跳变
     pthread_condattr_t attr;
     pthread_condattr_init(&attr);
-#  if defined(__linux__)
+#if defined(__linux__)
     pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
-#  endif
+#endif
     auto* cv = new pthread_cond_t;
     pthread_cond_init(cv, &attr);
     pthread_condattr_destroy(&attr);
@@ -126,11 +132,13 @@ void condition_variable::wait(scoped_lock& lock)
     SleepConditionVariableCS(
         static_cast<CONDITION_VARIABLE*>(platform_data_),
         static_cast<CRITICAL_SECTION*>(lock.m_.platform_data_),
-        INFINITE);
+        INFINITE
+    );
 #else
     pthread_cond_wait(
         static_cast<pthread_cond_t*>(platform_data_),
-        static_cast<pthread_mutex_t*>(lock.m_.platform_data_));
+        static_cast<pthread_mutex_t*>(lock.m_.platform_data_)
+    );
 #endif
 }
 
@@ -140,27 +148,32 @@ bool condition_variable::wait_for(scoped_lock& lock, int64_t ms)
     BOOL ok = SleepConditionVariableCS(
         static_cast<CONDITION_VARIABLE*>(platform_data_),
         static_cast<CRITICAL_SECTION*>(lock.m_.platform_data_),
-        static_cast<DWORD>(ms < 0 ? INFINITE : ms));
+        static_cast<DWORD>(ms < 0 ? INFINITE : ms)
+    );
     return ok != 0;
 #else
     // 使用 CLOCK_MONOTONIC 避免系统时钟调整导致等待时间异常（BqLog 同策略）
     struct timespec ts;
-#  if defined(__linux__)
+#if defined(__linux__)
     clock_gettime(CLOCK_MONOTONIC, &ts);
-#  else
+#else
     // macOS / BSD: clock_gettime with CLOCK_REALTIME fallback
     clock_gettime(CLOCK_REALTIME, &ts);
-#  endif
-    const int64_t ns_total =
-        static_cast<int64_t>(ts.tv_nsec) + (ms % 1000) * 1'000'000LL;
-    ts.tv_sec  += ms / 1000 + ns_total / 1'000'000'000LL;
-    ts.tv_nsec  = static_cast<long>(ns_total % 1'000'000'000LL);
-    if (ts.tv_nsec < 0) { ts.tv_sec--; ts.tv_nsec += 1'000'000'000L; }
+#endif
+    const int64_t ns_total = static_cast<int64_t>(ts.tv_nsec) + (ms % 1000) * 1'000'000LL;
+    ts.tv_sec += ms / 1000 + ns_total / 1'000'000'000LL;
+    ts.tv_nsec = static_cast<long>(ns_total % 1'000'000'000LL);
+    if (ts.tv_nsec < 0)
+    {
+        ts.tv_sec--;
+        ts.tv_nsec += 1'000'000'000L;
+    }
 
     int ret = pthread_cond_timedwait(
         static_cast<pthread_cond_t*>(platform_data_),
         static_cast<pthread_mutex_t*>(lock.m_.platform_data_),
-        &ts);
+        &ts
+    );
     return ret != ETIMEDOUT;
 #endif
 }

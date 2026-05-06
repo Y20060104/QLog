@@ -26,7 +26,6 @@ namespace qlog::serialization
 {
 
 // CRC32C 软件查表（256 元素，1 KB）
-// 对齐 BqLog util.cpp:30-63
 // 多项式：0x82F63B78 (反射后)
 static const uint32_t kCrc32cTable[256] = {
     0x00000000, 0xF26B8303, 0xE13B70F7, 0x1350F3F4, 0xC79A971F, 0x35F1141C, 0x26A1E7E8, 0xD4CA64EB,
@@ -295,7 +294,7 @@ bool is_hw_crc32c_enabled() noexcept
 #if defined(QLOG_X86) || (defined(QLOG_ARM) && defined(__ARM_FEATURE_CRC32))
 QLOG_HW_CRC_TARGET
 static uint64_t hash_hw_impl(
-    void* QLOG_RESTRICT DST, const void* QLOG_RESTRICT src, size_t len, bool do_copy
+    void* QLOG_RESTRICT dst, const void* QLOG_RESTRICT src, size_t len, bool do_copy
 ) noexcept
 {
     if (do_copy)

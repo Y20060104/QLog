@@ -46,10 +46,10 @@ private:
 
     // 共享元数据
     // 缓冲区管理
-    uint8_t* buffer_ = nullptr; // 分配来自M0
-    size_t capacity_bytes_ = 0; // 总容量
-    size_t block_count_ = 0;    // 总块数
-    size_t block_count_mask_=0;// 用于位与取模
+    uint8_t* buffer_ = nullptr;   // 分配来自M0
+    size_t capacity_bytes_ = 0;   // 总容量
+    size_t block_count_ = 0;      // 总块数
+    size_t block_count_mask_ = 0; // 用于位与取模
 
 public:
     spsc_ring_buffer() = default;
@@ -87,6 +87,5 @@ public:
     // 返回上次 read_chunk() 读到的数据字节数（不含 block_header）
     // 必须在 read_chunk() 返回非 nullptr 后、commit_read_chunk() 之前调用
     uint32_t last_read_data_size() const;
-
 };
 } // namespace qlog

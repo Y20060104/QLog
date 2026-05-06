@@ -321,12 +321,12 @@
 | Python-style 格式 | layout.h:99-103 | 90% | {0}, {1:>10.2f} 等 |
 | 类型转换函数 | layout.cpp:insert_* | 90% | int/float/double/bool/string/pointer |
 | UTF-8 编码 | layout.cpp:python_style_format_content_utf8 | 100% | 主要支持 |
-| UTF-16 编码 | layout.cpp:python_style_format_content_utf16 | 0% | 可选，后期加入 |
+| UTF-16 编码 | layout.cpp:python_style_format_content_utf16 | 100% | 可选用 |
 | SIMD 优化 | layout.cpp:*_avx2/*_neon | 0% | 可选，M12 加入 |
 | 缓冲区管理 | layout.h:format_content | 95% | 初始1024B，复用 |
 | 时区处理 | layout.cpp:insert_time | 85% | 集成 time_zone 类 |
 
-**总体对齐度**: 65-75% (去掉 SIMD 和 UTF-16)
+**总体对齐度**: 65-75% (去掉 SIMD )
 
 ### 参考源码
 
@@ -361,7 +361,6 @@
 
 ### 简化策略
 - ❌ SIMD 优化 (AVX2/SSE/NEON) — 保留软件版本
-- ❌ UTF-16 支持 — 仅 UTF-8
 - ❌ Legacy 版本 — 不保留
 - ✅ 缓冲区复用 — 保留
 - ✅ 时区处理 — 保留

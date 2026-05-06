@@ -30,4 +30,23 @@ public:
         locked_.store(false, std::memory_order_release);
     }
 };
+class scoped_spin_lock
+{
+public:
+    explicit scoped_spin_lock(spin_lock& lock)
+        : lock_(lock)
+    {
+        lock_.lock();
+    }
+    ~scoped_spin_lock()
+    {
+        lock_.unlock();
+    }
+
+    scoped_spin_lock(const scoped_spin_lock&) = delete;
+    scoped_spin_lock& operator=(const scoped_spin_lock&) = delete;
+
+private:
+    spin_lock& lock_;
+};
 } // namespace qlog

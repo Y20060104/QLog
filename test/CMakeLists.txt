@@ -130,6 +130,16 @@ set_target_properties(test_serializer PROPERTIES
 )
 add_test(NAME serializer_tests COMMAND test_serializer)
 
+add_executable(test_layout cpp/test_layout.cpp)
+target_link_libraries(test_layout PRIVATE qlog)
+target_include_directories(test_layout PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}
+)
+set_target_properties(test_layout PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+add_test(NAME layout_tests COMMAND test_layout)
 
 message(STATUS "QLog: M0 test targets configured (atomic, spin_lock, spin_lock_rw, aligned_alloc, platform_thread, condition_variable)")
 message(STATUS "QLog: M1 test targets configured (spsc_ring_buffer)")

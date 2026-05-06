@@ -3,9 +3,11 @@
 #include "qlog/buffer/mpsc_ring_buffer.h"
 #include "qlog/primitives/aligned_alloc.h"
 #include "qlog/primitives/atomic.h"
+#include "qlog/primitives/spin_lock.h"
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 
 namespace qlog
 {
@@ -13,7 +15,7 @@ namespace qlog
 struct destruction_mark
 {
     spin_lock lock_;
-    bool is_destructed=false;
+    bool is_destructed_ = false;
 };
 
 #pragma pack(push, 1)
@@ -64,7 +66,7 @@ struct alignas(64) log_tls_buffer_info
         nullptr; // HP 路径：当前线程使用的 spsc_ring_buffer（nullptr 表示用 LP 路径）
     log_buffer* owner_buffer_ = nullptr; // 反向引用，析构时需要找到 log_buffer 做清理
     bool is_thread_finished_ = false; // 线程退出标记 & 生命周期保护（用于安全析构）
-   std::shared_ptr<destruction_mark>destruction_mark_;
+    std::shared_ptr<destruction_mark> destruction_mark_;
 
     // LP 路径 pending write handle 在 alloc 与 commit 之间缓存，避免重建
     write_handle pending_lp_wh_;
@@ -83,7 +85,7 @@ struct alignas(64) log_tls_buffer_info
         char padding2_[64 - sizeof(uint32_t)];
     } rt_data_;
 
-    ~log_tls_buffer_info()=default;
+    ~log_tls_buffer_info();
 };
 static_assert(
     sizeof(log_tls_buffer_info) % 64 == 0,

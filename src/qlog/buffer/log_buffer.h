@@ -3,11 +3,10 @@
 #include "qlog/buffer/log_buffer_defs.h"
 #include "qlog/buffer/mpsc_ring_buffer.h"
 #include "qlog/buffer/spsc_ring_buffer.h"
-#include "qlog/primitives/spin_lock.h" // ← 只用 spin_lock（移除 spin_lock_rw）
-// 移除：#include <vector>  #include <mutex>  #include <shared_mutex>
+#include "qlog/primitives/spin_lock.h"
 
-#include <atomic>
 #include <cstdint>
+#include <memory>
 
 namespace qlog
 {
@@ -68,7 +67,7 @@ private:
     mpsc_ring_buffer lp_buffer_;
     uint32_t hp_capacity_per_thread_;
     uint64_t hp_threshold_;
-
+    std::shared_ptr<destruction_mark> destruction_mark_;
     // HP pool：侵入式单链表 + 单把 spin_lock
     // 对标 BqLog group_list head_ + lock（简化版：不分 group，单列表）
     // 生产者注册（冷路径）+ 消费者遍历（热路径，单消费者无竞争）
@@ -78,7 +77,6 @@ private:
     //   - 两者不同时发生的概率极高，spin_lock 足够
     spin_lock hp_pool_lock_;
     hp_buffer_entry* hp_head_ = nullptr; // 链表头（最新注册的在头部）
-
 
     // 消费者状态（单消费者，无并发访问）
     struct rt_state_t

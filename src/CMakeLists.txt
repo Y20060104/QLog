@@ -43,6 +43,11 @@ set(QLOG_SERIALIZATION_SOURCES
     qlog/serialization/log_filter.cpp
 )
 
+# M5 Layout (格式化引擎)
+set(QLOG_LAYOUT_SOURCES
+    qlog/layout/layout.h
+    qlog/layout/layout.cpp
+)
 
 # ============================================================================
 # Main QLog Library
@@ -52,6 +57,7 @@ add_library(qlog STATIC
     ${QLOG_PRIMITIVES_SOURCES}
     ${QLOG_BUFFER_SOURCES}
     ${QLOG_SERIALIZATION_SOURCES}
+    ${QLOG_LAYOUT_SOURCES}
 )
 
 # Set C++ standard and compile options
@@ -84,4 +90,5 @@ message(STATUS "QLog: Main library configured with:")
 message(STATUS "  - Primitives: ${QLOG_PRIMITIVES_SOURCES}")
 message(STATUS "  - Buffer: ${QLOG_BUFFER_SOURCES}")
 message(STATUS "  - Serialization: ${QLOG_SERIALIZATION_SOURCES}")
+message(STATUS "  - Layout: ${QLOG_LAYOUT_SOURCES}")
 

@@ -4,84 +4,11 @@
 #include <cassert>
 #include <chrono>
 #include <cstring>
-#include <thread>
 #include <mutex>
+#include <thread>
 
 namespace qlog
 {
-
-// ============================================================================
-// TLS 多实例注册表
-//
-// 对标 BqLog BQ_TLS_NON_POD(log_buffer::log_tls_info, log_tls_info_)
-//
-// 问题根源：原 `static thread_local tls_guard` 每线程只初始化一次，
-// 第二个 log_buffer 实例的 TLS 永远不触发 on_thread_exit。
-//
-// 修复：用 thread_local struct（无 static）持有所有 (log_buffer*, tls_info*) 对，
-// 析构时遍历全部注册项，调用 on_thread_exit。
-// ============================================================================
-struct tls_info_registry
-{
-    static constexpr int kMaxInstances = 16; // 单线程最多同时使用的 log_buffer 实例数
-
-    struct entry_t
-    {
-        log_buffer* buf = nullptr;
-        log_tls_buffer_info* info = nullptr;
-    };
-
-    // 两级缓存（对标 BqLog log_tls_info 的 cur_log_buffer_id_ + cur_buffer_info_）
-    uint64_t last_id_ = 0;
-    log_tls_buffer_info* last_info_ = nullptr;
-
-    entry_t entries_[kMaxInstances];
-    int count_ = 0;
-
-    ~tls_info_registry()
-    {
-        // 线程退出时：为所有注册的 log_buffer 写入 finish marker
-        for (int i = 0; i < count_; ++i)
-        {
-            auto* info = entries_[i].info;
-            auto* buf = entries_[i].buf;
-            if (info && buf && !info->is_thread_finished_)
-                buf->on_thread_exit(info);
-        }
-    }
-
-    log_tls_buffer_info* find(uint64_t id) noexcept
-    {
-        // 快速路径：命中上次缓存（绝大多数调用走此路径）
-        if (id == last_id_ && last_info_) [[likely]]
-            return last_info_;
-        // 线性扫描（实例数通常为 1）
-        for (int i = 0; i < count_; ++i)
-        {
-            if (entries_[i].buf && reinterpret_cast<uintptr_t>(entries_[i].buf) == id)
-            {
-                last_id_ = id;
-                last_info_ = entries_[i].info;
-                return entries_[i].info;
-            }
-        }
-        return nullptr;
-    }
-
-    bool add(log_buffer* buf, log_tls_buffer_info* info) noexcept
-    {
-        if (count_ >= kMaxInstances)
-            return false;
-        uint64_t id = reinterpret_cast<uintptr_t>(buf);
-        entries_[count_++] = {buf, info};
-        last_id_ = id;
-        last_info_ = info;
-        return true;
-    }
-};
-
-// thread_local（无 static）：每个线程独立实例，析构时自动触发 on_thread_exit
-thread_local tls_info_registry s_tls_registry;
 
 // ============================================================================
 // log_tls_buffer_info 析构
@@ -101,14 +28,13 @@ static std::atomic<uint64_t> s_id_counter{0};
 // 构造 / 析构
 // ============================================================================
 log_buffer::log_buffer(
-    uint32_t lp_capacity_bytes,
-    uint32_t hp_capacity_per_thread_bytes,
-    uint64_t hp_threshold)
+    uint32_t lp_capacity_bytes, uint32_t hp_capacity_per_thread_bytes, uint64_t hp_threshold
+)
     : id_(s_id_counter.fetch_add(1, std::memory_order_relaxed))
     , lp_buffer_(lp_capacity_bytes)
     , hp_capacity_per_thread_(hp_capacity_per_thread_bytes)
     , hp_threshold_(hp_threshold)
-    , destruction_mark_(std::make_shared<destruction_mark>())   // ← 新增
+    , destruction_mark_(std::make_shared<destruction_mark>()) // ← 新增
 {
 }
 
@@ -122,34 +48,46 @@ log_buffer::~log_buffer()
     // 释放 hp_pool_
     hp_pool_lock_.lock();
     hp_buffer_entry* node = hp_head_;
-    while (node) { auto* nx = node->next; delete node; node = nx; }
+    while (node)
+    {
+        auto* nx = node->next;
+        delete node;
+        node = nx;
+    }
     hp_head_ = nullptr;
     hp_pool_lock_.unlock();
 }
-
-
 
 struct tls_info_registry
 {
     static constexpr int kCap = 16;
 
-    struct slot { log_buffer* buf; log_tls_buffer_info* info; };
+    struct slot
+    {
+        log_buffer* buf;
+        log_tls_buffer_info* info;
+    };
     slot slots[kCap]{};
-    int  count    = 0;
-    int  last_idx = -1;
+    int count = 0;
+    mutable int last_idx = -1;
 
     log_tls_buffer_info* find(const log_buffer* buf) const noexcept
     {
         if (last_idx >= 0 && slots[last_idx].buf == buf)
             return slots[last_idx].info;
         for (int i = 0; i < count; ++i)
-            if (slots[i].buf == buf) { last_idx = i; return slots[i].info; }
+            if (slots[i].buf == buf)
+            {
+                last_idx = i;
+                return slots[i].info;
+            }
         return nullptr;
     }
 
     void add(log_buffer* buf, log_tls_buffer_info* info) noexcept
     {
-        if (count < kCap) slots[count++] = {buf, info};
+        if (count < kCap)
+            slots[count++] = {buf, info};
         last_idx = count - 1;
     }
 
@@ -159,7 +97,7 @@ struct tls_info_registry
         for (int i = 0; i < count; ++i)
         {
             auto* info = slots[i].info;
-            auto* buf  = slots[i].buf;
+            auto* buf = slots[i].buf;
             if (!info || info->is_thread_finished_)
                 continue;
 
@@ -191,15 +129,14 @@ struct tls_info_registry
 
 thread_local tls_info_registry t_tls_registry;
 
-
 log_tls_buffer_info& log_buffer::get_tls_buffer_info()
 {
     if (auto* existing = t_tls_registry.find(this))
         return *existing;
 
-    auto* info               = new log_tls_buffer_info();
-    info->owner_buffer_      = this;
-    info->destruction_mark_  = destruction_mark_; 
+    auto* info = new log_tls_buffer_info();
+    info->owner_buffer_ = this;
+    info->destruction_mark_ = destruction_mark_;
     t_tls_registry.add(this, info);
     return *info;
 }

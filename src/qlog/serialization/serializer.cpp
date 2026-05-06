@@ -206,4 +206,87 @@ size_t serializer::skip_param(const uint8_t* buf) noexcept
         return 1;
     }
 }
+
+size_t serializer::write_utf16(uint8_t* buf, const char16_t* str, size_t char_count) noexcept
+{
+    if (str == nullptr)
+        char_count = 0;
+
+    const size_t max_chars = MAX_STRING_BYTES / sizeof(char16_t);
+    const size_t actual = char_count > max_chars ? max_chars : char_count;
+    const uint32_t byte_len = static_cast<uint32_t>(actual * sizeof(char16_t));
+
+    buf[0] = static_cast<uint8_t>(param_type::type_string_utf16);
+    std::memcpy(buf + 1, &byte_len, sizeof(uint32_t));
+
+    if (actual > 0)
+    {
+        // 写入小端序 UTF-16 字节
+        // 在小端平台（x86/ARM LE）直接 memcpy 即可
+        // 在大端平台需要逐字符做字节序转换
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+        uint8_t* dst = buf + STRING_HEADER_SIZE;
+        for (size_t i = 0; i < actual; ++i)
+        {
+            const uint16_t u = static_cast<uint16_t>(str[i]);
+            dst[i * 2] = static_cast<uint8_t>(u & 0xFF);            // 低字节先
+            dst[i * 2 + 1] = static_cast<uint8_t>((u >> 8) & 0xFF); // 高字节后
+        }
+#else
+        std::memcpy(buf + STRING_HEADER_SIZE, str, byte_len);
+#endif
+    }
+    return STRING_HEADER_SIZE + byte_len;
+}
+
+size_t serializer::write_utf16(uint8_t* buf, std::u16string_view sv) noexcept
+{
+    return write_utf16(buf, sv.data(), sv.size());
+}
+
+// UTF-32 序列化（同理）
+size_t serializer::write_utf32(uint8_t* buf, const char32_t* str, size_t char_count) noexcept
+{
+    if (str == nullptr)
+        char_count = 0;
+
+    const size_t max_chars = MAX_STRING_BYTES / sizeof(char32_t);
+    const size_t actual = char_count > max_chars ? max_chars : char_count;
+    const uint32_t byte_len = static_cast<uint32_t>(actual * sizeof(char32_t));
+
+    buf[0] = static_cast<uint8_t>(param_type::type_string_utf32);
+    std::memcpy(buf + 1, &byte_len, sizeof(uint32_t));
+
+    if (actual > 0)
+    {
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+        uint8_t* dst = buf + STRING_HEADER_SIZE;
+        for (size_t i = 0; i < actual; ++i)
+        {
+            const uint32_t u = static_cast<uint32_t>(str[i]);
+            dst[i * 4] = static_cast<uint8_t>(u & 0xFF);
+            dst[i * 4 + 1] = static_cast<uint8_t>((u >> 8) & 0xFF);
+            dst[i * 4 + 2] = static_cast<uint8_t>((u >> 16) & 0xFF);
+            dst[i * 4 + 3] = static_cast<uint8_t>((u >> 24) & 0xFF);
+        }
+#else
+        std::memcpy(buf + STRING_HEADER_SIZE, str, byte_len);
+#endif
+    }
+    return STRING_HEADER_SIZE + byte_len;
+}
+
+size_t serializer::write_utf32(uint8_t* buf, std::u32string_view sv) noexcept
+{
+    return write_utf32(buf, sv.data(), sv.size());
+}
+
+// read_raw_string：UTF-16/UTF-32 共用的原始字节读取（与 read_string 同格式）
+std::pair<std::string_view, size_t> serializer::read_raw_string(const uint8_t* buf) noexcept
+{
+    uint32_t byte_len{};
+    std::memcpy(&byte_len, buf + 1, sizeof(uint32_t));
+    const char* raw = reinterpret_cast<const char*>(buf + STRING_HEADER_SIZE);
+    return {std::string_view{raw, byte_len}, STRING_HEADER_SIZE + byte_len};
+}
 } // namespace qlog::serialization

@@ -73,7 +73,6 @@ struct alignas(CACHE_LINE_SIZE) rt_cache_t
     uint8_t pad[CACHE_LINE_SIZE - 2 * sizeof(uint32_t)];
 };
 
-
 struct tls_buffer_info
 {
     uint32_t read_cursor_cache;
@@ -111,13 +110,13 @@ private:
     cursor_set cursors_; // 指向对齐的块数组
     uint8_t* buffer_ptr_;
 
-
-      alignas(CACHE_LINE_SIZE) struct
+    alignas(CACHE_LINE_SIZE) struct
     {
-        uint32_t read_cursor_cache  = 0; // BqLog: head_->read_cursor_cache_
-        uint32_t read_cursor_start  = 0; // BqLog: head_->read_cursor_start_cache_
-        char     pad[CACHE_LINE_SIZE - 2 * sizeof(uint32_t)];
+        uint32_t read_cursor_cache = 0; // BqLog: head_->read_cursor_cache_
+        uint32_t read_cursor_start = 0; // BqLog: head_->read_cursor_start_cache_
+        char pad[CACHE_LINE_SIZE - 2 * sizeof(uint32_t)];
     } rt_state_;
+
 public:
     explicit mpsc_ring_buffer(uint32_t capacity_bytes);
     ~mpsc_ring_buffer();

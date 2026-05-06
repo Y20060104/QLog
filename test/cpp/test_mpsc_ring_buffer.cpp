@@ -137,9 +137,21 @@ void test_init_edge_cases()
                 buffer_small.commit_write_chunk(wh_full);
             }
 
-            // 第三次分配才会真正失败
-            qlog::write_handle wh_overflow = buffer_small.alloc_write_chunk(1);
-            TEST_FALSE(wh_overflow.success, "minimal buffer should be full after 2 allocs");
+            // 实现会将最小容量向上对齐（当前实现最小为 16 blocks），
+            // 因此不应假设第 3 次一定失败；仅验证“最终会写满”。
+            bool became_full = false;
+            const uint32_t max_try = buffer_small.capacity() + 8u;
+            for (uint32_t i = 0; i < max_try; ++i)
+            {
+                qlog::write_handle wh_more = buffer_small.alloc_write_chunk(1);
+                if (!wh_more.success)
+                {
+                    became_full = true;
+                    break;
+                }
+                buffer_small.commit_write_chunk(wh_more);
+            }
+            TEST_TRUE(became_full, "minimal buffer should eventually become full");
         }
     }
 }

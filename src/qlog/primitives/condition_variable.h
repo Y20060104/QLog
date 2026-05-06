@@ -10,9 +10,8 @@ private:
     void* platform_data_;
 
 public:
-
-  mutex();   // 初始化 platform_data_
-    ~mutex();  // 释放 platform_data_
+    mutex();  // 初始化 platform_data_
+    ~mutex(); // 释放 platform_data_
 
     void lock();
     void unlock();
@@ -33,6 +32,8 @@ public:
 
     scoped_lock(const scoped_lock&) = delete;
     scoped_lock& operator=(const scoped_lock&) = delete;
+
+    friend class condition_variable;
 };
 
 class condition_variable

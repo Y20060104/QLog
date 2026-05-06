@@ -722,12 +722,20 @@ void test_11_buffer_full_handling()
     checker.join();
     TEST_TRUE(alloc_failed.load(), "alloc should fail when buffer is full");
 
-    // 消费一条后空间释放
+    // 消费后需要继续 drain 到空，以触发 LP read_cursor 刷新后再验证可恢复写入
     uint32_t out_size = 0;
     const void* rptr = buf.read_chunk(out_size);
     TEST_NOT_NULL(rptr, "should read one entry from full buffer");
     if (rptr)
         buf.commit_read_chunk(rptr);
+
+    while (true)
+    {
+        const void* next = buf.read_chunk(out_size);
+        if (!next)
+            break;
+        buf.commit_read_chunk(next);
+    }
 
     // 再次写入应成功（独立线程）
     std::atomic<bool> retry_ok{false};
@@ -741,7 +749,7 @@ void test_11_buffer_full_handling()
         }
     );
     retrier.join();
-    TEST_TRUE(retry_ok.load(), "alloc should succeed after consuming one entry");
+    TEST_TRUE(retry_ok.load(), "alloc should succeed after draining committed entries");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
