@@ -10,6 +10,10 @@ private:
     void* platform_data_;
 
 public:
+
+  mutex();   // 初始化 platform_data_
+    ~mutex();  // 释放 platform_data_
+
     void lock();
     void unlock();
     bool try_lock();

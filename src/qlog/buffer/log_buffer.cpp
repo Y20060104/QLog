@@ -5,7 +5,7 @@
 #include <chrono>
 #include <cstring>
 #include <thread>
-// 移除：#include <mutex>  #include <shared_mutex>  #include <vector>
+#include <mutex>
 
 namespace qlog
 {
@@ -101,46 +101,108 @@ static std::atomic<uint64_t> s_id_counter{0};
 // 构造 / 析构
 // ============================================================================
 log_buffer::log_buffer(
-    uint32_t lp_capacity_bytes, uint32_t hp_capacity_per_thread_bytes, uint64_t hp_threshold
-)
+    uint32_t lp_capacity_bytes,
+    uint32_t hp_capacity_per_thread_bytes,
+    uint64_t hp_threshold)
     : id_(s_id_counter.fetch_add(1, std::memory_order_relaxed))
     , lp_buffer_(lp_capacity_bytes)
     , hp_capacity_per_thread_(hp_capacity_per_thread_bytes)
     , hp_threshold_(hp_threshold)
+    , destruction_mark_(std::make_shared<destruction_mark>())   // ← 新增
 {
 }
 
 log_buffer::~log_buffer()
 {
-    // 释放侵入式链表（对标 BqLog group_list 析构）
+    // BqLog: scoped_spin_lock lock(destruction_mark_->lock_); is_destructed_ = true;
+    {
+        scoped_spin_lock lock(destruction_mark_->lock_);
+        destruction_mark_->is_destructed_ = true;
+    }
+    // 释放 hp_pool_
     hp_pool_lock_.lock();
     hp_buffer_entry* node = hp_head_;
-    while (node)
-    {
-        hp_buffer_entry* next = node->next;
-        delete node;
-        node = next;
-    }
+    while (node) { auto* nx = node->next; delete node; node = nx; }
     hp_head_ = nullptr;
     hp_pool_lock_.unlock();
 }
 
-// ============================================================================
-// TLS 注册（对标 BqLog log_tls_info::get_buffer_info）
-// ============================================================================
+
+
+struct tls_info_registry
+{
+    static constexpr int kCap = 16;
+
+    struct slot { log_buffer* buf; log_tls_buffer_info* info; };
+    slot slots[kCap]{};
+    int  count    = 0;
+    int  last_idx = -1;
+
+    log_tls_buffer_info* find(const log_buffer* buf) const noexcept
+    {
+        if (last_idx >= 0 && slots[last_idx].buf == buf)
+            return slots[last_idx].info;
+        for (int i = 0; i < count; ++i)
+            if (slots[i].buf == buf) { last_idx = i; return slots[i].info; }
+        return nullptr;
+    }
+
+    void add(log_buffer* buf, log_tls_buffer_info* info) noexcept
+    {
+        if (count < kCap) slots[count++] = {buf, info};
+        last_idx = count - 1;
+    }
+
+    // ── BqLog ~log_tls_info() (doc26 L73-L119) 对齐 ──────────────────────
+    ~tls_info_registry()
+    {
+        for (int i = 0; i < count; ++i)
+        {
+            auto* info = slots[i].info;
+            auto* buf  = slots[i].buf;
+            if (!info || info->is_thread_finished_)
+                continue;
+
+            // shared_ptr 保证 destruction_mark 此时仍然存活（即使 log_buffer 已析构）
+            auto mark = info->destruction_mark_;
+            if (!mark)
+            {
+                delete info;
+                continue;
+            }
+
+            // BqLog: scoped_spin_lock lock(protector->lock_)
+            // 与 ~log_buffer() 互斥：确保 is_destructed_ 的判断和写 finish marker 是原子的
+            scoped_spin_lock lock(mark->lock_);
+
+            if (!mark->is_destructed_)
+            {
+                // log_buffer 仍存活，写 finish marker（BqLog doc26 L100-L117）
+                buf->on_thread_exit(info);
+            }
+            else
+            {
+                // log_buffer 已析构：直接释放，不能访问 buf（BqLog doc26 L118-L120）
+                delete info;
+            }
+        }
+    }
+};
+
+thread_local tls_info_registry t_tls_registry;
+
+
 log_tls_buffer_info& log_buffer::get_tls_buffer_info()
 {
-    const uint64_t id = reinterpret_cast<uintptr_t>(this);
-    if (auto* info = s_tls_registry.find(id))
-        return *info;
+    if (auto* existing = t_tls_registry.find(this))
+        return *existing;
 
-    // 首次访问：创建并注册（冷路径，每线程每实例仅执行一次）
-    auto* info = new log_tls_buffer_info();
-    info->owner_buffer_ = this;
-    s_tls_registry.add(this, info);
+    auto* info               = new log_tls_buffer_info();
+    info->owner_buffer_      = this;
+    info->destruction_mark_  = destruction_mark_; 
+    t_tls_registry.add(this, info);
     return *info;
 }
-
 // ============================================================================
 // alloc_write_chunk（HP/LP 路由，对标 BqLog log_buffer::alloc_write_chunk）
 // ============================================================================

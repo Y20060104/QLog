@@ -4,15 +4,38 @@
 
 #include <atomic>
 #include <cstring>
+#include <unordered_map>
 
 namespace qlog
 {
 
-// ============================================================================
-// 全局 rt_cache_ 定义（在 mpsc_ring_buffer.h 中声明为 extern）
-// ============================================================================
-alignas(CACHE_LINE_SIZE) rt_cache_t rt_cache_{};
 
+    struct mpsc_tls_entry
+    {
+        uint32_t wt_read_cache=0;
+        bool is_new_created=true;
+    };
+
+    struct mpsc_tls_info
+    {
+        const mpsc_ring_buffer* current_buffer_=nullptr;
+        mpsc_tls_entry* current_entry_=nullptr;
+        //// per-buffer 独立缓存
+        std::unordered_map<const mpsc_ring_buffer*,mpsc_tls_entry>buffer_map_;
+        
+        mpsc_tls_entry& get(const mpsc_ring_buffer* buf)
+        {
+            if(buf==current_buffer_)
+            {
+                return *current_entry_;
+            }
+
+            current_buffer_=buf;
+            current_entry_=&buffer_map_[buf];
+            return *current_entry_;
+        }
+    };
+    thread_local mpsc_tls_info t_mpsc_tls;
 // 内部辅助：跨线程访问 status 字段的原子包装
 
 static inline std::atomic_ref<block_status> atomic_status(block_status& s)
@@ -29,22 +52,23 @@ mpsc_ring_buffer::mpsc_ring_buffer(uint32_t capacity_bytes)
     if (capacity_bytes == 0)
         return;
 
-    uint32_t aligned_capacity = (capacity_bytes + CACHE_LINE_SIZE - 1) >> CACHE_LINE_SIZE_LOG2;
+    uint32_t raw_blocks =
+        (capacity_bytes + CACHE_LINE_SIZE - 1) >> CACHE_LINE_SIZE_LOG2;
 
-    block_count_ = util::roundup_pow_of_two(aligned_capacity);
-    block_count_mask_ = block_count_ - 1;
+    // 强制 2 的幂次（BqLog miso_ring_buffer.cpp 构造: roundup_pow_of_two）
+    size_t actual = util::roundup_pow_of_two(static_cast<size_t>(raw_blocks));
+    if (actual < 16) actual = 16;   // 最小 16 blocks = 1KB（BqLog: max(16*BQ_CACHE_LINE_SIZE, roundup)）
 
-    uint32_t total_size = block_count_ * CACHE_LINE_SIZE;
+    block_count_      = actual;
+    block_count_mask_ = actual - 1;
+
+    uint32_t total_size = static_cast<uint32_t>(actual) * CACHE_LINE_SIZE;
     buffer_ptr_ = static_cast<uint8_t*>(aligned_alloc(CACHE_LINE_SIZE, total_size));
-
-    if (!buffer_ptr_)
-        return;
+    if (!buffer_ptr_) { block_count_ = 0; return; }
 
     blocks_ = reinterpret_cast<block*>(buffer_ptr_);
-
     cursors_.write_cursor.store_relaxed(0);
     cursors_.read_cursor.store_relaxed(0);
-
     reset();
 }
 
@@ -61,18 +85,13 @@ mpsc_ring_buffer::~mpsc_ring_buffer()
 void mpsc_ring_buffer::reset()
 {
     // 单线程初始化路径：relaxed 即可
-    for (uint32_t i = 0; i < block_count_; ++i)
-    {
+       for (uint32_t i = 0; i < block_count_; ++i)
         atomic_status(blocks_[i].chunk_head.status)
             .store(block_status::unused, std::memory_order_relaxed);
-        blocks_[i].chunk_head.set_block_num(0);
-        blocks_[i].chunk_head.data_size = 0;
-    }
     cursors_.write_cursor.store_relaxed(0);
     cursors_.read_cursor.store_relaxed(0);
-
-    rt_cache_.read_cursor_cache = 0;
-    rt_cache_.read_cursor_start = 0;
+    rt_state_.read_cursor_cache = 0;
+    rt_state_.read_cursor_start = 0;
 }
 
 uint32_t mpsc_ring_buffer::available_write_blocks() const
@@ -110,15 +129,13 @@ write_handle mpsc_ring_buffer::alloc_write_chunk(uint32_t size)
     {
         return handle;
     }
-
-    // TLS 缓存 read_cursor（对标 BqLog miso_tls_buffer_info）
-    static thread_local tls_buffer_info tls_info;
-    if (tls_info.is_new_created)
-    {
-        tls_info.is_new_created = false;
-        tls_info.read_cursor_cache = cursors_.read_cursor.load_acquire();
+    // per-buffer.tls 缓存
+    mpsc_tls_entry& tls =t_mpsc_tls.get(this);
+    if(tls.is_new_created){
+        tls.is_new_created=false;
+        tls.wt_read_cache=cursors_.read_cursor.load_acquire();
     }
-    uint32_t& read_cursor_cache = tls_info.read_cursor_cache;
+uint32_t read_cache=tls.wt_read_cache;
 
     uint32_t current_write;
 
@@ -128,19 +145,19 @@ write_handle mpsc_ring_buffer::alloc_write_chunk(uint32_t size)
         current_write = cursors_.write_cursor.load_acquire();
         const uint32_t new_write = current_write + need_block_count;
 
-        if ((new_write - read_cursor_cache) > block_count_)
+        if ((new_write - read_cache) > block_count_)
         {
-            read_cursor_cache = cursors_.read_cursor.load_acquire();
-            if ((new_write - read_cursor_cache) > block_count_)
+           read_cache = cursors_.read_cursor.load_acquire();
+            if ((new_write -read_cache) > block_count_)
                 return handle; // 真正不足，直接返回（不继续 fetch_add）
         }
 
         current_write = cursors_.write_cursor.fetch_add_relaxed(need_block_count);
         const uint32_t next_write = current_write + need_block_count;
 
-        if ((next_write - read_cursor_cache) > block_count_)
+        if ((next_write -read_cache) > block_count_)
         {
-            while ((next_write - (read_cursor_cache = cursors_.read_cursor.load_acquire())) >
+            while ((next_write - (read_cache = cursors_.read_cursor.load_acquire())) >
                    block_count_)
             {
                 uint32_t expected = next_write;
@@ -206,44 +223,39 @@ read_handle mpsc_ring_buffer::read_chunk()
 
     while (true)
     {
-        block* current_block = &blocks_[rt_cache_.read_cursor_cache & block_count_mask_];
+        block* current_block = &blocks_[rt_state_.read_cursor_cache & block_count_mask_];
 
         const block_status status =
             atomic_status(current_block->chunk_head.status).load(std::memory_order_acquire);
-
+        const uint32_t block_num=current_block->chunk_head.get_block_num();
         switch (status)
         {
         case block_status::invalid:
         {
             // INVALID：wrap-around 占位块，acquire load 已同步 block_num 写入
-            uint32_t block_num = current_block->chunk_head.get_block_num();
-            if (block_num == 0)
-                block_num = 1;
-            current_block->chunk_head.status = block_status::unused;
-            rt_cache_.read_cursor_cache += block_num;
+          current_block->chunk_head.status = block_status::unused;
+            rt_state_.read_cursor_cache +=
+                (block_num > 0) ? block_num
+                                : (static_cast<uint32_t>(block_count_) -
+                                   (rt_state_.read_cursor_cache & block_count_mask_));
             continue;
         }
 
         case block_status::unused:
-            if (rt_cache_.read_cursor_cache != rt_cache_.read_cursor_start)
-            {
+             if (rt_state_.read_cursor_cache != rt_state_.read_cursor_start)
                 flush_read_cursor();
-            }
             return handle;
 
         case block_status::used:
         {
             // acquire load 已建立 happens-before：
             //   producer 写 block_num/data_size/data 均可安全读取
-            uint32_t block_num = current_block->chunk_head.get_block_num();
-            if (block_num == 0) [[unlikely]]
-                return handle;
-
-            handle.success = true;
-            handle.data = current_block->chunk_head.data;
-            handle.data_size = current_block->chunk_head.data_size;
-            handle.block_count = block_num;
+           handle.success    = true;
+            handle.data       = current_block->chunk_head.data;
+            handle.data_size  = current_block->chunk_head.data_size;
+            handle.block_count= block_num;
             return handle;
+
         }
 
         default:
@@ -256,15 +268,15 @@ void mpsc_ring_buffer::commit_read_chunk(const read_handle& handle)
 {
     if (!handle.success)
     {
-        if (rt_cache_.read_cursor_cache != rt_cache_.read_cursor_start)
+        if (rt_state_.read_cursor_cache != rt_state_.read_cursor_start)
         {
             flush_read_cursor();
         }
         return;
     }
-    rt_cache_.read_cursor_cache += handle.block_count;
+ rt_state_.read_cursor_cache += handle.block_count;
 
-    const uint32_t pendding = rt_cache_.read_cursor_cache - rt_cache_.read_cursor_start;
+    const uint32_t pendding = rt_state_.read_cursor_cache - rt_state_.read_cursor_start;
     if (pendding >= static_cast<uint32_t>(block_count_ >> 2))
     {
         flush_read_cursor();
@@ -273,17 +285,17 @@ void mpsc_ring_buffer::commit_read_chunk(const read_handle& handle)
 
 void mpsc_ring_buffer::flush_read_cursor() noexcept
 {
-    const uint32_t start = rt_cache_.read_cursor_start;
-    const uint32_t end = rt_cache_.read_cursor_cache;
-    const uint32_t count = end - start;
+       const uint32_t start = rt_state_.read_cursor_start;
+    const uint32_t end   = rt_state_.read_cursor_cache;
+  
 
-    for (uint32_t i = 0; i < count; ++i)
+    for (uint32_t i = 0; i < end-start; ++i)
     {
         auto& blk = blocks_[(start + i) & block_count_mask_];
         atomic_status(blk.chunk_head.status).store(block_status::unused, std::memory_order_relaxed);
     }
 
-    rt_cache_.read_cursor_start = end;
+    rt_state_.read_cursor_start = end;
     cursors_.read_cursor.store_release(end);
 }
 

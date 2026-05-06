@@ -79,6 +79,7 @@ private:
     spin_lock hp_pool_lock_;
     hp_buffer_entry* hp_head_ = nullptr; // 链表头（最新注册的在头部）
 
+
     // 消费者状态（单消费者，无并发访问）
     struct rt_state_t
     {
