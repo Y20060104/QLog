@@ -189,7 +189,7 @@ static void test_integer_bases()
     EntryBuilder entry_oct(log_level::info);
     entry_oct.write(uint32_t{8});
     out = run_layout(lay, entry_oct, "|{0:#o}|");
-    CHECK(ends_with(out, with_prefix("|010|")), "octal alt form");
+    CHECK(ends_with(out, with_prefix("|10|")), "octal alt form");
 }
 
 static void test_sign_control()
@@ -262,9 +262,25 @@ static void test_buffer_reuse()
     CHECK(ends_with(out, with_prefix("value=7")), "repeated do_layout 10000x");
 }
 
+static void test_bool_and_pointer()
+{
+    std::cout << "\n[Test 10] Bool and pointer\n";
+    layout lay;
+
+    EntryBuilder entry_bool(log_level::info);
+    entry_bool.write(true);
+    auto out = run_layout(lay, entry_bool, "{0}");
+    CHECK(ends_with(out, with_prefix("TRUE")), "bool true as TRUE");
+
+    EntryBuilder entry_ptr(log_level::info);
+    entry_ptr.write(static_cast<const void*>(nullptr));
+    out = run_layout(lay, entry_ptr, "{0}");
+    CHECK(ends_with(out, with_prefix("null")), "null pointer as null");
+}
+
 static void test_layout_performance()
 {
-    std::cout << "\n[Test 10] Layout performance\n";
+    std::cout << "\n[Test 11] Layout performance\n";
     layout lay;
 
     EntryBuilder entry(log_level::info);
@@ -337,68 +353,6 @@ static void test_utf32_basic()
     CHECK(ends_with(out, with_prefix(inner)), "utf32 -> utf8");
 }
 
-static void test_grouping_comma()
-{
-    std::cout << "\n[Test Grouping] Comma\n";
-    layout lay;
-
-    EntryBuilder entry1(log_level::info);
-    entry1.write(int32_t{1234567});
-    auto out = run_layout(lay, entry1, "|{0:,d}|");
-    CHECK(ends_with(out, with_prefix("|1,234,567|")), "comma grouping int");
-
-    EntryBuilder entry2(log_level::info);
-    entry2.write(double{1234567.89});
-    out = run_layout(lay, entry2, "|{0:,.2f}|");
-    CHECK(ends_with(out, with_prefix("|1,234,567.89|")), "comma grouping float");
-
-    EntryBuilder entry3(log_level::info);
-    entry3.write(int32_t{42});
-    out = run_layout(lay, entry3, "|{0:,d}|");
-    CHECK(ends_with(out, with_prefix("|42|")), "comma grouping small int");
-}
-
-static void test_grouping_underscore()
-{
-    std::cout << "\n[Test Grouping] Underscore\n";
-    layout lay;
-
-    EntryBuilder entry1(log_level::info);
-    entry1.write(int32_t{1000000});
-    auto out = run_layout(lay, entry1, "|{0:_d}|");
-    CHECK(ends_with(out, with_prefix("|1_000_000|")), "underscore grouping decimal");
-
-    EntryBuilder entry2(log_level::info);
-    entry2.write(uint32_t{0xDEADBEEF});
-    out = run_layout(lay, entry2, "|{0:_x}|");
-    CHECK(ends_with(out, with_prefix("|dead_beef|")), "underscore grouping hex");
-
-    EntryBuilder entry3(log_level::info);
-    entry3.write(uint32_t{255});
-    out = run_layout(lay, entry3, "|{0:#_b}|");
-    CHECK(ends_with(out, with_prefix("|0b1111_1111|")), "underscore grouping binary");
-}
-
-static void test_grouping_with_sign()
-{
-    std::cout << "\n[Test Grouping] With sign\n";
-    layout lay;
-
-    EntryBuilder entry1(log_level::info);
-    entry1.write(int32_t{1234});
-    auto out = run_layout(lay, entry1, "|{0:+,d}|");
-    CHECK(ends_with(out, with_prefix("|+1,234|")), "grouping with plus sign");
-
-    EntryBuilder entry2(log_level::info);
-    entry2.write(int32_t{1234});
-    out = run_layout(lay, entry2, "|{0: ,d}|");
-    CHECK(ends_with(out, with_prefix("| 1,234|")), "grouping with space sign");
-
-    EntryBuilder entry3(log_level::info);
-    entry3.write(double{-1234.5});
-    out = run_layout(lay, entry3, "|{0:+,.2f}|");
-    CHECK(ends_with(out, with_prefix("|-1,234.50|")), "grouping with negative float");
-}
 
 int main()
 {
@@ -415,13 +369,11 @@ int main()
     test_param_reorder();
     test_escape_braces();
     test_buffer_reuse();
+    test_bool_and_pointer();
     test_layout_performance();
     test_utf16_basic();
     test_utf16_surrogate_pair();
     test_utf32_basic();
-    test_grouping_comma();
-    test_grouping_underscore();
-    test_grouping_with_sign();
 
     std::cout << "\nPASSED: " << g_res.passed << "\n";
     std::cout << "FAILED: " << g_res.failed << "\n";

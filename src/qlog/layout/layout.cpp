@@ -11,9 +11,6 @@
 namespace qlog::layout
 {
 
-static size_t apply_grouping(
-    const char* digits_start, size_t digit_len, char sep, int group_size, char* out_buf
-) noexcept;
 
 layout::layout()
 {
@@ -144,7 +141,6 @@ int layout::parse_format_spec(std::string_view spec, format_info& out) noexcept
 
     if (p < p_end && (*p == ',' || *p == '_'))
     {
-        out.grouping_char = *p;
         ++p;
     }
     // [.precision]
@@ -245,12 +241,6 @@ void layout::fill_and_alignment(
                 cur += 2;
                 len -= 2;
             }
-            else if (fi.type == format_info::fmt_type::octal)
-            {
-                push_char('0');
-                ++cur;
-                --len;
-            }
         }
 
         ensure_space(pad_total);
@@ -291,10 +281,6 @@ size_t layout::insert_integral_unsigned(uint64_t val, const format_info& fi) noe
             *--p = '0' + static_cast<int>(val & 7);
             val >>= 3;
         } while (val != 0);
-        if (fi.alt_form && *p != '0')
-        {
-            *--p = '0';
-        } // alt 前缀‘0’
     }
     else if (type == format_info::fmt_type::hex_lower || type == format_info::fmt_type::hex_upper)
     {
@@ -327,68 +313,8 @@ size_t layout::insert_integral_unsigned(uint64_t val, const format_info& fi) noe
 
     const char* const full_start = p; // 完整字符串起点
     const size_t full_len = static_cast<size_t>(tmp_end - p);
-    char grouped_tmp[128]; // 最大 64 位数字 + 21 个分隔符 + 前缀符号
-    size_t final_len = full_len;
-    const char* final_ptr = full_start;
-
-    if (fi.grouping_char != '\0' && full_len > 0)
-    {
-        // 确定分组大小（对标 Python grouping 规则）
-        int group_size = 3; // 十进制默认
-        if (type == format_info::fmt_type::binary || type == format_info::fmt_type::hex_lower ||
-            type == format_info::fmt_type::hex_upper || type == format_info::fmt_type::octal)
-        {
-            group_size = 4;
-        }
-
-        // 仅十进制支持 ','；其他进制只支持 '_'
-        const char eff_sep =
-            (type == format_info::fmt_type::decimal || type == format_info::fmt_type::none)
-                ? fi.grouping_char
-                : '_'; // 非十进制强制用 '_'
-
-        // 定位纯数字区间（跳过符号字节和前缀）
-        const char* digits_p = full_start;
-
-        // 跳过符号（'+', '-', ' '）
-        if (digits_p < tmp_end && (*digits_p == '+' || *digits_p == '-' || *digits_p == ' '))
-        {
-            ++digits_p;
-        }
-
-        // 跳过 alt 前缀（"0b", "0x", "0X", "0"）
-        if (fi.alt_form)
-        {
-            if (digits_p + 1 < tmp_end && digits_p[0] == '0' &&
-                (digits_p[1] == 'b' || digits_p[1] == 'x' || digits_p[1] == 'X'))
-                digits_p += 2;
-            else if (digits_p < tmp_end && digits_p[0] == '0')
-                digits_p += 1;
-        }
-
-        const size_t digit_only_len = static_cast<size_t>(tmp_end - digits_p);
-        const size_t prefix_len = static_cast<size_t>(digits_p - full_start);
-
-        // 分组只有超过 group_size 位才有意义
-        if (digit_only_len > static_cast<size_t>(group_size))
-        {
-            // 拷贝前缀/符号部分
-            char* gp = grouped_tmp;
-            std::memcpy(gp, full_start, prefix_len);
-            gp += prefix_len;
-
-            // 对纯数字部分应用分组
-            const size_t digit_out =
-                apply_grouping(digits_p, digit_only_len, eff_sep, group_size, gp);
-            gp += digit_out;
-
-            final_len = static_cast<size_t>(gp - grouped_tmp);
-            final_ptr = grouped_tmp;
-        }
-    }
-
     const size_t before = static_cast<size_t>(buf_cur_ - buf_begin_);
-    fill_and_alignment(final_ptr, final_len, fi);
+    fill_and_alignment(full_start, full_len, fi);
     return static_cast<size_t>(buf_cur_ - buf_begin_) - before;
 }
 
@@ -403,10 +329,6 @@ size_t layout::insert_integral_signed(int64_t val, const format_info& fi) noexce
     uint64_t uval = negative ? (val == INT64_MIN ? static_cast<uint64_t>(INT64_MAX) + 1
                                                  : static_cast<uint64_t>(-val))
                              : static_cast<uint64_t>(val);
-
-    // 复用无符号逻辑，但跳过符号前缀（我们在这里自己处理符号）
-    format_info fi_unsigned = fi;
-    fi_unsigned.sign = format_info::sign_type::none;
 
     // 在 tmp 中用 decimal 构建数字部分（不走 insert_integral_unsigned，避免 ensure_space）
     const auto type = fi.type;
@@ -430,8 +352,6 @@ size_t layout::insert_integral_signed(int64_t val, const format_info& fi) noexce
             *--p = '0' + static_cast<int>(uval & 7);
             uval >>= 3;
         } while (uval);
-        if (fi.alt_form && *p != '0')
-            *--p = '0';
     }
     else if (type == format_info::fmt_type::hex_lower || type == format_info::fmt_type::hex_upper)
     {
@@ -467,59 +387,8 @@ size_t layout::insert_integral_signed(int64_t val, const format_info& fi) noexce
 
     const char* const full_start = p;
     const size_t full_len = static_cast<size_t>(tmp_end - p);
-    char grouped_tmp[128];
-    size_t final_len = full_len;
-    const char* final_ptr = full_start;
-
-    if (fi.grouping_char != '\0' && full_len > 0)
-    {
-        int group_size = 3;
-        if (type == format_info::fmt_type::binary || type == format_info::fmt_type::hex_lower ||
-            type == format_info::fmt_type::hex_upper || type == format_info::fmt_type::octal)
-        {
-            group_size = 4;
-        }
-
-        const char eff_sep =
-            (type == format_info::fmt_type::decimal || type == format_info::fmt_type::none)
-                ? fi.grouping_char
-                : '_';
-
-        const char* digits_p = full_start;
-        if (digits_p < tmp_end && (*digits_p == '+' || *digits_p == '-' || *digits_p == ' '))
-        {
-            ++digits_p;
-        }
-
-        if (fi.alt_form)
-        {
-            if (digits_p + 1 < tmp_end && digits_p[0] == '0' &&
-                (digits_p[1] == 'b' || digits_p[1] == 'x' || digits_p[1] == 'X'))
-                digits_p += 2;
-            else if (digits_p < tmp_end && digits_p[0] == '0')
-                digits_p += 1;
-        }
-
-        const size_t digit_only_len = static_cast<size_t>(tmp_end - digits_p);
-        const size_t prefix_len = static_cast<size_t>(digits_p - full_start);
-
-        if (digit_only_len > static_cast<size_t>(group_size))
-        {
-            char* gp = grouped_tmp;
-            std::memcpy(gp, full_start, prefix_len);
-            gp += prefix_len;
-
-            const size_t digit_out =
-                apply_grouping(digits_p, digit_only_len, eff_sep, group_size, gp);
-            gp += digit_out;
-
-            final_len = static_cast<size_t>(gp - grouped_tmp);
-            final_ptr = grouped_tmp;
-        }
-    }
-
     const size_t before = static_cast<size_t>(buf_cur_ - buf_begin_);
-    fill_and_alignment(final_ptr, final_len, fi);
+    fill_and_alignment(full_start, full_len, fi);
     return static_cast<size_t>(buf_cur_ - buf_begin_) - before;
 }
 
@@ -577,57 +446,8 @@ size_t layout::insert_decimal(double val, const format_info& fi, bool is_float) 
     if (n <= 0)
         return 0;
 
-    char grouped_dec[128];
-    const char* final_dec_ptr = tmp;
-    size_t final_dec_len = static_cast<size_t>(n);
-
-    if (fi.grouping_char != '\0' && n > 0)
-    {
-        // 找到小数点位置（或字符串末尾）
-        const char* dot_pos =
-            static_cast<const char*>(std::memchr(tmp, '.', static_cast<size_t>(n)));
-        const size_t int_part_len =
-            dot_pos ? static_cast<size_t>(dot_pos - tmp) : static_cast<size_t>(n);
-
-        // 定位整数部分的纯数字起点（跳过符号字节）
-        const char* int_digits = tmp;
-        size_t sign_len = 0;
-        if (int_digits < tmp + int_part_len &&
-            (*int_digits == '+' || *int_digits == '-' || *int_digits == ' '))
-        {
-            ++int_digits;
-            ++sign_len;
-        }
-
-        const size_t pure_int_len = int_part_len - sign_len;
-
-        if (pure_int_len > 3)
-        {
-            char* gp = grouped_dec;
-            // 符号
-            if (sign_len)
-                *gp++ = tmp[0];
-
-            // 整数数字部分分组
-            const size_t dig_out =
-                apply_grouping(int_digits, pure_int_len, fi.grouping_char, 3, gp);
-            gp += dig_out;
-
-            // 小数点及之后（原样复制）
-            if (dot_pos)
-            {
-                const size_t frac_len = static_cast<size_t>(n) - int_part_len;
-                std::memcpy(gp, dot_pos, frac_len);
-                gp += frac_len;
-            }
-
-            final_dec_len = static_cast<size_t>(gp - grouped_dec);
-            final_dec_ptr = grouped_dec;
-        }
-    }
-
     const size_t before = static_cast<size_t>(buf_cur_ - buf_begin_);
-    fill_and_alignment(final_dec_ptr, final_dec_len, fi);
+    fill_and_alignment(tmp, static_cast<size_t>(n), fi);
     return static_cast<size_t>(buf_cur_ - buf_begin_) - before;
 }
 
@@ -733,15 +553,22 @@ size_t layout::insert_bool(bool val, const format_info& fi) noexcept
     {
         return insert_integral_unsigned(static_cast<uint64_t>(val), fi);
     }
-    const std::string_view sv = val ? std::string_view{"true"} : std::string_view{"false"};
+    const std::string_view sv = val ? std::string_view{"TRUE"} : std::string_view{"FALSE"};
     return insert_str_utf8(sv, fi);
 }
 
 size_t layout::insert_pointer(uintptr_t ptr, const format_info& fi) noexcept
 {
-    // 固定格式："0x" + 16 位十六进制（64位系统）
-    char tmp[20];
-    int n = std::snprintf(tmp, sizeof(tmp), "0x%016" PRIxPTR, ptr);
+    if (ptr == 0)
+    {
+        const char* null_str = "null";
+        const size_t before = static_cast<size_t>(buf_cur_ - buf_begin_);
+        fill_and_alignment(null_str, 4, fi);
+        return static_cast<size_t>(buf_cur_ - buf_begin_) - before;
+    }
+
+    char tmp[2 + sizeof(uintptr_t) * 2 + 1];
+    const int n = std::snprintf(tmp, sizeof(tmp), "0x%" PRIxPTR, ptr);
     if (n <= 0)
         return 0;
     const size_t before = static_cast<size_t>(buf_cur_ - buf_begin_);
@@ -864,41 +691,6 @@ size_t layout::insert_param(const uint8_t* param_ptr, const format_info& fi) noe
     }
 }
 
-static size_t apply_grouping(
-    const char* digits_start, size_t digit_len, char sep, int group_size, char* out_buf
-) noexcept
-{
-    if (digit_len == 0 || group_size <= 0)
-    {
-        std::memcpy(out_buf, digits_start, digit_len);
-        return digit_len;
-    }
-
-    // 计算第一组的位数（不足 group_size 的部分）
-    // 例：1234567, group=3 → 第一组 1 位，后续各 3 位
-    const int first_group = static_cast<int>(digit_len % static_cast<size_t>(group_size));
-    char* dst = out_buf;
-    const char* src = digits_start;
-
-    if (first_group > 0)
-    {
-        std::memcpy(dst, src, static_cast<size_t>(first_group));
-        dst += first_group;
-        src += first_group;
-        if (src < digits_start + digit_len)
-            *dst++ = sep;
-    }
-
-    while (src < digits_start + digit_len)
-    {
-        std::memcpy(dst, src, static_cast<size_t>(group_size));
-        dst += group_size;
-        src += group_size;
-        if (src < digits_start + digit_len)
-            *dst++ = sep;
-    }
-    return static_cast<size_t>(dst - out_buf);
-}
 
 void layout::scan_params() noexcept
 {
