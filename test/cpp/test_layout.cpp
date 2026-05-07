@@ -353,7 +353,6 @@ static void test_utf32_basic()
     CHECK(ends_with(out, with_prefix(inner)), "utf32 -> utf8");
 }
 
-
 int main()
 {
     std::cout << "==============================\n";

@@ -11,7 +11,6 @@
 namespace qlog::layout
 {
 
-
 layout::layout()
 {
     // 初始分配init_buffer_size 后续按需realloc *2
@@ -690,7 +689,6 @@ size_t layout::insert_param(const uint8_t* param_ptr, const format_info& fi) noe
         return serializer::skip_param(param_ptr); // 未知类型，跳过
     }
 }
-
 
 void layout::scan_params() noexcept
 {
