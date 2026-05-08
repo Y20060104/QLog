@@ -20,12 +20,10 @@ constexpr size_t k_cache_write_default_size = 64 * 1024;
 
 uint64_t now_epoch_ms()
 {
-    return static_cast<uint64_t>(
-        std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now().time_since_epoch()
-        )
-            .count()
-    );
+    return static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(
+                                     std::chrono::system_clock::now().time_since_epoch()
+    )
+                                     .count());
 }
 
 uint64_t get_entry_epoch_ms(const entry_runtime_view& view)
@@ -62,7 +60,9 @@ void appender_file_base::flush_write_cache()
 
     if (real_write_size < need_write_size)
     {
-        std::memmove(base, base + static_cast<ptrdiff_t>(real_write_size), need_write_size - real_write_size);
+        std::memmove(
+            base, base + static_cast<ptrdiff_t>(real_write_size), need_write_size - real_write_size
+        );
     }
 
     if (cache_write_cursor_ > need_write_size)
@@ -171,7 +171,9 @@ appender_file_base::read_with_cache_handle appender_file_base::read_with_cache(s
     const auto left = cache_read_.size() - cache_read_cursor_;
     if (left < size)
     {
-        cache_read_.erase(cache_read_.begin(), cache_read_.begin() + static_cast<ptrdiff_t>(cache_read_cursor_));
+        cache_read_.erase(
+            cache_read_.begin(), cache_read_.begin() + static_cast<ptrdiff_t>(cache_read_cursor_)
+        );
         const auto total_size = std::max(size, k_cache_read_default_size);
         const auto fill_size = total_size - left;
         const auto old_size = cache_read_.size();
@@ -233,7 +235,8 @@ void appender_file_base::return_write_cache(const write_with_cache_handle& handl
     cache_write_cursor_ += std::min(handle.used_len_, handle.alloc_len_);
 }
 
-size_t appender_file_base::direct_write(const void* data, size_t size, int whence, int64_t seek_offset)
+size_t
+appender_file_base::direct_write(const void* data, size_t size, int whence, int64_t seek_offset)
 {
     if (!file_)
     {
@@ -274,9 +277,12 @@ void appender_file_base::set_cache_write_padding(uint8_t new_padding)
         std::memmove(new_base, old_base, cache_write_cursor_);
     }
 
-    if (old_padding > cache_write_padding_ && cache_write_entity_.size() > k_cache_write_default_size)
+    if (old_padding > cache_write_padding_ &&
+        cache_write_entity_.size() > k_cache_write_default_size)
     {
-        resize_cache_write_entity(std::max(k_cache_write_default_size, cache_write_cursor_ + cache_write_padding_));
+        resize_cache_write_entity(
+            std::max(k_cache_write_default_size, cache_write_cursor_ + cache_write_padding_)
+        );
     }
 }
 
@@ -330,10 +336,12 @@ void appender_file_base::refresh_file_handle(const entry_runtime_view& view)
 
     const auto epoch = get_entry_epoch_ms(view);
     const uint64_t ms_per_day = 24ull * 3600ull * 1000ull;
-    const auto local_epoch = static_cast<int64_t>(epoch) + static_cast<int64_t>(gmt_offset_minutes_) * 60 * 1000;
+    const auto local_epoch =
+        static_cast<int64_t>(epoch) + static_cast<int64_t>(gmt_offset_minutes_) * 60 * 1000;
     const auto local_next_day = (static_cast<uint64_t>(local_epoch) / ms_per_day + 1) * ms_per_day;
     current_file_expire_time_epoch_ms_ =
-        local_next_day - static_cast<uint64_t>(static_cast<int64_t>(gmt_offset_minutes_) * 60 * 1000);
+        local_next_day -
+        static_cast<uint64_t>(static_cast<int64_t>(gmt_offset_minutes_) * 60 * 1000);
 
     if (file_)
     {
@@ -413,13 +421,13 @@ void appender_file_base::open_new_indexed_file_by_name()
 
     const auto epoch = now_epoch_ms();
     std::time_t tt = static_cast<std::time_t>(epoch / 1000);
-    std::tm tmv {};
+    std::tm tmv{};
 #if defined(_WIN32)
     localtime_s(&tmv, &tt);
 #else
     localtime_r(&tt, &tmv);
 #endif
-    char day_buf[32] {};
+    char day_buf[32]{};
     std::strftime(day_buf, sizeof(day_buf), "_%Y%m%d_", &tmv);
     const std::string prefix = stem + (enable_rolling_log_file_ ? day_buf : "_");
 
@@ -554,7 +562,7 @@ void appender_file_base::clear_all_limit_files()
     struct file_info
     {
         uint64_t mtime = 0;
-        std::filesystem::path path {};
+        std::filesystem::path path{};
         uint64_t size = 0;
     };
 
@@ -583,7 +591,7 @@ void appender_file_base::clear_all_limit_files()
             std::chrono::duration_cast<std::chrono::milliseconds>(mt.time_since_epoch()).count()
         );
 
-        files.push_back(file_info { mt_ms, it.path(), sz });
+        files.push_back(file_info{mt_ms, it.path(), sz});
         total += sz;
     }
 
@@ -592,9 +600,14 @@ void appender_file_base::clear_all_limit_files()
         return;
     }
 
-    std::sort(files.begin(), files.end(), [](const auto& l, const auto& r) {
-        return l.mtime < r.mtime;
-    });
+    std::sort(
+        files.begin(),
+        files.end(),
+        [](const auto& l, const auto& r)
+        {
+            return l.mtime < r.mtime;
+        }
+    );
 
     for (const auto& f : files)
     {
@@ -613,7 +626,9 @@ void appender_file_base::clear_all_limit_files()
 
 void appender_file_base::parse_file_context::log_parse_fail_reason(const char* msg) const
 {
-    std::fprintf(stderr, "failed to parse log file:\"%s\", msg:%s\n", file_name_.c_str(), msg ? msg : "");
+    std::fprintf(
+        stderr, "failed to parse log file:\"%s\", msg:%s\n", file_name_.c_str(), msg ? msg : ""
+    );
 }
 
 } // namespace qlog::appender

@@ -29,23 +29,20 @@ uint64_t fnv1a64(std::string_view sv)
     return fnv1a64(reinterpret_cast<const uint8_t*>(sv.data()), sv.size());
 }
 
-uint64_t mix_format_hash(
-    serialization::log_level level,
-    uint32_t category_idx,
-    uint64_t fmt_hash
-)
+uint64_t mix_format_hash(serialization::log_level level, uint32_t category_idx, uint64_t fmt_hash)
 {
-    const uint64_t mixer = (static_cast<uint64_t>(category_idx) << 32) | static_cast<uint64_t>(level);
+    const uint64_t mixer =
+        (static_cast<uint64_t>(category_idx) << 32) | static_cast<uint64_t>(level);
     return fmt_hash ^ mixer;
 }
 
-template <typename U> U zigzag_encode(std::make_signed_t<U> v)
+template<typename U> U zigzag_encode(std::make_signed_t<U> v)
 {
     using S = std::make_signed_t<U>;
     return static_cast<U>((v << 1) ^ (v >> (sizeof(S) * 8 - 1)));
 }
 
-template <typename U> std::make_signed_t<U> zigzag_decode(U v)
+template<typename U> std::make_signed_t<U> zigzag_decode(U v)
 {
     using S = std::make_signed_t<U>;
     return static_cast<S>((v >> 1) ^ (static_cast<U>(0) - (v & 1)));
@@ -86,7 +83,7 @@ size_t vlq_decode_u64(uint64_t& value, const uint8_t* in, size_t in_len)
 
 void push_vlq_u64(std::vector<uint8_t>& out, uint64_t v)
 {
-    std::array<uint8_t, 10> tmp {};
+    std::array<uint8_t, 10> tmp{};
     const auto n = vlq_encode_u64(v, tmp.data());
     out.insert(out.end(), tmp.begin(), tmp.begin() + static_cast<ptrdiff_t>(n));
 }
@@ -201,19 +198,18 @@ bool appender_file_compressed::parse_exist_log_file(parse_file_context& context)
     }
 }
 
-appender_file_compressed::read_item_result appender_file_compressed::read_item_data(
-    parse_file_context& context
-)
+appender_file_compressed::read_item_result
+appender_file_compressed::read_item_data(parse_file_context& context)
 {
     auto h = read_with_cache(12);
     if (h.len() == 0 && is_read_of_cache_eof())
     {
-        return { false, item_type::log_template, h };
+        return {false, item_type::log_template, h};
     }
     if (h.len() < 2)
     {
         context.log_parse_fail_reason("read item head failed");
-        return { false, item_type::log_template, h };
+        return {false, item_type::log_template, h};
     }
 
     uint8_t first = h.data()[0];
@@ -226,27 +222,25 @@ appender_file_compressed::read_item_result appender_file_compressed::read_item_d
     if (len_size == 0 || data_size_u64 > UINT32_MAX)
     {
         context.log_parse_fail_reason("decode item body len failed");
-        return { false, type, h };
+        return {false, type, h};
     }
     const uint32_t data_size = static_cast<uint32_t>(data_size_u64);
 
     seek_read_file_offset(
-        static_cast<int32_t>(len_size + static_cast<size_t>(offset)) -
-        static_cast<int32_t>(h.len())
+        static_cast<int32_t>(len_size + static_cast<size_t>(offset)) - static_cast<int32_t>(h.len())
     );
 
     h = read_with_cache(data_size);
     if (h.len() != data_size)
     {
         context.log_parse_fail_reason("read item body failed");
-        return { false, type, h };
+        return {false, type, h};
     }
-    return { true, type, h };
+    return {true, type, h};
 }
 
 bool appender_file_compressed::parse_log_entry(
-    parse_file_context& context,
-    const appender_file_base::read_with_cache_handle& data_handle
+    parse_file_context& context, const appender_file_base::read_with_cache_handle& data_handle
 )
 {
     if (data_handle.len() < 2)
@@ -264,7 +258,8 @@ bool appender_file_compressed::parse_log_entry(
         return false;
     }
     const int64_t diff = zigzag_decode<uint64_t>(zz_epoch);
-    last_log_entry_epoch_ = static_cast<uint64_t>(static_cast<int64_t>(last_log_entry_epoch_) + diff);
+    last_log_entry_epoch_ =
+        static_cast<uint64_t>(static_cast<int64_t>(last_log_entry_epoch_) + diff);
     return true;
 }
 
@@ -303,8 +298,7 @@ bool appender_file_compressed::parse_format_template(
 }
 
 bool appender_file_compressed::parse_thread_info_template(
-    parse_file_context& context,
-    const appender_file_base::read_with_cache_handle& data_handle
+    parse_file_context& context, const appender_file_base::read_with_cache_handle& data_handle
 )
 {
     const uint8_t* p = data_handle.data();
@@ -323,13 +317,14 @@ bool appender_file_compressed::parse_thread_info_template(
         return false;
     }
     thread_info_hash_cache_[tid] = static_cast<uint32_t>(idx);
-    current_thread_info_max_index_ = std::max(current_thread_info_max_index_, static_cast<uint32_t>(idx + 1));
+    current_thread_info_max_index_ =
+        std::max(current_thread_info_max_index_, static_cast<uint32_t>(idx + 1));
     return true;
 }
 
 void appender_file_compressed::write_item(item_type type, const std::vector<uint8_t>& body)
 {
-    std::array<uint8_t, 10> len_buf {};
+    std::array<uint8_t, 10> len_buf{};
     const auto len_size = vlq_encode_u64(static_cast<uint64_t>(body.size()), len_buf.data());
 
     auto wh = alloc_write_cache(1 + len_size + body.size());
@@ -403,8 +398,8 @@ void appender_file_compressed::log_impl(const entry_runtime_view& view)
     std::vector<uint8_t> body;
     body.reserve(view.entry_size * 2);
 
-    const int64_t epoch_delta = static_cast<int64_t>(hdr->timestamp_ms) -
-                                static_cast<int64_t>(last_log_entry_epoch_);
+    const int64_t epoch_delta =
+        static_cast<int64_t>(hdr->timestamp_ms) - static_cast<int64_t>(last_log_entry_epoch_);
     last_log_entry_epoch_ = hdr->timestamp_ms;
     push_vlq_u64(body, zigzag_encode<uint64_t>(epoch_delta));
     push_vlq_u64(body, format_template_idx);
@@ -505,7 +500,7 @@ void appender_file_compressed::log_impl(const entry_runtime_view& view)
             std::memcpy(&v, args, sizeof(v));
             args += sizeof(v);
             body.push_back(static_cast<uint8_t>(type));
-            std::array<uint8_t, sizeof(uintptr_t)> raw {};
+            std::array<uint8_t, sizeof(uintptr_t)> raw{};
             std::memcpy(raw.data(), &v, sizeof(v));
             body.insert(body.end(), raw.begin(), raw.end());
             break;

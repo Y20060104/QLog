@@ -7,10 +7,10 @@ namespace qlog::appender
 
 namespace
 {
-constexpr const char* k_recover_start =
-    "/************************************* QLOG RECOVER START *************************************/";
-constexpr const char* k_recover_end =
-    "/************************************* QLOG RECOVER END *************************************/";
+constexpr const char* k_recover_start = "/************************************* QLOG RECOVER START "
+                                        "*************************************/";
+constexpr const char* k_recover_end = "/************************************* QLOG RECOVER END "
+                                      "*************************************/";
 } // namespace
 
 void appender_file_text::log_impl(const entry_runtime_view& view)
@@ -22,11 +22,7 @@ void appender_file_text::log_impl(const entry_runtime_view& view)
     }
 
     const auto line = layout_ptr_->do_layout(
-        view.entry_data,
-        view.entry_size,
-        view.format_string,
-        view.categories,
-        view.category_count
+        view.entry_data, view.entry_size, view.format_string, view.categories, view.category_count
     );
 
     auto wh = alloc_write_cache(line.size() + 1);

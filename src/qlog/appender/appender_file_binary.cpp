@@ -10,8 +10,8 @@ namespace qlog::appender
 
 bool appender_file_binary::init_impl(const appender_config& config)
 {
-    enc_type_ = config.public_key.empty() ? appender_encryption_type::plaintext :
-                                            appender_encryption_type::rsa_aes_xor;
+    enc_type_ = config.public_key.empty() ? appender_encryption_type::plaintext
+                                          : appender_encryption_type::rsa_aes_xor;
     xor_key_blob_.clear();
     return appender_file_base::init_impl(config);
 }
@@ -23,8 +23,8 @@ bool appender_file_binary::reset_impl(const appender_config& config)
         return false;
     }
     const auto prev_type = enc_type_;
-    const auto new_type = config.public_key.empty() ? appender_encryption_type::plaintext :
-                                                      appender_encryption_type::rsa_aes_xor;
+    const auto new_type = config.public_key.empty() ? appender_encryption_type::plaintext
+                                                    : appender_encryption_type::rsa_aes_xor;
     return prev_type == new_type;
 }
 
@@ -39,7 +39,7 @@ bool appender_file_binary::parse_exist_log_file(parse_file_context& context)
         return false;
     }
 
-    appender_file_header file_head {};
+    appender_file_header file_head{};
     std::memcpy(&file_head, rh.data(), sizeof(file_head));
     if (file_head.version != get_binary_format_version())
     {
@@ -72,7 +72,7 @@ bool appender_file_binary::parse_exist_log_file(parse_file_context& context)
         return false;
     }
 
-    appender_payload_metadata md {};
+    appender_payload_metadata md{};
     std::memcpy(&md, rh.data(), sizeof(md));
     if (md.magic_number[0] != 2 || md.magic_number[1] != 2 || md.magic_number[2] != 7)
     {
@@ -130,14 +130,14 @@ void appender_file_binary::on_file_open(bool is_new_created)
         return;
     }
 
-    appender_file_header file_head {};
+    appender_file_header file_head{};
     file_head.format = get_appender_format();
     file_head.version = get_binary_format_version();
     direct_write(&file_head, sizeof(file_head), SEEK_END, 0);
 
     append_new_segment(appender_segment_type::normal);
 
-    appender_payload_metadata md {};
+    appender_payload_metadata md{};
     md.magic_number[0] = 2;
     md.magic_number[1] = 2;
     md.magic_number[2] = 7;
@@ -168,11 +168,7 @@ void appender_file_binary::on_file_open(bool is_new_created)
 }
 
 void appender_file_binary::xor_crypt(
-    uint8_t* data,
-    size_t size,
-    const uint8_t* key,
-    size_t key_size,
-    uint64_t stream_offset
+    uint8_t* data, size_t size, const uint8_t* key, size_t key_size, uint64_t stream_offset
 )
 {
     if (!data || !key || key_size == 0)
@@ -223,7 +219,8 @@ bool appender_file_binary::seek_read_file_absolute(size_t pos)
 void appender_file_binary::seek_read_file_offset(int32_t offset)
 {
     appender_file_base::seek_read_file_offset(offset);
-    if (cur_read_seg_.start_pos > get_read_file_pos() || cur_read_seg_.end_pos < get_read_file_pos())
+    if (cur_read_seg_.start_pos > get_read_file_pos() ||
+        cur_read_seg_.end_pos < get_read_file_pos())
     {
         read_to_correct_segment();
     }
@@ -313,7 +310,7 @@ bool appender_file_binary::read_to_next_segment()
         return false;
     }
 
-    appender_file_segment_head seg_head {};
+    appender_file_segment_head seg_head{};
     std::memcpy(&seg_head, rh.data(), sizeof(seg_head));
     if (seg_head.next_seg_pos < new_seg_start_pos + sizeof(appender_file_segment_head))
     {
@@ -332,11 +329,7 @@ bool appender_file_binary::read_to_next_segment()
             return false;
         }
         xor_key_blob_.resize(get_xor_key_blob_size());
-        std::memcpy(
-            xor_key_blob_.data(),
-            key_handle.data() + 256 + 16,
-            get_xor_key_blob_size()
-        );
+        std::memcpy(xor_key_blob_.data(), key_handle.data() + 256 + 16, get_xor_key_blob_size());
     }
     return true;
 }
@@ -363,7 +356,7 @@ void appender_file_binary::append_new_segment(appender_segment_type type)
         );
     }
 
-    appender_file_segment_head seg {};
+    appender_file_segment_head seg{};
     seg.next_seg_pos = UINT64_MAX;
     seg.seg_type = type;
     seg.enc_type = enc_type_;
@@ -372,8 +365,8 @@ void appender_file_binary::append_new_segment(appender_segment_type type)
 
     if (seg.has_key)
     {
-        std::array<uint8_t, 256> fake_rsa_cipher {};
-        std::array<uint8_t, 16> fake_iv {};
+        std::array<uint8_t, 256> fake_rsa_cipher{};
+        std::array<uint8_t, 16> fake_iv{};
         xor_key_blob_.resize(get_xor_key_blob_size());
 
         std::random_device rd;

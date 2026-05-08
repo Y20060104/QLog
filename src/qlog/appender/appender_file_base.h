@@ -25,7 +25,7 @@ protected:
         }
 
         void log_parse_fail_reason(const char* msg) const;
-        std::string file_name_ {};
+        std::string file_name_{};
     };
 
     struct write_with_cache_handle
@@ -135,13 +135,14 @@ protected:
     }
     [[nodiscard]] size_t get_cache_write_size() const
     {
-        return cache_write_entity_.size() > cache_write_padding_ ?
-                   cache_write_entity_.size() - static_cast<size_t>(cache_write_padding_) :
-                   0;
+        return cache_write_entity_.size() > cache_write_padding_
+                   ? cache_write_entity_.size() - static_cast<size_t>(cache_write_padding_)
+                   : 0;
     }
     [[nodiscard]] uint8_t* get_cache_write_ptr_base()
     {
-        return cache_write_entity_.empty() ? nullptr : cache_write_entity_.data() + cache_write_padding_;
+        return cache_write_entity_.empty() ? nullptr
+                                           : cache_write_entity_.data() + cache_write_padding_;
     }
     [[nodiscard]] bool is_read_of_cache_eof() const
     {
@@ -172,7 +173,7 @@ private:
     void clean_cache_write();
 
 private:
-    std::string config_file_name_ {};
+    std::string config_file_name_{};
     bool always_create_new_file_ = false;
     uint64_t max_file_size_ = 0;
     uint64_t current_file_size_ = 0;
@@ -182,14 +183,15 @@ private:
     uint64_t capacity_limit_ = 0;
     uint64_t current_file_expire_time_epoch_ms_ = 0;
     bool flush_when_destruct_ = true;
-    std::string current_file_path_ {};
+    std::string current_file_path_{};
 
-    std::vector<uint8_t, qlog::aligned_allocator<uint8_t, DEFAULT_BUFFER_ALIGNMENT>> cache_write_entity_ ;
+    std::vector<uint8_t, qlog::aligned_allocator<uint8_t, DEFAULT_BUFFER_ALIGNMENT>>
+        cache_write_entity_;
     size_t cache_write_cursor_ = 0;
     size_t cache_write_finished_cursor_ = 0;
     uint8_t cache_write_padding_ = 0;
 
-    std::vector<uint8_t> cache_read_ {};
+    std::vector<uint8_t> cache_read_{};
     size_t cache_read_cursor_ = 0;
     size_t read_file_pos_ = 0;
     bool cache_read_eof_ = false;

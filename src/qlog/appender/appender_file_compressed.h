@@ -43,26 +43,28 @@ protected:
     uint32_t get_binary_format_version() const override;
 
 private:
-    using read_item_result = std::tuple<bool, item_type, appender_file_base::read_with_cache_handle>;
+    using read_item_result =
+        std::tuple<bool, item_type, appender_file_base::read_with_cache_handle>;
 
     read_item_result read_item_data(parse_file_context& context);
-    bool parse_log_entry(parse_file_context& context, const appender_file_base::read_with_cache_handle& data_handle);
+    bool parse_log_entry(
+        parse_file_context& context, const appender_file_base::read_with_cache_handle& data_handle
+    );
     bool parse_format_template(
         parse_file_context& context,
         const appender_file_base::read_with_cache_handle& data_handle,
         template_sub_type sub_type
     );
     bool parse_thread_info_template(
-        parse_file_context& context,
-        const appender_file_base::read_with_cache_handle& data_handle
+        parse_file_context& context, const appender_file_base::read_with_cache_handle& data_handle
     );
     void reset();
     void write_item(item_type type, const std::vector<uint8_t>& body);
 
 private:
-    std::unordered_map<uint64_t, uint32_t> format_templates_hash_cache_ {};
+    std::unordered_map<uint64_t, uint32_t> format_templates_hash_cache_{};
     uint32_t current_format_template_max_index_ = 0;
-    std::unordered_map<uint64_t, uint32_t> thread_info_hash_cache_ {};
+    std::unordered_map<uint64_t, uint32_t> thread_info_hash_cache_{};
     uint32_t current_thread_info_max_index_ = 0;
     uint64_t last_log_entry_epoch_ = 0;
 };

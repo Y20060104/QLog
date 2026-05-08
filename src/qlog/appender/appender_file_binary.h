@@ -61,7 +61,9 @@ public:
 #pragma pack(pop)
 
     static_assert(sizeof(appender_file_header) == 8, "appender_file_header size error");
-    static_assert(sizeof(appender_file_segment_head) == 12, "appender_file_segment_head size error");
+    static_assert(
+        sizeof(appender_file_segment_head) == 12, "appender_file_segment_head size error"
+    );
 
     struct seg_info
     {
@@ -106,17 +108,16 @@ private:
     void append_new_segment(appender_segment_type type);
     void update_write_cache_padding();
     static void xor_crypt(
-        uint8_t* data,
-        size_t size,
-        const uint8_t* key,
-        size_t key_size,
-        uint64_t stream_offset
+        uint8_t* data, size_t size, const uint8_t* key, size_t key_size, uint64_t stream_offset
     );
 
 private:
-    seg_info cur_read_seg_ {};
+    seg_info cur_read_seg_{};
     appender_encryption_type enc_type_ = appender_encryption_type::plaintext;
-    std::vector<uint8_t, qlog::aligned_allocator<uint8_t, appender_file_base::DEFAULT_BUFFER_ALIGNMENT> > xor_key_blob_ ;
+    std::vector<
+        uint8_t,
+        qlog::aligned_allocator<uint8_t, appender_file_base::DEFAULT_BUFFER_ALIGNMENT>>
+        xor_key_blob_;
 };
 
 } // namespace qlog::appender
