@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
 
 namespace qlog
 {
@@ -14,6 +15,18 @@ template<typename T, size_t Alignment = 64> class aligned_allocator
 {
 public:
     using value_type = T;
+    using pointer = T*;
+    using const_pointer = const T*;
+    using size_type = size_t;
+    using difference_type = std::ptrdiff_t;
+
+    template<typename U> struct rebind
+    {
+        using other = aligned_allocator<U, Alignment>;
+    };
+
+    using propagate_on_container_move_assignment = std::true_type;
+    using is_always_equal = std::true_type;
 
     aligned_allocator() = default;
     ~aligned_allocator() = default;
@@ -25,13 +38,13 @@ public:
     }
 
     // STL 必需的分配方法
-    T* allocate(size_t n)
+    pointer allocate(size_t n)
     {
         // aligned_alloc 参数: (alignment, size_in_bytes)
-        return reinterpret_cast<T*>(aligned_alloc(Alignment, n * sizeof(T)));
+        return reinterpret_cast<pointer>(aligned_alloc(Alignment, n * sizeof(T)));
     }
 
-    void deallocate(T* p, size_t n)
+    void deallocate(pointer p, size_t n)
     {
         (void)n; // 未使用但需要匹配 STL 签名
         aligned_free(p);
