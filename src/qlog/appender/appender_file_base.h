@@ -184,8 +184,7 @@ private:
     bool flush_when_destruct_ = true;
     std::string current_file_path_ {};
 
-    std::vector<uint8_t, qlog::aligned_allocator<uint8_t, DEFAULT_BUFFER_ALIGNMENT>>
-        cache_write_entity_ {};
+    std::vector<uint8_t, qlog::aligned_allocator<uint8_t, DEFAULT_BUFFER_ALIGNMENT>> cache_write_entity_ ;
     size_t cache_write_cursor_ = 0;
     size_t cache_write_finished_cursor_ = 0;
     uint8_t cache_write_padding_ = 0;
