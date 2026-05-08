@@ -92,6 +92,7 @@ protected:
     bool init_impl(const appender_config& config) override;
     bool reset_impl(const appender_config& config) override;
     void log_impl(const entry_runtime_view& view) override;
+    void flush() override;
 
     void on_log_item_recovery_begin(entry_runtime_view& read_view) override;
     void on_log_item_recovery_end() override;
@@ -101,6 +102,15 @@ private:
     static console_buffer& buffer_registry();
     static void
     default_console_output(serialization::log_level level, const char* text, int32_t len);
+    static void
+    flush_console_buffer_callback(
+        void* pass_through,
+        uint64_t log_id,
+        int32_t category_idx,
+        serialization::log_level level,
+        const char* text,
+        int32_t length
+    );
 
 private:
     std::string log_name_prefix_{};

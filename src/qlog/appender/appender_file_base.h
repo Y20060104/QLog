@@ -160,6 +160,11 @@ protected:
     {
         return read_file_pos_;
     }
+    void flush() override
+    {
+    flush_write_cache();
+    flush_write_io();
+    }
 
 private:
     void set_basic_configs(const appender_config& config);

@@ -67,6 +67,20 @@ set(QLOG_APPENDER_SOURCES
     qlog/appender/appender_file_text.cpp
 )
 
+# M7 Worker
+set(QLOG_WORKER_SOURCES
+    qlog/worker/log_worker.h
+    qlog/worker/log_worker.cpp
+)
+
+# M8 Log management
+set(QLOG_LOG_SOURCES
+    qlog/log/log_config.h
+    qlog/log/log_imp.h
+    qlog/log/log_imp.cpp
+    qlog/log/log_manager.h
+    qlog/log/log_manager.cpp
+)
 # ============================================================================
 # Main QLog Library
 # ============================================================================
@@ -77,6 +91,8 @@ add_library(qlog STATIC
     ${QLOG_SERIALIZATION_SOURCES}
     ${QLOG_LAYOUT_SOURCES}
     ${QLOG_APPENDER_SOURCES}
+    ${QLOG_WORKER_SOURCES}
+    ${QLOG_LOG_SOURCES}
 )
 
 # Set C++ standard and compile options

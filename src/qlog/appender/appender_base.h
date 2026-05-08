@@ -136,6 +136,8 @@ public:
         return type_;
     }
 
+    virtual void flush() {}  // 默认空实现；文件 appender 覆盖此方法
+
 protected:
     virtual bool init_impl(const appender_config& config) = 0;
     virtual bool reset_impl(const appender_config& config) = 0;
@@ -150,7 +152,6 @@ protected:
     virtual void on_log_item_new_begin(entry_runtime_view&)
     {
     }
-
     [[nodiscard]] bool is_category_enabled(uint16_t category_idx) const noexcept;
     [[nodiscard]] bool is_level_enabled(serialization::log_level level) const noexcept;
 

@@ -141,6 +141,33 @@ set_target_properties(test_layout PROPERTIES
 )
 add_test(NAME layout_tests COMMAND test_layout)
 
+
+# M7 单元测试 - log_worker
+add_executable(test_log_worker cpp/test_log_worker.cpp)
+target_link_libraries(test_log_worker PRIVATE qlog Threads::Threads)
+target_include_directories(test_log_worker PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}
+)
+set_target_properties(test_log_worker PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+add_test(NAME log_worker_tests COMMAND test_log_worker)
+
+# M8 单元测试 - log_manager
+add_executable(test_log_manager cpp/test_log_manager.cpp)
+target_link_libraries(test_log_manager PRIVATE qlog Threads::Threads)
+target_include_directories(test_log_manager PRIVATE
+    ${PROJECT_SOURCE_DIR}/src
+    ${PROJECT_SOURCE_DIR}
+)
+set_target_properties(test_log_manager PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
+add_test(NAME log_manager_tests COMMAND test_log_manager)
+
+message(STATUS "QLog: M7 test targets configured (log_worker)")
+message(STATUS "QLog: M8 test targets configured (log_manager)")
 message(STATUS "QLog: M0 test targets configured (atomic, spin_lock, spin_lock_rw, aligned_alloc, platform_thread, condition_variable)")
 message(STATUS "QLog: M1 test targets configured (spsc_ring_buffer)")
 message(STATUS "QLog: M2 test targets configured (mpsc_ring_buffer)")

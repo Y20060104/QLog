@@ -24,6 +24,12 @@ void appender_console::console_callback_registry::register_callback(
     callback_ = callback;
 }
 
+type_func_ptr_console_callback appender_console::console_callback_registry::get() const
+{
+    scoped_spin_lock lock(lock_);
+    return callback_;
+}
+
 appender_console::console_buffer::console_buffer() = default;
 
 appender_console::console_buffer::~console_buffer()
@@ -52,7 +58,7 @@ mpsc_ring_buffer* appender_console::console_buffer::get_or_creat_buffer()
 }
 
 void appender_console::console_buffer::insert(
-    uint64_t epoch_ms_,
+    uint64_t epoch_ms_ __attribute__((unused)),
     uint64_t log_id,
     int32_t category_idx,
     serialization::log_level log_level,
@@ -288,6 +294,25 @@ void appender_console::log_impl(const entry_runtime_view& view)
            level,
            log_entry_cache_.c_str(),
            static_cast<int32_t>(log_entry_cache_.size()));
+    }
+}
+
+void appender_console::flush_console_buffer_callback(
+    void* /*pass_through*/,
+    uint64_t /*log_id*/,
+    int32_t /*category_idx*/,
+    serialization::log_level level,
+    const char* text,
+    int32_t length
+)
+{
+    default_console_output(level, text, length);
+}
+
+void appender_console::flush()
+{
+    while (buffer_registry().fetch_and_remove(flush_console_buffer_callback, nullptr))
+    {
     }
 }
 

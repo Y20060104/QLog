@@ -101,6 +101,10 @@ template<> struct param_encoded_size<bool>
 {
     static constexpr size_t value = 1 + 1;
 };
+template<> struct param_encoded_size<const void*>
+{
+    static constexpr size_t value = 1 + sizeof(uintptr_t);
+};
 
 // 字符串 1B tag+ 4B length +N字节内容
 inline constexpr size_t STRING_HEADER_SIZE = 1 + sizeof(uint32_t);

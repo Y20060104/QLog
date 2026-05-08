@@ -782,6 +782,7 @@ std::string_view layout::do_layout(
 
     const char* p = fmt_str.data();
     const char* p_end = p + fmt_str.size();
+    int auto_index = 0;
 
     while (p < p_end)
     {
@@ -807,6 +808,9 @@ std::string_view layout::do_layout(
                 ++p;
             }
 
+            if (!has_index)
+                index = auto_index;
+
             // ── 解析格式说明符 ────────────────────────────────────────
             format_info fi{};
             if (p < p_end && *p == ':')
@@ -825,10 +829,11 @@ std::string_view layout::do_layout(
                 ++p;
 
             // ── 输出对应参数 ──────────────────────────────────────────
-            if (has_index && index < param_count_)
+            if (index < param_count_)
             {
                 insert_param(param_offsets_[index], fi);
             }
+            ++auto_index;
         }
         else if (*p == '}' && p + 1 < p_end && p[1] == '}')
         {
