@@ -533,7 +533,9 @@ QLog bare hot-path 吞吐量稳定在 ~6.5M/s，不随线程数退化。
 
 1. ✅ **热路径达标**: bare hot-path ~286ns < 300ns 目标
 2. ⚠️ **单线程落后**: BqLog text 格式化路径有 AVX2 + CRC32 硬件加速，QLog 单线程慢 5x
-3. ✅ **多线程反超**: QLog MPSC ring buffer (fetch_add + CAS 回滚) 在 4T/10T 下竞争更少，text 吞吐量反超 BqLog
+3. ✅ **多线程反超**: QLog 在 4T/10T 下 text 吞吐量反超 BqLog，根因在于两点：
+   - **MPSC 核心算法优秀**：fetch_add + CAS 回滚模式，多线程扩展性极佳
+   - **HP Pool 扁平链表设计**：QLog 的 `hp_buffer_entry` 扁平侵入式链表（单层结构+单把 spin_lock）比 BqLog 的 `group_list→group_node→block_node_head` 三级层次结构（hand-over-hand locking）简单得多，消费者遍历开销更小。BqLog 的 HP 层还有 `context_head` 的 version+seq 双重校验和 `block_list.used_/free_/stage_` 管理，这些在独占 SPSC 路径上并不必要，反而成为多线程下的性能拖累
 4. ❌ **Compressed appender 缺失**: BqLog compressed 在 10T 下达到 10.5 M/s (no param)，QLog compressed appender 未实现且 crash
 5. ❌ **加密未支持**: BqLog encrypted compressed 在 10T 下 6.07 M/s，QLog 完全缺失
 6. ⚠️ **Text layout 是瓶颈**: bare 6.5M/s → text 2.0M/s，layout 格式化和 file I/O 吃掉 70% 性能
