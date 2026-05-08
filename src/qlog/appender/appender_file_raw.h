@@ -12,7 +12,7 @@ public:
 protected:
     void log_impl(const entry_runtime_view& view) override;
     std::string get_file_ext_name() override;
-    uint32_t get_binnary_format_version() const override;
+    uint32_t get_binary_format_version() const override;
 
     appender_file_binary::appender_format_type get_appender_format() const override
     {

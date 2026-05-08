@@ -49,6 +49,24 @@ set(QLOG_LAYOUT_SOURCES
     qlog/layout/layout.cpp
 )
 
+#M6 Appender
+set(QLOG_APPENDER_SOURCES
+    qlog/appender/appender_base.h
+    qlog/appender/appender_base.cpp
+    qlog/appender/appender_console.h
+    qlog/appender/appender_console.cpp
+    qlog/appender/appender_file_base.h
+    qlog/appender/appender_file_base.cpp
+    qlog/appender/appender_file_binary.h
+    qlog/appender/appender_file_binary.cpp
+    qlog/appender/appender_file_compressed.h
+    qlog/appender/appender_file_compressed.cpp
+    qlog/appender/appender_file_raw.h
+    qlog/appender/appender_file_raw.cpp
+    qlog/appender/appender_file_text.h
+    qlog/appender/appender_file_text.cpp
+)
+
 # ============================================================================
 # Main QLog Library
 # ============================================================================
@@ -58,6 +76,7 @@ add_library(qlog STATIC
     ${QLOG_BUFFER_SOURCES}
     ${QLOG_SERIALIZATION_SOURCES}
     ${QLOG_LAYOUT_SOURCES}
+    ${QLOG_APPENDER_SOURCES}
 )
 
 # Set C++ standard and compile options

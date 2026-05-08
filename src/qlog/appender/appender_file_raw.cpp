@@ -20,11 +20,11 @@ void appender_file_raw::log_impl(const entry_runtime_view& view)
     mark_write_finished();
 }
 
-std::string appender_file_raw::get_file_ext_name() const
+std::string appender_file_raw::get_file_ext_name() 
 {
     return ".lograw";
 }
-uint32_t appender_file_raw::get_binnary_format_version()
+uint32_t appender_file_raw::get_binary_format_version()const 
 {
     return format_version;
 }
