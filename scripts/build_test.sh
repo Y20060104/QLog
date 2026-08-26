@@ -23,16 +23,16 @@ case "${build_type}" in
         ;;
 esac
 
-for command_name in cmake ninja; do
+for command_name in cmake ninja ctest; do
     if ! command -v "${command_name}" >/dev/null 2>&1; then
         echo "Missing required command: ${command_name}"
         exit 1
     fi
 done
 
-readonly build_dir="${project_root}/build/main/${build_type,,}"
+readonly build_dir="${project_root}/build/test/${build_type,,}"
 
-echo "Configuring QLog (${build_type}, tests disabled)..."
+echo "Configuring QLog (${build_type}, tests enabled)..."
 
 cmake \
     -S "${project_root}" \
@@ -40,10 +40,17 @@ cmake \
     -G Ninja \
     -DCMAKE_BUILD_TYPE="${build_type}" \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DBUILD_TESTING=OFF
+    -DBUILD_TESTING=ON
 
-echo "Building QLog..."
+echo "Building QLog tests..."
 
 cmake --build "${build_dir}" --parallel
 
-echo "QLog build passed: ${build_dir}"
+echo "Running QLog tests..."
+
+ctest \
+    --test-dir "${build_dir}" \
+    --output-on-failure \
+    --no-tests=error
+
+echo "QLog tests passed: ${build_dir}"
