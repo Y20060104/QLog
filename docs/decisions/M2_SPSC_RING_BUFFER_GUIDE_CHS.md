@@ -93,11 +93,11 @@ union block 和 block_status 位于 miso_ring_buffer，即多生产者单消费�
 
 ~~~text
 SpscRingBuffer（不可复制、不可移动）
-├── SpscWriteHandle          64B，长期写端 + 写端私有状态
-├── PublishedWriteState      64B，atomic<uint64_t>
-├── SpscReadHandle           64B，长期读端 + 读端私有状态
-├── PublishedReadState       64B，atomic<uint64_t>
-├── ColdState                配置与 Storage owner
+├── ColdState                   配置与 Storage owner
+├── SpscWriteHandle             64B，长期写端 + 写端私有状态
+├── SharedCursor write_cursor_  64B，atomic<uint64_t> value_
+├── SpscReadHandle              64B，长期读端 + 读端私有状态
+├── SharedCursor read_cursor_   64B，atomic<uint64_t> value_
 └── 64B 对齐的字节 Storage
 ~~~
 
@@ -276,9 +276,9 @@ public:
 | 缓存行 | 字段 | 唯一写线程 |
 |---|---|---|
 | SpscWriteHandle | ring、current_write_cursor_、cached_read_cursor_、reservation_pending | 写线程 |
-| PublishedWriteState | atomic write_cursor_ | 写线程 |
+| SharedCursor write_cursor_ | atomic value_ | 写线程 |
 | SpscReadHandle | ring、current_read_cursor_、cached_write_cursor_、回收计数、read_pending | 读线程 |
-| PublishedReadState | atomic read_cursor_ | 读线程 |
+| SharedCursor read_cursor_ | atomic value_ | 读线程 |
 
 要求：
 
@@ -287,12 +287,14 @@ static_assert(sizeof(SpscWriteHandle) == 64);
 static_assert(alignof(SpscWriteHandle) == 64);
 static_assert(sizeof(SpscReadHandle) == 64);
 static_assert(alignof(SpscReadHandle) == 64);
+static_assert(sizeof(SharedCursor) == 64);
+static_assert(alignof(SharedCursor) == 64);
 static_assert(std::atomic<std::uint64_t>::is_always_lock_free);
 ~~~
 
 M2 中 atomic 只初始化为零，不调用 load/store。
 
-ColdState 和统计不得与两个 PublishedState 共用缓存行。
+ColdState 和统计不得与两个 `SharedCursor` 实例共用缓存行。
 
 ## 8. 单次 Reservation/View 的性能目标
 
@@ -492,8 +494,8 @@ Codex 的验收任务：
   SpscReadHandle::current_read_cursor_
 
 共享发布进度：
-  PublishedWriteState::write_cursor_
-  PublishedReadState::read_cursor_
+  SpscRingBuffer::write_cursor_.value_
+  SpscRingBuffer::read_cursor_.value_
 
 对端进度缓存：
   SpscWriteHandle::cached_read_cursor_
@@ -504,11 +506,11 @@ Codex 的验收任务：
 
 ~~~text
 current_write_cursor_
-    -> PublishedWriteState::write_cursor_
+    -> write_cursor_.value_
     -> cached_write_cursor_
 
 current_read_cursor_
-    -> PublishedReadState::read_cursor_
+    -> read_cursor_.value_
     -> cached_read_cursor_
 ~~~
 
@@ -520,35 +522,34 @@ current_read_cursor_
 ~~~text
 ColdState cold_state_
 SpscWriteHandle write_handle_
-PublishedWriteState published_write_state_
+SharedCursor write_cursor_
 SpscReadHandle read_handle_
-PublishedReadState published_read_state_
+SharedCursor read_cursor_
 ~~~
 
-其中两个发布状态的形状冻结为：
+两个发布缓存行共用同一种类型，其形状冻结为：
 
 ~~~cpp
-struct alignas(64) PublishedWriteState {
-    std::atomic<std::uint64_t> write_cursor_{0};
-};
+static constexpr std::size_t kCacheLineSize = 64;
 
-struct alignas(64) PublishedReadState {
-    std::atomic<std::uint64_t> read_cursor_{0};
+struct alignas(kCacheLineSize) SharedCursor final {
+    std::atomic<std::uint64_t> value_{0};
 };
 ~~~
 
 不使用 `std::hardware_destructive_interference_size`，不手写 padding，也不把
-Ring 的精确 `sizeof` 冻结为 ABI。四个热类型各自使用 `alignas(64)`，并通过
-静态断言验证 `sizeof == 64`、`alignof == 64` 以及
-`atomic<uint64_t>` 始终无锁。
+Ring 的精确 `sizeof` 冻结为 ABI。`SpscWriteHandle`、`SpscReadHandle` 和
+`SharedCursor` 三个热类型分别使用 `alignas(kCacheLineSize)`；Ring 内两个
+`SharedCursor` 实例与两个 Handle 形成四个热状态块。通过静态断言验证
+`sizeof == 64`、`alignof == 64` 以及 `atomic<uint64_t>` 始终无锁。
 
 你的生产代码任务：
 
 - 头文件自包含引入 `<atomic>`。
 - 按上述名称调整两个 Handle 的当前游标和对端缓存字段。
-- 在 Ring 私有区加入两个 PublishedState，并 friend 两个长期 Handle。
-- Ring 按冻结顺序内嵌唯一 WriteHandle、PublishedWriteState、ReadHandle 和
-  PublishedReadState。
+- 在 Ring 私有区声明一个 `SharedCursor` 类型并 friend 两个长期 Handle。
+- Ring 按冻结顺序内嵌唯一 WriteHandle、`write_cursor_`、ReadHandle 和
+  `read_cursor_`；后两者都是 `SharedCursor` 实例。
 - 两个 Handle 的私有构造函数只保存 `&ring`，不读取尚未构造完成的成员。
 - Ring 构造时完成上述成员构造；所有游标、计数和 pending 通过成员初始化为零。
 - 在 `.cpp` 定义两个 Handle 构造和两个 accessor；accessor 只返回稳定引用。
@@ -557,7 +558,7 @@ Ring 的精确 `sizeof` 冻结为 ABI。四个热类型各自使用 `alignas(64)
 Codex 的验收任务：
 
 - 将唯一测试访问器提取到共享测试头，避免多个测试翻译单元重复定义。
-- 验证两个 Handle 和两个 PublishedState 均为 64B 对齐、大小为 64B，且地址
+- 验证两个 Handle 和两个 `SharedCursor` 实例均为 64B 对齐、大小为 64B，且地址
   两两位于不同缓存行。
 - 验证两个 accessor 多次调用始终返回同一内嵌 Handle。
 - 验证两个共享游标初值为零；测试可以 relaxed-load，生产代码不得 load/store。

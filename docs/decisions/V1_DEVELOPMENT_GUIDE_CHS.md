@@ -253,14 +253,14 @@ tail_waste     tail - H
 
 ## 7. 状态所有权和内存序
 
-建议用四个独立的 `alignas(64)` 包装结构，并对其大小做静态检查：
+建议用四个彼此独立的 64B 热状态块，并对其类型大小做静态检查：
 
 | Cache line | 字段 | 唯一写线程 |
 |---|---|---|
 | Long-lived write handle | `ring`, `current_write_cursor_`, `cached_read_cursor_`, reservation state | Writer |
-| Published write | `atomic<uint64_t> write_cursor_` | Writer |
+| `SharedCursor write_cursor_` | `atomic<uint64_t> value_` | Writer |
 | Long-lived read handle | `ring`, `current_read_cursor_`, `cached_write_cursor_`, reclaim counters | Reader |
-| Published read | `atomic<uint64_t> read_cursor_` | Reader |
+| `SharedCursor read_cursor_` | `atomic<uint64_t> value_` | Reader |
 
 冷元数据和统计不得与 published cursor 共用 cache line。Producer 统计由
 Producer 写，Consumer 统计由 Consumer 写；运行中跨线程读取统计需要另行
@@ -282,8 +282,8 @@ current_read_cursor_  % 8 == 0
 ```text
 Producer 写 Payload
     -> memcpy Header
-    -> write_cursor_.store(new_write, release)
-    -> Consumer write_cursor_.load(acquire)
+    -> write_cursor_.value_.store(new_write, release)
+    -> Consumer write_cursor_.value_.load(acquire)
     -> Consumer 才能读 Header/Payload
 ```
 
@@ -291,8 +291,8 @@ Producer 写 Payload
 
 ```text
 Consumer 完成最后一次 Ring 数据读取
-    -> read_cursor_.store(new_read, release)
-    -> Producer read_cursor_.load(acquire)
+    -> read_cursor_.value_.store(new_read, release)
+    -> Producer read_cursor_.value_.load(acquire)
     -> Producer 才能覆盖已回收字节
 ```
 
@@ -527,9 +527,9 @@ ARM64 CI。
 ### 任务
 
 - Producer 先用 `cached_read_cursor_`，只有缓存判断空间不足时才 acquire-load
-  `read_cursor_`；刷新后仍不足才 drop。
+  `read_cursor_.value_`；刷新后仍不足才 drop。
 - Consumer 用 `cached_write_cursor_`，本地 snapshot 耗尽后才 acquire-load
-  `write_cursor_`。
+  `write_cursor_.value_`。
 - Consumer 在 32 条、4 KiB、切换 Channel 或观察 empty 时发布 reclaim。
 - 四类状态独立占 64B cache line。
 
@@ -853,7 +853,7 @@ private:
 
 - 修改阶段 A 已冻结的 Reservation/View 特殊成员。
 - 定义 Handle、Reservation/View 或 accessor 的运行时行为。
-- 把长期 Handle、PublishedState 或 atomic 加入 Ring。
+- 把长期 Handle、SharedCursor 或 atomic 加入 Ring。
 - 实现 reserve/commit/peek/consume 或调用布局函数处理真实记录。
 - 加入游标推进、acquire/release、CAS 或 `fetch_add`。
 - 使用 `vector<std::byte>`、`new[]`、`delete[]`、`aligned_alloc` 或
@@ -880,23 +880,24 @@ src/spsc_ring_buffer.cpp
 
 - 本侧当前进度：`current_write_cursor_`、`current_read_cursor_`。
 - 对端缓存快照：`cached_read_cursor_`、`cached_write_cursor_`。
-- 共享发布游标：`PublishedWriteState::write_cursor_`、
-  `PublishedReadState::read_cursor_`。
+- 共享发布游标：`SpscRingBuffer::write_cursor_.value_`、
+  `SpscRingBuffer::read_cursor_.value_`。
 
 已冻结的 Ring 成员顺序：
 
 ~~~text
 ColdState cold_state_
 SpscWriteHandle write_handle_
-PublishedWriteState published_write_state_
+SharedCursor write_cursor_
 SpscReadHandle read_handle_
-PublishedReadState published_read_state_
+SharedCursor read_cursor_
 ~~~
 
 你的生产代码任务：
 
-- 引入 `<atomic>`，声明两个 `alignas(64)` PublishedState。
-- 每个 PublishedState 只保存一个初始化为零的 `atomic<uint64_t>`。
+- 引入 `<atomic>`，声明一个 `alignas(kCacheLineSize)` 的 `SharedCursor` 类型。
+- `SharedCursor` 只保存一个初始化为零的 `atomic<uint64_t> value_`，Ring 内嵌
+  `write_cursor_` 和 `read_cursor_` 两个实例。
 - Ring friend 两个长期 Handle，并按冻结顺序内嵌四个热状态块。
 - 定义两个 Handle 私有构造，只保存 Ring 地址。
 - 定义两个 accessor，只返回内嵌 Handle 的稳定引用。

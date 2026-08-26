@@ -93,12 +93,14 @@ WriteReservation 默认 abort，ReadView 默认 abandon。
 
 ### 发布状态
 
-继续使用两个独立缓存行：
+继续使用两个独立缓存行，它们是同一个 `SharedCursor` 类型的两个实例：
 
-- PublishedWriteState；
-- PublishedReadState。
+- `write_cursor_`，由写线程发布；
+- `read_cursor_`，由读线程发布。
 
-两个长期 Handle、两个 PublishedState 构成四个热缓存行。写端与读端可变状态绝不合并到同一缓存行。
+`SharedCursor` 内部只保存初始化为零的 `atomic<uint64_t> value_`。两个长期
+Handle 与两个 `SharedCursor` 实例构成四个热缓存行；写端与读端可变状态
+绝不合并到同一缓存行。
 
 ### 8B 单位
 
