@@ -45,10 +45,10 @@
 已冻结的缓存行分组：
 
 ```text
-长期写 Handle 缓存行：ring, write_local, read_cache, reservation_pending
-写发布缓存行：       atomic<uint64_t> published_write
-长期读 Handle 缓存行：ring, read_local, write_cache, reclaim counters, read_pending
-读发布缓存行：       atomic<uint64_t> published_read
+长期写 Handle 缓存行：ring, current_write_cursor_, cached_read_cursor_, reservation_pending
+写发布缓存行：       atomic<uint64_t> write_cursor_
+长期读 Handle 缓存行：ring, current_read_cursor_, cached_write_cursor_, reclaim counters, read_pending
+读发布缓存行：       atomic<uint64_t> read_cursor_
 冷数据缓存行：    capacity, mask, storage pointer, statistics
 ```
 
@@ -82,7 +82,7 @@ public:
 
 - 成功的预留只暴露一个连续的载荷（payload）span。
 - `try_reserve()` 计算暂定布局，但不推进已提交的生产者游标。
-- `commit()` 写入 8 字节帧头，推进 `write_local`，然后对 `published_write` 执行 release-store。
+- `commit()` 写入 8 字节帧头，推进 `current_write_cursor_`，然后对 `write_cursor_` 执行 release-store。
 - 未提交即析构会中止预留：不发布任何内容，也不推进任何游标。下一次预留可以覆盖相同的未发布字节。
 - 同一时刻只允许一个未完成的预留。该检查仅涉及生产者本地状态，不需要原子操作。
 - `commit()` 不能改变预留的精确大小，因为不同大小可能意味着不同的物理载荷（payload）位置。
@@ -114,9 +114,9 @@ public:
 ```
 
 - 每个长期读 Handle 最多只能有一个未完成的 ReadView。
-- `try_peek()` 仅在缓存快照耗尽后才 acquire-load `published_write`。
+- `try_peek()` 仅在缓存快照耗尽后才 acquire-load `write_cursor_`。
 - ReadView 不拥有载荷（payload）字节。它不得存活到对应空间被回收之后。
-- `consume()` 推进 `read_local`；在累计 32 条记录、4 KiB、切换通道或观察到通道为空时，以 release 发布回收进度。
+- `consume()` 推进 `current_read_cursor_`；在累计 32 条记录、4 KiB、切换通道或观察到通道为空时，以 release 发布回收进度。
 - 未消费的句柄析构时会放弃该视图，并保留记录以供后续读取。后台线程的错误路径必须明确决定是消费一条有问题的日志，还是隔离该通道。
 
 ## 后台调度
@@ -146,17 +146,17 @@ public:
 ## 代码评审中必须证明的不变量
 
 ```text
-unsigned(write_local - published_read) <= capacity
-unsigned(published_write - read_local) <= capacity
-write_local % 8 == 0
-read_local  % 8 == 0
+unsigned(current_write_cursor_ - read_cursor_) <= capacity
+unsigned(write_cursor_ - current_read_cursor_) <= capacity
+current_write_cursor_ % 8 == 0
+current_read_cursor_  % 8 == 0
 ```
 
-- 只有生产者写入生产者本地状态和 `published_write`。
-- 只有消费者写入消费者本地状态和 `published_read`。
+- 只有生产者写入生产者本地状态和 `write_cursor_`。
+- 只有消费者写入消费者本地状态和 `read_cursor_`。
 - 无符号减法计算游标距离，包括游标接近 `UINT64_MAX` 时；绝不使用 `write < read` 判断游标顺序。
 - 过期的对端游标缓存只会低估可用空间或可处理工作量。
-- `published_write` 是提交标记；消费者绝不检查未发布的帧头/载荷（payload）字节。
+- `write_cursor_` 是提交标记；消费者绝不检查未发布的帧头/载荷（payload）字节。
 - 在生产者 acquire-load 到包含相应字节的已发布读游标之前，已回收字节绝不被复用。
 
 ## 已接受的评审决策
@@ -165,7 +165,7 @@ read_local  % 8 == 0
 2. **后台线程边界。** 后台线程直接从环形缓冲区格式化到可复用输出缓冲区，在格式化之后回收空间，随后才执行文件 I/O。
 3. **空闲唤醒策略。** 第一版实现采用自适应轮询加短时定时等待，不增加任何生产者侧的唤醒访问。带调度器休眠标志和低频通知路径的方案保留为后续测量选项。两种情况下，唤醒均位于 Ring 之外。
 4. **生命周期约定。** 生产者线程在 Logger 关闭前停止；V1 中地址稳定的通道存储保留到关闭时。
-5. **损坏处理策略。** Debug 模式下断言/快速失败。Release 模式下仅隔离受损通道、增加计数器，并通过非递归的紧急路径报告。绝不信任受损的 `frame_bytes` 来定位下一条记录。
+5. **损坏处理策略。** Debug 模式完整检查 Header、长度、对齐和 Geometry。Release 模式只保留避免越界和未定义行为的最小检查；损坏隔离、详细统计与紧急报告推迟到 M6，不进入 M3 热路径。任何模式都绝不使用不可信的 `frame_bytes` 定位下一条记录。
 
 ## 接受后的实现顺序
 

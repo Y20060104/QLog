@@ -61,15 +61,15 @@ SpscRingBuffer 内嵌：
 SpscWriteHandle 保存：
 
 - Ring 指针；
-- write_local；
-- read_cache；
+- current_write_cursor_；
+- cached_read_cursor_；
 - reservation_pending。
 
 SpscReadHandle 保存：
 
 - Ring 指针；
-- read_local；
-- write_cache；
+- current_read_cursor_；
+- cached_write_cursor_；
 - 批量回收计数；
 - read_pending。
 

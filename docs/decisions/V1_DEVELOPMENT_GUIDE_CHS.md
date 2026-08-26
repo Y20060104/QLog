@@ -257,10 +257,10 @@ tail_waste     tail - H
 
 | Cache line | 字段 | 唯一写线程 |
 |---|---|---|
-| Long-lived write handle | `ring`, `write_local`, `read_cache`, reservation state | Writer |
-| Published write | `atomic<uint64_t> published_write` | Writer |
-| Long-lived read handle | `ring`, `read_local`, `write_cache`, reclaim counters | Reader |
-| Published read | `atomic<uint64_t> published_read` | Reader |
+| Long-lived write handle | `ring`, `current_write_cursor_`, `cached_read_cursor_`, reservation state | Writer |
+| Published write | `atomic<uint64_t> write_cursor_` | Writer |
+| Long-lived read handle | `ring`, `current_read_cursor_`, `cached_write_cursor_`, reclaim counters | Reader |
+| Published read | `atomic<uint64_t> read_cursor_` | Reader |
 
 冷元数据和统计不得与 published cursor 共用 cache line。Producer 统计由
 Producer 写，Consumer 统计由 Consumer 写；运行中跨线程读取统计需要另行
@@ -269,10 +269,10 @@ Producer 写，Consumer 统计由 Consumer 写；运行中跨线程读取统计�
 核心不变量：
 
 ```text
-unsigned(write_local - published_read) <= capacity
-unsigned(published_write - read_local) <= capacity
-write_local % 8 == 0
-read_local  % 8 == 0
+unsigned(current_write_cursor_ - read_cursor_) <= capacity
+unsigned(write_cursor_ - current_read_cursor_) <= capacity
+current_write_cursor_ % 8 == 0
+current_read_cursor_  % 8 == 0
 ```
 
 只用无符号减法计算逻辑距离，禁止用 `write < read` 判断先后。
@@ -282,8 +282,8 @@ read_local  % 8 == 0
 ```text
 Producer 写 Payload
     -> memcpy Header
-    -> published_write.store(new_write, release)
-    -> Consumer published_write.load(acquire)
+    -> write_cursor_.store(new_write, release)
+    -> Consumer write_cursor_.load(acquire)
     -> Consumer 才能读 Header/Payload
 ```
 
@@ -291,8 +291,8 @@ Producer 写 Payload
 
 ```text
 Consumer 完成最后一次 Ring 数据读取
-    -> published_read.store(new_read, release)
-    -> Producer published_read.load(acquire)
+    -> read_cursor_.store(new_read, release)
+    -> Producer read_cursor_.load(acquire)
     -> Producer 才能覆盖已回收字节
 ```
 
@@ -526,10 +526,10 @@ ARM64 CI。
 
 ### 任务
 
-- Producer 先用 `read_cache`，只有缓存判断空间不足时才 acquire-load
-  `published_read`；刷新后仍不足才 drop。
-- Consumer 用 `write_cache`，本地 snapshot 耗尽后才 acquire-load
-  `published_write`。
+- Producer 先用 `cached_read_cursor_`，只有缓存判断空间不足时才 acquire-load
+  `read_cursor_`；刷新后仍不足才 drop。
+- Consumer 用 `cached_write_cursor_`，本地 snapshot 耗尽后才 acquire-load
+  `write_cursor_`。
 - Consumer 在 32 条、4 KiB、切换 Channel 或观察 empty 时发布 reclaim。
 - 四类状态独立占 64B cache line。
 
@@ -867,7 +867,51 @@ private:
 
 严格按照 [更新后的里程碑 2 专项指南](./M2_SPSC_RING_BUFFER_GUIDE_CHS.md) 推进。
 
-## 22. 一手参考资料
+## 22. 当前唯一用户任务：阶段 C 长期 Handle 与发布状态布局
+
+当前只修改生产文件：
+
+~~~text
+include/qlog/detail/spsc_ring_buffer.hpp
+src/spsc_ring_buffer.cpp
+~~~
+
+已冻结的游标命名：
+
+- 本侧当前进度：`current_write_cursor_`、`current_read_cursor_`。
+- 对端缓存快照：`cached_read_cursor_`、`cached_write_cursor_`。
+- 共享发布游标：`PublishedWriteState::write_cursor_`、
+  `PublishedReadState::read_cursor_`。
+
+已冻结的 Ring 成员顺序：
+
+~~~text
+ColdState cold_state_
+SpscWriteHandle write_handle_
+PublishedWriteState published_write_state_
+SpscReadHandle read_handle_
+PublishedReadState published_read_state_
+~~~
+
+你的生产代码任务：
+
+- 引入 `<atomic>`，声明两个 `alignas(64)` PublishedState。
+- 每个 PublishedState 只保存一个初始化为零的 `atomic<uint64_t>`。
+- Ring friend 两个长期 Handle，并按冻结顺序内嵌四个热状态块。
+- 定义两个 Handle 私有构造，只保存 Ring 地址。
+- 定义两个 accessor，只返回内嵌 Handle 的稳定引用。
+- 更新 Ring 构造初始化列表，不执行 atomic load/store。
+
+本阶段禁止实现 reserve/commit/peek/consume、游标推进、full/empty、
+Header/Payload、acquire/release、CAS、`fetch_add`、锁或线程身份检查。
+
+测试仍由 Codex 负责：提取唯一测试访问器、验证四缓存行布局和稳定地址，并运行
+Debug、Release、ASan/UBSan。完成阶段 C 后先执行阶段 D 总门禁，再进入 M3。
+
+详细类型边界与验收要求见
+[里程碑 2 专项指南](./M2_SPSC_RING_BUFFER_GUIDE_CHS.md)。
+
+## 23. 一手参考资料
 
 - [BQLog SISO ring source](https://github.com/Tencent/BqLog/blob/main/src/bq_log/types/buffer/siso_ring_buffer.cpp)
 - [spdlog async thread-pool dispatch](https://github.com/gabime/spdlog/blob/v1.x/include/spdlog/details/thread_pool-inl.h)

@@ -222,8 +222,8 @@ private:
     explicit SpscWriteHandle(SpscRingBuffer& ring) noexcept;
 
     SpscRingBuffer* ring_{};
-    std::uint64_t write_local_{};
-    std::uint64_t read_cache_{};
+    std::uint64_t current_write_cursor_{};
+    std::uint64_t cached_read_cursor_{};
     bool reservation_pending_{};
 };
 
@@ -242,8 +242,8 @@ private:
     explicit SpscReadHandle(SpscRingBuffer& ring) noexcept;
 
     SpscRingBuffer* ring_{};
-    std::uint64_t read_local_{};
-    std::uint64_t write_cache_{};
+    std::uint64_t current_read_cursor_{};
+    std::uint64_t cached_write_cursor_{};
     std::uint32_t records_since_publish_{};
     std::uint32_t bytes_since_publish_{};
     bool read_pending_{};
@@ -275,10 +275,10 @@ public:
 
 | 缓存行 | 字段 | 唯一写线程 |
 |---|---|---|
-| SpscWriteHandle | ring、write_local、read_cache、reservation_pending | 写线程 |
-| PublishedWriteState | atomic published_write | 写线程 |
-| SpscReadHandle | ring、read_local、write_cache、回收计数、read_pending | 读线程 |
-| PublishedReadState | atomic published_read | 读线程 |
+| SpscWriteHandle | ring、current_write_cursor_、cached_read_cursor_、reservation_pending | 写线程 |
+| PublishedWriteState | atomic write_cursor_ | 写线程 |
+| SpscReadHandle | ring、current_read_cursor_、cached_write_cursor_、回收计数、read_pending | 读线程 |
+| PublishedReadState | atomic read_cursor_ | 读线程 |
 
 要求：
 
@@ -484,18 +484,93 @@ Codex 的验收任务：
 
 ### 阶段 C：长期 Handle 与发布状态布局（当前）
 
+本阶段冻结三类游标名称：
+
+~~~text
+本线程权威进度：
+  SpscWriteHandle::current_write_cursor_
+  SpscReadHandle::current_read_cursor_
+
+共享发布进度：
+  PublishedWriteState::write_cursor_
+  PublishedReadState::read_cursor_
+
+对端进度缓存：
+  SpscWriteHandle::cached_read_cursor_
+  SpscReadHandle::cached_write_cursor_
+~~~
+
+数据流固定为：
+
+~~~text
+current_write_cursor_
+    -> PublishedWriteState::write_cursor_
+    -> cached_write_cursor_
+
+current_read_cursor_
+    -> PublishedReadState::read_cursor_
+    -> cached_read_cursor_
+~~~
+
+`current_*` 只能由本侧线程推进，是本侧权威位置；`cached_*` 是对端发布游标
+的本地快照，只允许过期并造成保守判断，不能扩大可读或可写范围。
+
+四个热状态块的成员顺序冻结为：
+
+~~~text
+ColdState cold_state_
+SpscWriteHandle write_handle_
+PublishedWriteState published_write_state_
+SpscReadHandle read_handle_
+PublishedReadState published_read_state_
+~~~
+
+其中两个发布状态的形状冻结为：
+
+~~~cpp
+struct alignas(64) PublishedWriteState {
+    std::atomic<std::uint64_t> write_cursor_{0};
+};
+
+struct alignas(64) PublishedReadState {
+    std::atomic<std::uint64_t> read_cursor_{0};
+};
+~~~
+
+不使用 `std::hardware_destructive_interference_size`，不手写 padding，也不把
+Ring 的精确 `sizeof` 冻结为 ABI。四个热类型各自使用 `alignas(64)`，并通过
+静态断言验证 `sizeof == 64`、`alignof == 64` 以及
+`atomic<uint64_t>` 始终无锁。
+
 你的生产代码任务：
 
-- Ring 析构前构造并持有唯一 WriteHandle/ReadHandle。
-- 两个 Handle 分别保存稳定 Ring 指针和本侧私有状态。
-- 两个 PublishedState 分别独占缓存行。
-- 所有游标、计数和 pending 初始化为零，但不执行 atomic load/store。
+- 头文件自包含引入 `<atomic>`。
+- 按上述名称调整两个 Handle 的当前游标和对端缓存字段。
+- 在 Ring 私有区加入两个 PublishedState，并 friend 两个长期 Handle。
+- Ring 按冻结顺序内嵌唯一 WriteHandle、PublishedWriteState、ReadHandle 和
+  PublishedReadState。
+- 两个 Handle 的私有构造函数只保存 `&ring`，不读取尚未构造完成的成员。
+- Ring 构造时完成上述成员构造；所有游标、计数和 pending 通过成员初始化为零。
+- 在 `.cpp` 定义两个 Handle 构造和两个 accessor；accessor 只返回稳定引用。
+- 不定义 `try_reserve()`、`try_peek()`、Reservation/View 或任何状态机行为。
 
 Codex 的验收任务：
 
-- 验证四个热状态块均按 64B 对齐且两两不共享缓存行。
-- 验证 accessor 地址在 Ring 生命周期内稳定。
-- 验证 M2 没有游标推进、内存序或并发状态机行为。
+- 将唯一测试访问器提取到共享测试头，避免多个测试翻译单元重复定义。
+- 验证两个 Handle 和两个 PublishedState 均为 64B 对齐、大小为 64B，且地址
+  两两位于不同缓存行。
+- 验证两个 accessor 多次调用始终返回同一内嵌 Handle。
+- 验证两个共享游标初值为零；测试可以 relaxed-load，生产代码不得 load/store。
+- 保留阶段 A/B 全部测试，并运行头文件独立编译、Debug、Release 与
+  ASan/UBSan。
+- 扫描生产源码，确认没有游标推进、atomic load/store、acquire/release、CAS、
+  `fetch_add`、Header memcpy 或并发状态机行为。
+
+性能优先边界：
+
+- 本阶段不加入线程身份检查、锁、引用计数、运行时缓存行检查或防御性分支。
+- Debug 完整校验、Release 仅保留避免越界和未定义行为的最小检查；损坏隔离、
+  详细统计和紧急报告推迟到 M6。
 
 ### 阶段 D：M2 总门禁
 
