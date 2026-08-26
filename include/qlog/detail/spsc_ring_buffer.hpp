@@ -44,8 +44,8 @@ class alignas(64) SpscWriteHandle final {
     explicit SpscWriteHandle(SpscRingBuffer& ring) noexcept;
 
     SpscRingBuffer* ring_{};
-    std::uint64_t local_write_cursor_{};
-    std::uint64_t read_cursor_cache_{};
+    std::uint64_t current_write_cursor_{};
+    std::uint64_t cached_read_cursor_{};
     bool reservation_pending_{};
 };
 
@@ -64,8 +64,8 @@ class alignas(64) SpscReadHandle final {
     explicit SpscReadHandle(SpscRingBuffer& ring) noexcept;
 
     SpscRingBuffer* ring_{};
-    std::uint64_t local_read_cursor_{};
-    std::uint64_t write_cursor_cache_{};
+    std::uint64_t current_read_cursor_{};
+    std::uint64_t cached_write_cursor_{};
     std::uint32_t records_since_publish_{};
     std::uint32_t bytes_since_publish_{};
     bool read_pending_{};
