@@ -2,8 +2,26 @@ cmake_minimum_required(VERSION 3.20)
 
 project(QLog VERSION 0.1.0 LANGUAGES CXX)
 
+function(qlog_enable_warnings target_name)
+    if(MSVC)
+        target_compile_options(${target_name} PRIVATE
+            /W4
+            /permissive-
+        )
+    else()
+        target_compile_options(${target_name} PRIVATE
+            -Wall
+            -Wextra
+            -Wpedantic
+            -Wconversion
+            -Wshadow
+        )
+    endif()
+endfunction()
+
 add_library(qlog STATIC
     src/version.cpp
+    src/spsc_ring_buffer.cpp
 )
 
 add_library(QLog::qlog ALIAS qlog)
@@ -20,29 +38,10 @@ target_include_directories(qlog
         $<INSTALL_INTERFACE:include>
 )
 
-if(MSVC)
-    target_compile_options(qlog PRIVATE /W4 /permissive-)
-else()
-    target_compile_options(qlog PRIVATE
-        -Wall
-        -Wextra
-        -Wpedantic
-        -Wconversion
-        -Wshadow
-    )
-endif()
+qlog_enable_warnings(qlog)
 
 include(CTest)
 
 if(BUILD_TESTING)
-    add_executable(qlog_smoke_test
-        tests/smoke_test.cpp
-    )
-
-    target_link_libraries(qlog_smoke_test PRIVATE QLog::qlog)
-
-    add_test(
-        NAME qlog.smoke
-        COMMAND qlog_smoke_test
-    )
+    add_subdirectory(tests)
 endif()
