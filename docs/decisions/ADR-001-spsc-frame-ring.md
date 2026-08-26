@@ -1,38 +1,41 @@
-# ADR-001: Split-span SPSC frame ring
+# ADR-001：双区段 SPSC 帧环形缓冲区
 
-- Status: Accepted
-- Date: 2026-08-15
+- 状态：已被 ADR-002 取代
+- 日期：2026-08-15
+- 取代日期：2026-08-16
 
-## Context
+> 本 ADR 作为设计历史以及未来对比基准测试的规范予以保留。它不再是
+> V1 的生产布局。ADR-002 使用回绕到环形缓冲区物理起始位置的连续
+> payload，取代了分段 payload。
 
-V1 needs a bounded, non-blocking producer channel for long-lived, latency-
-sensitive game-server threads. Each channel has exactly one producer and one
-consumer. Records are variable length. The design must preserve all usable ring
-capacity without requiring producers to reserve a shared ticket.
+## 背景
 
-## Decision
+V1 需要为长生命周期、延迟敏感的游戏服务器线程提供一个有界、非阻塞的
+生产者通道。每个通道恰好有一个生产者和一个消费者。记录是变长的。该设计
+必须保留环形缓冲区全部可用容量，同时不能要求生产者预留共享 ticket。
 
-### Storage and cursors
+## 决策
 
-- The ring capacity is a power of two; the default is 64 KiB.
-- Storage and every frame start are aligned to 8 bytes.
-- Producer and consumer use 64-bit monotonically increasing logical byte
-  cursors. A physical position is `cursor & (capacity - 1)`.
-- The maintained invariant is:
+### 存储与游标
+
+- 环形缓冲区容量是 2 的幂；默认值为 64 KiB。
+- 存储区和每个帧起始位置均按 8 字节对齐。
+- 生产者和消费者使用单调递增的 64 位逻辑字节游标。物理位置为
+  `cursor & (capacity - 1)`。
+- 持续维护以下不变量：
 
   ```text
   0 <= published_write - published_read <= capacity
   ```
 
-- Producer-local and consumer-local cursors are ordinary integers.
-- The published write and read cursors are atomics placed on independent cache
-  lines. Cold metadata and statistics must not share those cache lines.
-- The normal SPSC path contains no CAS, `fetch_add`, per-slot state, or version
-  number.
+- 生产者本地游标和消费者本地游标使用普通整数。
+- 已发布的写游标和读游标是放置在独立缓存行上的原子变量。冷路径元数据和
+  统计信息不得与这些游标共享缓存行。
+- 常规 SPSC 路径不包含 CAS、`fetch_add`、逐槽位状态或版本号。
 
-### Frame layout
+### 帧布局
 
-The ring owns an 8-byte framing header:
+环形缓冲区采用一个 8 字节的成帧头部：
 
 ```cpp
 struct FrameHeader {
@@ -41,9 +44,9 @@ struct FrameHeader {
 };
 ```
 
-`frame_bytes` is `align_up(sizeof(FrameHeader) + payload_bytes, 8)`. Because the
-capacity and all frame sizes are multiples of eight, the 8-byte header is always
-physically contiguous. The payload may cross the ring end and is exposed as:
+`frame_bytes` 为 `align_up(sizeof(FrameHeader) + payload_bytes, 8)`。由于容量和
+所有帧大小都是 8 的倍数，8 字节头部在物理上始终连续。payload 可以跨越
+环形缓冲区末端，并通过以下结构暴露：
 
 ```cpp
 struct MutableSegments {
@@ -52,39 +55,37 @@ struct MutableSegments {
 };
 ```
 
-The sum of the two span lengths equals `payload_bytes`; `second` is empty for
-the common contiguous case.
+两个 span 的长度之和等于 `payload_bytes`；在常见的连续情形中，`second`
+为空。
 
-### Reservation and publication
+### 预留与发布
 
-- `try_reserve(payload_bytes)` checks overflow and the 8 KiB payload limit.
-- The producer calculates free space using its cached read cursor. Only when
-  cached space is insufficient does it acquire-load the published read cursor.
-- If refreshed space is still insufficient, the operation returns `full`
-  immediately. No cursor changes, waiting, retry loop, allocation, or fallback
-  I/O occurs.
-- Only one outstanding producer reservation is allowed per channel.
-- A reservation is move-only. Explicit `commit()` is required. Destruction
-  without commit abandons the reservation and leaves the write cursor unchanged.
-- `commit()` writes the frame header after the payload is complete, advances the
-  producer-local cursor, and release-stores the published write cursor.
-- The producer publishes every accepted record; implicit publication batching
-  is not used because an isolated log must become visible without a later call.
+- `try_reserve(payload_bytes)` 检查溢出和 8 KiB 的 payload 上限。
+- 生产者使用其缓存的读游标计算空闲空间。只有当缓存的空间不足时，才以
+  acquire 语义加载已发布的读游标。
+- 如果刷新后的空间仍然不足，操作会立即返回 `full`。不会发生游标改变、
+  等待、重试循环、内存分配或回退 I/O。
+- 每个通道只允许存在一个尚未完成的生产者预留。
+- 预留对象只可移动。必须显式调用 `commit()`。未 commit 就析构会放弃该
+  预留，并保持写游标不变。
+- `commit()` 在 payload 完成后写入帧头部，推进生产者本地游标，并以
+  release 语义存储已发布的写游标。
+- 生产者会发布每一条已接受的记录；不使用隐式批量发布，因为即使后续没有
+  再次调用，单独一条日志也必须变为可见。
 
-### Consumption and reclamation
+### 消费与回收
 
-- The consumer uses its cached published-write snapshot until exhausted, then
-  acquire-loads the current published write cursor.
-- It validates both sizes before constructing a frame view. A malformed frame
-  must never cause an out-of-bounds access or a zero-length progress loop.
-- The consumer finishes decoding/formatting or copies the data into backend-
-  owned memory before advancing the reusable boundary.
-- It release-stores the published read cursor after 32 records, 4 KiB, a channel
-  switch, or observing the channel empty, whichever happens first.
-- No view into ring storage may survive publication of the corresponding read
-  cursor.
+- 消费者会一直使用缓存的已发布写游标快照，直至该快照耗尽，然后以 acquire
+  语义加载当前已发布的写游标。
+- 消费者在构造帧视图前验证两个大小字段。畸形帧绝不能导致越界访问或
+  零长度的无进展循环。
+- 消费者在推进可复用边界前，必须完成解码/格式化，或者将数据复制到后端
+  拥有的内存中。
+- 当处理完 32 条记录、4 KiB 数据、切换通道或观察到通道为空时，以最先发生
+  的条件为准，消费者会以 release 语义存储已发布的读游标。
+- 发布相应的读游标后，不得继续保留任何指向环形缓冲区存储区的视图。
 
-### Memory ordering
+### 内存序
 
 ```text
 producer payload/header writes
@@ -98,81 +99,73 @@ consumer finishes all ring reads
     -> producer may overwrite released bytes
 ```
 
-Cached peer cursors may be stale. Staleness only underestimates available work
-or space; it must never permit reading unpublished bytes or overwriting
-unconsumed bytes.
+缓存的对端游标可以是过期的。过期只会低估可用工作量或空间；它绝不能允许
+读取尚未发布的字节或覆盖尚未消费的字节。
 
-### Crossing the physical tail
+### 跨越物理末端
 
-No padding frame is inserted. A wrapped payload is written directly through its
-two spans. The consumer handles fmt's contiguous-string requirement as follows:
+不插入 padding frame。回绕的 payload 直接通过它的两个 span 写入。消费者
+按照以下方式满足 fmt 对连续字符串的要求：
 
-- contiguous frame: decode directly from ring storage;
-- wrapped frame: copy the complete payload into an 8 KiB preallocated scratch
-  buffer, then decode and format from that contiguous buffer.
+- 连续帧：直接从环形缓冲区存储区解码；
+- 回绕帧：将完整 payload 复制到一个预先分配的 8 KiB 暂存缓冲区中，然后
+  从该连续缓冲区进行解码和格式化。
 
-The fast encoder must branch once per record between the contiguous and split
-paths. It must not impose a split check on every scalar field of every
-contiguous record.
+快速编码器必须对每条记录进行一次连续路径与分段路径之间的分支。对于每条
+连续记录，它不得在每个标量字段上都施加一次分段检查。
 
-## Consequences
+## 后果
 
-### Benefits
+### 优点
 
-- Every byte of ring capacity remains usable; there is no tail padding.
-- Full/empty state is unambiguous because logical cursors are not reduced to
-  physical offsets.
-- The producer has no shared RMW contention and never waits when full.
-- Variable-sized records near the tail do not cause conservative admission
-  failures solely because contiguous physical space is unavailable.
+- 环形缓冲区容量的每个字节都保持可用；不存在末端 padding。
+- full/empty 状态没有歧义，因为逻辑游标不会被缩减为物理偏移量。
+- 生产者没有共享 RMW 竞争，并且在缓冲区已满时绝不等待。
+- 靠近末端的变长记录不会仅仅因为缺少连续物理空间而造成保守的准入失败。
 
-### Costs
+### 代价
 
-- A wrapped producer encode may perform two copies instead of one.
-- A wrapped consumer record is copied once into scratch before formatting.
-- The implementation and tests are more involved than a contiguous-only frame
-  queue.
-- This design is not assumed to be universally faster than tail padding. Its
-  expected advantage is capacity utilization and overload behavior, not the CPU
-  cost of the individual wrapped record.
+- 回绕的生产者编码可能执行两次复制，而不是一次。
+- 回绕的消费者记录在格式化前会被复制一次到暂存缓冲区。
+- 与仅支持连续帧的队列相比，实现和测试更复杂。
+- 不假设该设计一定普遍快于末端 padding。它的预期优势是容量利用率和过载
+  行为，而不是单条回绕记录的 CPU 成本。
 
-## Required comparison benchmark
+## 必需的对比基准测试
 
-Before claiming a performance advantage, compare this split-span design with a
-tail-padding/contiguous-payload variant using the same frame protocol.
+在声称存在性能优势前，应使用相同的帧协议，将该双区段设计与
+末端 padding/连续 payload 变体进行比较。
 
-Test matrix:
+测试矩阵：
 
-- ring capacities: 4 KiB, 64 KiB, 256 KiB;
-- fixed 64-byte records;
-- variable 32-512-byte records;
-- mixed game-style records with occasional 1-8 KiB payloads;
-- low occupancy, burst load, and near-full sustained load.
+- 环形缓冲区容量：4 KiB、64 KiB、256 KiB；
+- 固定 64 字节记录；
+- 32-512 字节的变长记录；
+- 偶尔包含 1-8 KiB payload 的混合游戏风格记录；
+- 低占用率、突发负载以及接近满载的持续负载。
 
-Report:
+报告：
 
-- producer P50/P99/P99.9;
-- consumer throughput;
-- accepted and dropped counts;
-- tail bytes wasted per accepted record;
-- wrapped-frame rate and scratch-copy bytes;
-- CPU cycles and cache misses where available.
+- 生产者 P50/P99/P99.9；
+- 消费者吞吐量；
+- 已接受和已丢弃的数量；
+- 每条已接受记录浪费的末端字节数；
+- 回绕帧比例和暂存复制字节数；
+- 在可用时报告 CPU 周期和缓存未命中。
 
-Expected hypothesis, not a promised result:
+以下是预期假设，而非承诺的结果：
 
-- at low occupancy with small records, the contiguous tail-padding variant may
-  be slightly faster or indistinguishable;
-- under variable-size bursts and high occupancy, split spans may accept more
-  records and reduce drops because no tail capacity is discarded;
-- with large records in a small ring, the capacity benefit and scratch-copy cost
-  both become more visible.
+- 在低占用率和小记录场景下，连续末端 padding 变体可能略快，或者二者没有
+  可分辨的差异；
+- 在变长突发和高占用率场景下，双区段设计可能接受更多记录并减少丢弃，
+  因为它不会丢弃末端容量；
+- 当小型环形缓冲区中存在大记录时，容量优势和暂存复制成本都会更加明显。
 
-## Verification requirements
+## 验证要求
 
-- Exhaustively test every start offset and valid length on tiny rings.
-- Test exact-tail, split-by-one-byte, exact-full, full, empty, abort, and reuse.
-- Compare random operations against a deque-based reference model.
-- Run long producer/consumer sequence and checksum tests under TSan.
-- Inject cursors near `UINT64_MAX` and verify unsigned wrap behavior.
-- Verify `attempted == accepted + dropped` in all overload tests.
-
+- 在小型环形缓冲区上穷举测试每个起始偏移量和每个有效长度。
+- 测试恰好到达末端、跨末端 1 字节、恰好满、满、空、abort 和复用。
+- 将随机操作与基于 deque 的参考模型进行比较。
+- 在 TSan 下运行长时间的生产者/消费者序列和校验和测试。
+- 注入接近 `UINT64_MAX` 的游标并验证无符号回绕行为。
+- 在所有过载测试中验证 `attempted == accepted + dropped`。
