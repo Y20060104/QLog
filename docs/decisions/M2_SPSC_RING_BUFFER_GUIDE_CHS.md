@@ -95,9 +95,10 @@ union block 和 block_status 位于 miso_ring_buffer，即多生产者单消费�
 SpscRingBuffer（不可复制、不可移动）
 ├── ColdState                   配置与 Storage owner
 ├── SpscWriteHandle             64B，长期写端 + 写端私有状态
-├── SharedCursor write_cursor_  64B，atomic<uint64_t> value_
+├── CursorSet cursors_          128B，共享发布游标
+│   ├── write_cursor_           64B，atomic<uint64_t>
+│   └── read_cursor_            64B，atomic<uint64_t>
 ├── SpscReadHandle              64B，长期读端 + 读端私有状态
-├── SharedCursor read_cursor_   64B，atomic<uint64_t> value_
 └── 64B 对齐的字节 Storage
 ~~~
 
@@ -276,9 +277,9 @@ public:
 | 缓存行 | 字段 | 唯一写线程 |
 |---|---|---|
 | SpscWriteHandle | ring、current_write_cursor_、cached_read_cursor_、reservation_pending | 写线程 |
-| SharedCursor write_cursor_ | atomic value_ | 写线程 |
+| CursorSet::write_cursor_ | atomic<uint64_t> | 写线程 |
+| CursorSet::read_cursor_ | atomic<uint64_t> | 读线程 |
 | SpscReadHandle | ring、current_read_cursor_、cached_write_cursor_、回收计数、read_pending | 读线程 |
-| SharedCursor read_cursor_ | atomic value_ | 读线程 |
 
 要求：
 
@@ -287,14 +288,15 @@ static_assert(sizeof(SpscWriteHandle) == 64);
 static_assert(alignof(SpscWriteHandle) == 64);
 static_assert(sizeof(SpscReadHandle) == 64);
 static_assert(alignof(SpscReadHandle) == 64);
-static_assert(sizeof(SharedCursor) == 64);
-static_assert(alignof(SharedCursor) == 64);
+static_assert(sizeof(std::atomic<std::uint64_t>) <= kCacheLineSize);
+static_assert(sizeof(CursorSet) == 2 * kCacheLineSize);
+static_assert(alignof(CursorSet) == kCacheLineSize);
 static_assert(std::atomic<std::uint64_t>::is_always_lock_free);
 ~~~
 
 M2 中 atomic 只初始化为零，不调用 load/store。
 
-ColdState 和统计不得与两个 `SharedCursor` 实例共用缓存行。
+ColdState 和统计不得与 `CursorSet` 或两个 Handle 共用热缓存行。
 
 ## 8. 单次 Reservation/View 的性能目标
 
@@ -494,8 +496,8 @@ Codex 的验收任务：
   SpscReadHandle::current_read_cursor_
 
 共享发布进度：
-  SpscRingBuffer::write_cursor_.value_
-  SpscRingBuffer::read_cursor_.value_
+  SpscRingBuffer::cursors_.write_cursor_
+  SpscRingBuffer::cursors_.read_cursor_
 
 对端进度缓存：
   SpscWriteHandle::cached_read_cursor_
@@ -506,50 +508,55 @@ Codex 的验收任务：
 
 ~~~text
 current_write_cursor_
-    -> write_cursor_.value_
+    -> cursors_.write_cursor_
     -> cached_write_cursor_
 
 current_read_cursor_
-    -> read_cursor_.value_
+    -> cursors_.read_cursor_
     -> cached_read_cursor_
 ~~~
 
 `current_*` 只能由本侧线程推进，是本侧权威位置；`cached_*` 是对端发布游标
 的本地快照，只允许过期并造成保守判断，不能扩大可读或可写范围。
 
-四个热状态块的成员顺序冻结为：
+形成四条热缓存行的三个成员对象顺序冻结为：
 
 ~~~text
 ColdState cold_state_
 SpscWriteHandle write_handle_
-SharedCursor write_cursor_
+CursorSet cursors_
 SpscReadHandle read_handle_
-SharedCursor read_cursor_
 ~~~
 
-两个发布缓存行共用同一种类型，其形状冻结为：
+两个发布缓存行由一个 `CursorSet` 统一收纳，其形状冻结为：
 
 ~~~cpp
 static constexpr std::size_t kCacheLineSize = 64;
 
-struct alignas(kCacheLineSize) SharedCursor final {
-    std::atomic<std::uint64_t> value_{0};
+struct CursorSet final {
+    alignas(kCacheLineSize) std::atomic<std::uint64_t> write_cursor_{0};
+    alignas(kCacheLineSize) std::atomic<std::uint64_t> read_cursor_{0};
 };
 ~~~
 
+这里仅借鉴 BQLog `cursors_set` / `cursors_` 的命名与缓存行隔离方式；QLog
+继续使用 SPSC 私有游标，不引入 MISO 的共享 `fetch_add`、CAS 回滚或 TLS
+游标表。
+
 不使用 `std::hardware_destructive_interference_size`，不手写 padding，也不把
-Ring 的精确 `sizeof` 冻结为 ABI。`SpscWriteHandle`、`SpscReadHandle` 和
-`SharedCursor` 三个热类型分别使用 `alignas(kCacheLineSize)`；Ring 内两个
-`SharedCursor` 实例与两个 Handle 形成四个热状态块。通过静态断言验证
-`sizeof == 64`、`alignof == 64` 以及 `atomic<uint64_t>` 始终无锁。
+Ring 的精确 `sizeof` 冻结为 ABI。两个 Handle 分别使用
+`alignas(kCacheLineSize)`；`CursorSet` 的两个原子成员分别使用
+`alignas(kCacheLineSize)`，由编译器完成间隔。三个 Ring 成员对象形成四条热
+缓存行。通过静态断言验证两个 Handle 各为 64B、`CursorSet` 为 128B、
+所有热类型对齐为 64B，并保证 `atomic<uint64_t>` 始终无锁。
 
 你的生产代码任务：
 
 - 头文件自包含引入 `<atomic>`。
 - 按上述名称调整两个 Handle 的当前游标和对端缓存字段。
-- 在 Ring 私有区声明一个 `SharedCursor` 类型并 friend 两个长期 Handle。
-- Ring 按冻结顺序内嵌唯一 WriteHandle、`write_cursor_`、ReadHandle 和
-  `read_cursor_`；后两者都是 `SharedCursor` 实例。
+- 在 Ring 私有区声明一个 `CursorSet` 类型并 friend 两个长期 Handle。
+- Ring 按冻结顺序内嵌唯一 WriteHandle、`cursors_` 和 ReadHandle；
+  `cursors_` 是唯一的 `CursorSet` 实例。
 - 两个 Handle 的私有构造函数只保存 `&ring`，不读取尚未构造完成的成员。
 - Ring 构造时完成上述成员构造；所有游标、计数和 pending 通过成员初始化为零。
 - 在 `.cpp` 定义两个 Handle 构造和两个 accessor；accessor 只返回稳定引用。
@@ -558,8 +565,10 @@ Ring 的精确 `sizeof` 冻结为 ABI。`SpscWriteHandle`、`SpscReadHandle` 和
 Codex 的验收任务：
 
 - 将唯一测试访问器提取到共享测试头，避免多个测试翻译单元重复定义。
-- 验证两个 Handle 和两个 `SharedCursor` 实例均为 64B 对齐、大小为 64B，且地址
-  两两位于不同缓存行。
+- 验证两个 Handle 均为 64B 对齐且大小为 64B，`CursorSet` 为 64B 对齐且
+  大小为 128B。
+- 验证 `cursors_.write_cursor_` 与 `cursors_.read_cursor_` 的起始地址恰好
+  相差 `kCacheLineSize`，并与两个 Handle 分别位于四条不同缓存行。
 - 验证两个 accessor 多次调用始终返回同一内嵌 Handle。
 - 验证两个共享游标初值为零；测试可以 relaxed-load，生产代码不得 load/store。
 - 保留阶段 A/B 全部测试，并运行头文件独立编译、Debug、Release 与

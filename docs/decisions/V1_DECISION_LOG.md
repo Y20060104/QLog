@@ -41,9 +41,10 @@
 23. SPSC 配置不静默向上取整。合法 capacity 范围为 `[16, 2^31]` 且必须是 2 的幂；`max_payload_bytes` 必须非零并满足 `align_up_8(max_payload_bytes) <= capacity / 2`。实现必须先用 `max_payload_bytes <= capacity / 2` 拒绝极值，再进行对齐计算，避免无符号回绕。Header 不额外计入半容量约束。
 24. 阶段 B 使用私有 `ValidatedConfig`、`ColdState` 和唯一 `StorageOwner`。Storage 通过 C++ aligned scalar `operator new` 一次性申请 64B 对齐内存，并由自定义 deleter 调用匹配的 aligned scalar `operator delete`；不清零、不扩容、不公开 mutable 地址。校验必须先于分配，构造成功的 Ring 不存在半初始化状态。
 25. 阶段 B 已于 2026-08-26 完成：固定 Storage 的配置校验、64B 对齐分配与 RAII 释放通过 Debug、Release 和 ASan/UBSan 门禁。里程碑 2 当前进入阶段 C，只实现长期 Handle 与发布状态的四缓存行布局，不提前加入状态机或内存序行为。
-26. [共享状态类型名已由决策 28 修订] 阶段 C 的游标命名冻结为：本侧权威进度使用 `current_write_cursor_` / `current_read_cursor_`，对端缓存使用 `cached_read_cursor_` / `cached_write_cursor_`，共享发布状态使用 `write_cursor_` / `read_cursor_`。原 Ring 类型方案为 ColdState、WriteHandle、PublishedWriteState、ReadHandle、PublishedReadState，四个热状态块各占 64B。
+26. [共享状态类型名已由决策 28、29 连续修订] 阶段 C 的游标命名冻结为：本侧权威进度使用 `current_write_cursor_` / `current_read_cursor_`，对端缓存使用 `cached_read_cursor_` / `cached_write_cursor_`，共享发布状态使用 `write_cursor_` / `read_cursor_`。原 Ring 类型方案为 ColdState、WriteHandle、PublishedWriteState、ReadHandle、PublishedReadState，四个热状态块各占 64B。
 27. 性能优先校验策略取代决策 18 的 Release 隔离方案：Debug 执行完整 Header、长度、对齐和 Geometry 检查；Release 只保留避免越界和未定义行为的最小检查。损坏隔离、详细统计和紧急报告推迟到 M6，不进入 M3 热路径。
-28. 阶段 C 的共享发布状态命名修订决策 26：两个缓存行统一使用 `SharedCursor` 类型，内部原子字段为 `value_`；Ring 成员为 `write_cursor_` / `read_cursor_`。成员顺序修订为 ColdState、WriteHandle、`write_cursor_`、ReadHandle、`read_cursor_`，四个热状态块仍各占 64B。
+28. [共享游标容器已由决策 29 修订] 阶段 C 曾将两个发布缓存行统一为 `SharedCursor` 类型，内部原子字段为 `value_`，Ring 分别内嵌 `write_cursor_` / `read_cursor_`。
+29. 阶段 C 的共享游标命名与布局最终修订为：私有 `CursorSet cursors_` 统一收纳 `write_cursor_` / `read_cursor_`，两个原子成员分别使用 `alignas(kCacheLineSize)` 并各占一条缓存行，不手写 padding。Ring 成员顺序为 ColdState、WriteHandle、CursorSet、ReadHandle，共形成四条热缓存行。该修订只改变命名与布局组织，不改变 SPSC 所有权、缓存策略或后续 acquire/release 语义。
 
 ## 重要限制
 

@@ -46,14 +46,15 @@
 
 ```text
 长期写 Handle 缓存行：ring, current_write_cursor_, cached_read_cursor_, reservation_pending
-写发布缓存行：       SharedCursor write_cursor_ -> atomic<uint64_t> value_
+写发布缓存行：       CursorSet::write_cursor_
+读发布缓存行：       CursorSet::read_cursor_
 长期读 Handle 缓存行：ring, current_read_cursor_, cached_write_cursor_, reclaim counters, read_pending
-读发布缓存行：       SharedCursor read_cursor_ -> atomic<uint64_t> value_
-冷数据缓存行：    capacity, mask, storage pointer, statistics
+冷数据缓存行：       capacity, mask, storage pointer, statistics
 ```
 
-`SpscWriteHandle`、`SpscReadHandle` 与两个 `SharedCursor` 实例分别是四个
-`alignas(64)` 热数据块，并对其大小进行静态检查。V1 的目标平台必须保证
+`SpscWriteHandle`、`CursorSet`、`SpscReadHandle` 是三个 Ring 成员对象；
+其中 `CursorSet` 占两条缓存行，因此总计仍是四条相互隔离的热缓存行。必须检查
+两个 Handle 各为 64B、`CursorSet` 为 128B，并保证
 `std::atomic<std::uint64_t>` 始终无锁。
 
 ### 长期写 Handle
@@ -84,7 +85,7 @@ public:
 
 - 成功的预留只暴露一个连续的载荷（payload）span。
 - `try_reserve()` 计算暂定布局，但不推进已提交的生产者游标。
-- `commit()` 写入 8 字节帧头，推进 `current_write_cursor_`，然后对 `write_cursor_.value_` 执行 release-store。
+- `commit()` 写入 8 字节帧头，推进 `current_write_cursor_`，然后对 `cursors_.write_cursor_` 执行 release-store。
 - 未提交即析构会中止预留：不发布任何内容，也不推进任何游标。下一次预留可以覆盖相同的未发布字节。
 - 同一时刻只允许一个未完成的预留。该检查仅涉及生产者本地状态，不需要原子操作。
 - `commit()` 不能改变预留的精确大小，因为不同大小可能意味着不同的物理载荷（payload）位置。
@@ -116,7 +117,7 @@ public:
 ```
 
 - 每个长期读 Handle 最多只能有一个未完成的 ReadView。
-- `try_peek()` 仅在缓存快照耗尽后才 acquire-load `write_cursor_.value_`。
+- `try_peek()` 仅在缓存快照耗尽后才 acquire-load `cursors_.write_cursor_`。
 - ReadView 不拥有载荷（payload）字节。它不得存活到对应空间被回收之后。
 - `consume()` 推进 `current_read_cursor_`；在累计 32 条记录、4 KiB、切换通道或观察到通道为空时，以 release 发布回收进度。
 - 未消费的句柄析构时会放弃该视图，并保留记录以供后续读取。后台线程的错误路径必须明确决定是消费一条有问题的日志，还是隔离该通道。
@@ -148,17 +149,20 @@ public:
 ## 代码评审中必须证明的不变量
 
 ```text
-unsigned(current_write_cursor_ - read_cursor_) <= capacity
-unsigned(write_cursor_ - current_read_cursor_) <= capacity
+unsigned(current_write_cursor_ - cached_read_cursor_) <= capacity
+unsigned(cached_write_cursor_ - current_read_cursor_) <= capacity
 current_write_cursor_ % 8 == 0
 current_read_cursor_  % 8 == 0
 ```
 
-- 只有生产者写入生产者本地状态和 `write_cursor_.value_`。
-- 只有消费者写入消费者本地状态和 `read_cursor_.value_`。
+`cached_read_cursor_` / `cached_write_cursor_` 分别是从
+`cursors_.read_cursor_` / `cursors_.write_cursor_` 取得的本地快照。
+
+- 只有生产者写入生产者本地状态和 `cursors_.write_cursor_`。
+- 只有消费者写入消费者本地状态和 `cursors_.read_cursor_`。
 - 无符号减法计算游标距离，包括游标接近 `UINT64_MAX` 时；绝不使用 `write < read` 判断游标顺序。
 - 过期的对端游标缓存只会低估可用空间或可处理工作量。
-- `write_cursor_.value_` 是提交标记；消费者绝不检查未发布的帧头/载荷（payload）字节。
+- `cursors_.write_cursor_` 是提交标记；消费者绝不检查未发布的帧头/载荷（payload）字节。
 - 在生产者 acquire-load 到包含相应字节的已发布读游标之前，已回收字节绝不被复用。
 
 ## 已接受的评审决策

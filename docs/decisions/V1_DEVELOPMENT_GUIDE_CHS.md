@@ -258,9 +258,9 @@ tail_waste     tail - H
 | Cache line | 字段 | 唯一写线程 |
 |---|---|---|
 | Long-lived write handle | `ring`, `current_write_cursor_`, `cached_read_cursor_`, reservation state | Writer |
-| `SharedCursor write_cursor_` | `atomic<uint64_t> value_` | Writer |
+| `CursorSet::write_cursor_` | `atomic<uint64_t>` | Writer |
+| `CursorSet::read_cursor_` | `atomic<uint64_t>` | Reader |
 | Long-lived read handle | `ring`, `current_read_cursor_`, `cached_write_cursor_`, reclaim counters | Reader |
-| `SharedCursor read_cursor_` | `atomic<uint64_t> value_` | Reader |
 
 冷元数据和统计不得与 published cursor 共用 cache line。Producer 统计由
 Producer 写，Consumer 统计由 Consumer 写；运行中跨线程读取统计需要另行
@@ -269,12 +269,13 @@ Producer 写，Consumer 统计由 Consumer 写；运行中跨线程读取统计�
 核心不变量：
 
 ```text
-unsigned(current_write_cursor_ - read_cursor_) <= capacity
-unsigned(write_cursor_ - current_read_cursor_) <= capacity
+unsigned(current_write_cursor_ - cached_read_cursor_) <= capacity
+unsigned(cached_write_cursor_ - current_read_cursor_) <= capacity
 current_write_cursor_ % 8 == 0
 current_read_cursor_  % 8 == 0
 ```
 
+`cached_read_cursor_` / `cached_write_cursor_` 是从共享原子取得的本地快照。
 只用无符号减法计算逻辑距离，禁止用 `write < read` 判断先后。
 
 发布链：
@@ -282,8 +283,8 @@ current_read_cursor_  % 8 == 0
 ```text
 Producer 写 Payload
     -> memcpy Header
-    -> write_cursor_.value_.store(new_write, release)
-    -> Consumer write_cursor_.value_.load(acquire)
+    -> cursors_.write_cursor_.store(new_write, release)
+    -> Consumer cursors_.write_cursor_.load(acquire)
     -> Consumer 才能读 Header/Payload
 ```
 
@@ -291,8 +292,8 @@ Producer 写 Payload
 
 ```text
 Consumer 完成最后一次 Ring 数据读取
-    -> read_cursor_.value_.store(new_read, release)
-    -> Producer read_cursor_.value_.load(acquire)
+    -> cursors_.read_cursor_.store(new_read, release)
+    -> Producer cursors_.read_cursor_.load(acquire)
     -> Producer 才能覆盖已回收字节
 ```
 
@@ -527,11 +528,11 @@ ARM64 CI。
 ### 任务
 
 - Producer 先用 `cached_read_cursor_`，只有缓存判断空间不足时才 acquire-load
-  `read_cursor_.value_`；刷新后仍不足才 drop。
+  `cursors_.read_cursor_`；刷新后仍不足才 drop。
 - Consumer 用 `cached_write_cursor_`，本地 snapshot 耗尽后才 acquire-load
-  `write_cursor_.value_`。
+  `cursors_.write_cursor_`。
 - Consumer 在 32 条、4 KiB、切换 Channel 或观察 empty 时发布 reclaim。
-- 四类状态独立占 64B cache line。
+- 四条热缓存行保持相互独立。
 
 ### 测试
 
@@ -853,7 +854,7 @@ private:
 
 - 修改阶段 A 已冻结的 Reservation/View 特殊成员。
 - 定义 Handle、Reservation/View 或 accessor 的运行时行为。
-- 把长期 Handle、SharedCursor 或 atomic 加入 Ring。
+- 把长期 Handle、CursorSet 或 atomic 加入 Ring。
 - 实现 reserve/commit/peek/consume 或调用布局函数处理真实记录。
 - 加入游标推进、acquire/release、CAS 或 `fetch_add`。
 - 使用 `vector<std::byte>`、`new[]`、`delete[]`、`aligned_alloc` 或
@@ -880,25 +881,25 @@ src/spsc_ring_buffer.cpp
 
 - 本侧当前进度：`current_write_cursor_`、`current_read_cursor_`。
 - 对端缓存快照：`cached_read_cursor_`、`cached_write_cursor_`。
-- 共享发布游标：`SpscRingBuffer::write_cursor_.value_`、
-  `SpscRingBuffer::read_cursor_.value_`。
+- 共享发布游标：`SpscRingBuffer::cursors_.write_cursor_`、
+  `SpscRingBuffer::cursors_.read_cursor_`。
 
 已冻结的 Ring 成员顺序：
 
 ~~~text
 ColdState cold_state_
 SpscWriteHandle write_handle_
-SharedCursor write_cursor_
+CursorSet cursors_
 SpscReadHandle read_handle_
-SharedCursor read_cursor_
 ~~~
 
 你的生产代码任务：
 
-- 引入 `<atomic>`，声明一个 `alignas(kCacheLineSize)` 的 `SharedCursor` 类型。
-- `SharedCursor` 只保存一个初始化为零的 `atomic<uint64_t> value_`，Ring 内嵌
-  `write_cursor_` 和 `read_cursor_` 两个实例。
-- Ring friend 两个长期 Handle，并按冻结顺序内嵌四个热状态块。
+- 引入 `<atomic>`，声明一个私有 `CursorSet` 类型。
+- `CursorSet` 保存两个初始化为零的 `atomic<uint64_t>`：`write_cursor_` 和
+  `read_cursor_`；两个成员分别使用 `alignas(kCacheLineSize)`。
+- Ring 只内嵌一个 `CursorSet cursors_`，不手写缓存行 padding。
+- Ring friend 两个长期 Handle，并按冻结顺序内嵌三个成员对象，形成四条热缓存行。
 - 定义两个 Handle 私有构造，只保存 Ring 地址。
 - 定义两个 accessor，只返回内嵌 Handle 的稳定引用。
 - 更新 Ring 构造初始化列表，不执行 atomic load/store。

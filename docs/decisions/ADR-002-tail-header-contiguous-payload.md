@@ -83,13 +83,13 @@ else:
 
 ```text
 producer payload and header writes
-    -> write_cursor_.value_.store(release)
-    -> write_cursor_.value_.load(acquire)
+    -> cursors_.write_cursor_.store(release)
+    -> cursors_.write_cursor_.load(acquire)
     -> consumer header and payload reads
 
 consumer completes all reads from the frame
-    -> read_cursor_.value_.store(release)
-    -> read_cursor_.value_.load(acquire)
+    -> cursors_.read_cursor_.store(release)
+    -> cursors_.read_cursor_.load(acquire)
     -> producer may reuse those bytes
 ```
 
