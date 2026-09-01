@@ -1,10 +1,13 @@
-!~1# QLog V1 SPSC 架构评审
+# QLog V1 SPSC 架构评审
 
-- 状态：已接受
+- 状态：已接受（对象模型由 ADR-004 修订）
 - 日期：2026-08-16
 - 接受日期：2026-08-16
-- 最后修订：2026-08-25
-- 关卡已通过：里程碑 1 Geometry；当前仅进入里程碑 2 存储与类骨架
+- 最后修订：2026-08-29
+- 当前计划：完成 SPSC RingBuffer，然后完成异步日志 V1
+
+> 当前执行顺序以
+> [QLog V1 后续两里程碑实现指南](./V1_TWO_MILESTONES_GUIDE_CHS.md) 为准。
 
 ## 已冻结事项
 
@@ -19,11 +22,11 @@
 
 ```text
 业务线程
-    -> TLS 长期写 Handle
+    -> 长期 ThreadLogger / Channel
     -> 通道拥有的 SPSC 环形缓冲区
                                     \
 业务线程                              -> 一个后台调度器
-    -> TLS 长期写 Handle                 /      -> 可复用的 fmt 输出缓冲区
+    -> 长期 ThreadLogger / Channel         /      -> 可复用的 fmt 输出缓冲区
     -> 通道拥有的 SPSC 环形缓冲区            -> sink 写缓存 -> 文件 I/O
 ```
 
@@ -35,29 +38,29 @@
 
 - 容量在构造时选择，之后固定且不可变；
 - 环形缓冲区拥有按 64 字节对齐的存储；
-- 不可复制且不可移动，从而保证两个长期 Handle 及单次对象引用的地址保持稳定；
-- 内嵌唯一的 `SpscWriteHandle` 和 `SpscReadHandle`，并只通过左值 accessor 返回引用；
-- 两个长期 Handle 不可复制、不可移动，持有非拥有型 Ring 指针和本侧私有游标缓存；
-- 长期 Handle 自身就是对应角色的 64B 私有状态块，不再另设 PrivateState；
+- 不可复制且不可移动，从而保证内部状态与短期 Handle 中 owner 指针的地址稳定；
+- 内嵌私有的 `WriterState` 和 `ReaderState`，分别保存本侧逻辑游标与对端游标缓存；
+- Ring 直接提供 `try_reserve()` / `try_peek()`，不再公开长期读写 Handle 或其 accessor；
+- 每次成功操作返回短期、只可移动的 `WriteHandle` / `ReadHandle`；
 - 由地址稳定的 Channel 对象通过 `unique_ptr` 持有；
 - 外部内存和 mmap 构造函数推迟到 V1 之后。
 
 已冻结的缓存行分组：
 
 ```text
-长期写 Handle 缓存行：ring, current_write_cursor_, cached_read_cursor_, reservation_pending
+WriterState 缓存行： current_write_cursor_, cached_read_cursor_, reservation_pending
 写发布缓存行：       CursorSet::write_cursor_
 读发布缓存行：       CursorSet::read_cursor_
-长期读 Handle 缓存行：ring, current_read_cursor_, cached_write_cursor_, reclaim counters, read_pending
+ReaderState 缓存行： current_read_cursor_, cached_write_cursor_, reclaim counters, read_pending
 冷数据缓存行：       capacity, mask, storage pointer, statistics
 ```
 
-`SpscWriteHandle`、`CursorSet`、`SpscReadHandle` 是三个 Ring 成员对象；
+`WriterState`、`CursorSet`、`ReaderState` 是三个 Ring 私有成员对象；
 其中 `CursorSet` 占两条缓存行，因此总计仍是四条相互隔离的热缓存行。必须检查
-两个 Handle 各为 64B、`CursorSet` 为 128B，并保证
+两个 State 各为 64B、`CursorSet` 为 128B，并保证
 `std::atomic<std::uint64_t>` 始终无锁。
 
-### 长期写 Handle
+### 短期 WriteHandle
 
 已接受的 API 使用只可移动的两阶段预留：
 
@@ -69,28 +72,40 @@ enum class ReserveStatus : std::uint8_t {
     reservation_pending,
 };
 
-class WriteReservation {
+class WriteHandle {
 public:
-    std::span<std::byte> payload() noexcept;
+    [[nodiscard]] explicit operator bool() const noexcept;
+    [[nodiscard]] ReserveStatus status() const noexcept;
+    [[nodiscard]] std::byte* data() noexcept;
+    [[nodiscard]] std::uint32_t size() const noexcept;
     void commit() noexcept;
     void abort() noexcept;
+
+private:
+    void deactivate() noexcept;
 };
 
-class SpscWriteHandle {
+class SpscRingBuffer {
 public:
-    [[nodiscard]] WriteReservation
+    [[nodiscard]] WriteHandle
     try_reserve(std::size_t exact_payload_bytes) noexcept;
 };
 ```
 
-- 成功的预留只暴露一个连续的载荷（payload）span。
+- 成功的预留通过内联 `data()` / `size()` 暴露一个连续 payload；字段仍为 private。
+- Ring 基础接口不返回 `std::span`。这是底层 API 取舍，不代表 span 本身必然更慢。
 - `try_reserve()` 计算暂定布局，但不推进已提交的生产者游标。
-- `commit()` 写入 8 字节帧头，推进 `current_write_cursor_`，然后对 `cursors_.write_cursor_` 执行 release-store。
+- `try_reserve()` 在空间确认后写入尚不可见的 8 字节帧头；`commit()` 只推进
+  `current_write_cursor_`，然后对 `cursors_.write_cursor_` 执行 release-store。
+- `try_reserve()` 不复制用户 payload。调用者在成功 reserve 后、commit 前，把已有连续数据一次
+  `memcpy` 到 `data()`，或把结构化日志直接编码到该地址；commit 不做第二次复制。
+- Ring 的 `FrameHeader` 与未来日志层的 `RecordHeader` 分层：前者由 reserve 写，后者属于 payload，
+  由编码层在 commit 前写。
 - 未提交即析构会中止预留：不发布任何内容，也不推进任何游标。下一次预留可以覆盖相同的未发布字节。
 - 同一时刻只允许一个未完成的预留。该检查仅涉及生产者本地状态，不需要原子操作。
 - `commit()` 不能改变预留的精确大小，因为不同大小可能意味着不同的物理载荷（payload）位置。
 
-### 长期读 Handle
+### 短期 ReadHandle
 
 已接受的 API 返回一个只可移动的读取句柄：
 
@@ -99,26 +114,32 @@ enum class ReadStatus : std::uint8_t {
     ok,
     empty,
     corrupted,
-};
     read_pending,
+};
 
-class ReadView {
+class ReadHandle {
 public:
-    std::span<const std::byte> payload() const noexcept;
+    [[nodiscard]] explicit operator bool() const noexcept;
+    [[nodiscard]] ReadStatus status() const noexcept;
+    [[nodiscard]] const std::byte* data() const noexcept;
+    [[nodiscard]] std::uint32_t size() const noexcept;
     void consume() noexcept;
     void abandon() noexcept;
+
+private:
+    void deactivate() noexcept;
 };
 
-class SpscReadHandle {
+class SpscRingBuffer {
 public:
-    [[nodiscard]] ReadView try_peek() noexcept;
+    [[nodiscard]] ReadHandle try_peek() noexcept;
     void publish_reclaimed() noexcept;
 };
 ```
 
-- 每个长期读 Handle 最多只能有一个未完成的 ReadView。
+- Ring 读端最多只能有一个未终结的 ReadHandle。
 - `try_peek()` 仅在缓存快照耗尽后才 acquire-load `cursors_.write_cursor_`。
-- ReadView 不拥有载荷（payload）字节。它不得存活到对应空间被回收之后。
+- ReadHandle 不拥有载荷（payload）字节。它不得存活到对应空间被回收之后。
 - `consume()` 推进 `current_read_cursor_`；在累计 32 条记录、4 KiB、切换通道或观察到通道为空时，以 release 发布回收进度。
 - 未消费的句柄析构时会放弃该视图，并保留记录以供后续读取。后台线程的错误路径必须明确决定是消费一条有问题的日志，还是隔离该通道。
 
@@ -139,7 +160,8 @@ public:
 
 ## 通道注册表与生命周期
 
-- 线程第一次记录日志时，在注册表锁保护下执行冷路径通道注册；之后 TLS 缓存一个无所有权的 `SpscWriteHandle*`。
+- 线程第一次记录日志时，在注册表锁保护下执行冷路径通道注册；之后 TLS 缓存一个
+  无所有权的 `ThreadLogger*` 或稳定 Channel 指针，不缓存短期 Handle。
 - Logger 拥有的 Channel 地址保持稳定。
 - V1 要求所有生产者线程在 Logger 关闭之前停止并完成 join。
 - 线程退出标记允许后台线程继续排空已退役通道。
@@ -176,7 +198,7 @@ current_read_cursor_  % 8 == 0
 ## 接受后的实现顺序
 
 1. 实现纯布局几何计算，并在小容量环形缓冲区中穷举测试每个对齐位置。
-2. 建立 `SpscRingBuffer` 的存储所有权、长期读写 Handle、四缓存行布局和单次对象声明，不实现状态机。
+2. 建立 `SpscRingBuffer` 的存储所有权、私有读写 State、四缓存行布局和短期 Handle 声明，不实现状态机。
 3. 实现单线程 reserve/commit/peek/consume/abort，并与 deque 模型比较。
 4. 添加发布游标和 acquire/release；在 TSan 下运行双线程序列与校验和测试。
 5. 添加对端游标缓存和批量回收，并在每项优化前后进行基准测试。

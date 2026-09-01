@@ -1,10 +1,17 @@
 # QLog V1 开发指南：SPSC 基础设施
 
-- 状态：生效中
+> 历史指南：其中长期 Handle 相关内容已由 ADR-004 取代。当前实现请以
+> `V1_TWO_MILESTONES_GUIDE_CHS.md` 和 ADR-004 为准。
+
+- 状态：历史详细参考
 - 日期：2026-08-16
-- 最后修订：2026-08-25
+- 最后修订：2026-08-28
 - 适用范围：QLog V1 的字节型 SPSC Ring、Channel 与最小后台消费链路
 - 目标读者：项目实现者与代码评审者
+
+> 后续唯一生效的执行计划是
+> [QLog V1 后续两里程碑实现指南](./V1_TWO_MILESTONES_GUIDE_CHS.md)。
+> 本文的旧阶段和旧里程碑仅用于保留设计原理、测试细节与历史记录。
 
 ## 1. 如何使用这份指南
 
@@ -77,16 +84,12 @@ Codex 的职责：
 ### 2.4 V1 总体开发路线
 
 ```text
-A. SPSC geometry 与并发队列（本指南当前门禁）
-    -> B. Record codec 与 Callsite registry
-    -> C. Logger API、级别过滤与 TLS Channel
-    -> D. Backend fmt、write cache 与基础文件 Sink
-    -> E. shutdown/drain、故障处理与统计
-    -> F. 公平 benchmark 与性能优化
+里程碑一：完成可用且高性能的 SPSC RingBuffer
+    -> 里程碑二：完成可演示、可公平基准的异步日志 V1
 ```
 
-每一层先设计其协议和生命周期，再进入实现。SPSC 通过之前不并行开发
-codec；否则记录协议、队列协议和格式化错误会混在一起，难以定位。
+里程碑内仍按依赖顺序实现和测试，但不再把状态机、内存序、编码器、Backend
+或 Sink 单独命名为新里程碑。SPSC 通过之前不并行开发 codec。
 
 ## 3. 参考项目的学习边界
 
