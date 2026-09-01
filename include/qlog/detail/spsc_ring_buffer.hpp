@@ -1,10 +1,14 @@
 #pragma once
+
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
 
 namespace qlog::detail {
-// 测试所需的前置声明
+
+inline constexpr std::size_t kCacheLineSize = 64U;
+
 struct SpscRingBufferTestAccess;
 
 enum class ReserveStatus : std::uint8_t {
@@ -22,83 +26,94 @@ enum class ReadStatus : std::uint8_t {
 };
 
 struct SpscRingBufferConfig {
-    std::size_t capacity_bytes{64 * 1024};
-    std::size_t max_payload_bytes{8 * 1024};
+    std::size_t capacity_bytes{64U * 1024U};
+    std::size_t max_payload_bytes{8U * 1024U};
 };
 
 class SpscRingBuffer;
-class WriteReservation;
-class ReadView;
+class WriteHandle;
+class ReadHandle;
 
-class alignas(64) SpscWriteHandle final {
+class WriteHandle final {
    public:
-    SpscWriteHandle(const SpscWriteHandle&) = delete;
-    SpscWriteHandle& operator=(const SpscWriteHandle&) = delete;
-    SpscWriteHandle(SpscWriteHandle&&) = delete;
-    SpscWriteHandle& operator=(SpscWriteHandle&&) = delete;
+    ~WriteHandle() noexcept;
 
-    [[nodiscard]] WriteReservation try_reserve(std::size_t exact_payload_bytes) noexcept;
+    WriteHandle(const WriteHandle&) = delete;
+    WriteHandle& operator=(const WriteHandle&) = delete;
+
+    WriteHandle(WriteHandle&& other) noexcept;
+    WriteHandle& operator=(WriteHandle&& other) noexcept;
+
+    void commit() noexcept;
+    void abort() noexcept;
+
+    [[nodiscard]] explicit operator bool() const noexcept {
+        return ring_ != nullptr;
+    }
+
+    [[nodiscard]] inline ReserveStatus status() const noexcept {
+        return status_;
+    }
+
+    [[nodiscard]] inline std::byte* data() noexcept {
+        return payload_;
+    }
+
+    [[nodiscard]] inline std::uint32_t size() const noexcept {
+        return payload_bytes_;
+    }
 
    private:
     friend class SpscRingBuffer;
-    explicit SpscWriteHandle(SpscRingBuffer& ring) noexcept;
+    WriteHandle() noexcept = default;
+    void deactivate() noexcept;
 
     SpscRingBuffer* ring_{};
-    std::uint64_t current_write_cursor_{};
-    std::uint64_t cached_read_cursor_{};
-    bool reservation_pending_{};
+    std::byte* payload_{};
+    std::uint64_t next_write_cursor_{};
+    std::uint32_t payload_bytes_{};
+    ReserveStatus status_{ReserveStatus::full};
 };
 
-class alignas(64) SpscReadHandle final {
+class ReadHandle final {
    public:
-    SpscReadHandle(const SpscReadHandle&) = delete;
-    SpscReadHandle& operator=(const SpscReadHandle&) = delete;
-    SpscReadHandle(SpscReadHandle&&) = delete;
-    SpscReadHandle& operator=(SpscReadHandle&&) = delete;
+    ~ReadHandle() noexcept;
 
-    [[nodiscard]] ReadView try_peek() noexcept;
-    void publish_reclaimed() noexcept;
+    ReadHandle(const ReadHandle&) = delete;
+    ReadHandle& operator=(const ReadHandle&) = delete;
+
+    ReadHandle(ReadHandle&& other) noexcept;
+    ReadHandle& operator=(ReadHandle&& other) noexcept;
+
+    void consume() noexcept;
+    void abandon() noexcept;
+
+    [[nodiscard]] explicit operator bool() const noexcept {
+        return ring_ != nullptr;
+    }
+
+    [[nodiscard]] inline ReadStatus status() const noexcept {
+        return status_;
+    }
+
+    [[nodiscard]] inline const std::byte* data() const noexcept {
+        return payload_;
+    }
+
+    [[nodiscard]] inline std::uint32_t size() const noexcept {
+        return payload_bytes_;
+    }
 
    private:
     friend class SpscRingBuffer;
-    explicit SpscReadHandle(SpscRingBuffer& ring) noexcept;
+    ReadHandle() noexcept = default;
+    void deactivate() noexcept;
 
     SpscRingBuffer* ring_{};
-    std::uint64_t current_read_cursor_{};
-    std::uint64_t cached_write_cursor_{};
-    std::uint32_t records_since_publish_{};
-    std::uint32_t bytes_since_publish_{};
-    bool read_pending_{};
-};
-
-class WriteReservation final {
-   public:
-    ~WriteReservation() noexcept;
-
-    WriteReservation(const WriteReservation&) = delete;
-    WriteReservation& operator=(const WriteReservation&) = delete;
-
-    WriteReservation(WriteReservation&&) noexcept;
-    WriteReservation& operator=(WriteReservation&&) noexcept;
-
-   private:
-    friend class SpscWriteHandle;
-    WriteReservation() noexcept;
-};
-
-class ReadView final {
-   public:
-    ~ReadView() noexcept;
-
-    ReadView(const ReadView&) = delete;
-    ReadView& operator=(const ReadView&) = delete;
-
-    ReadView(ReadView&&) noexcept;
-    ReadView& operator=(ReadView&&) noexcept;
-
-   private:
-    friend class SpscReadHandle;
-    ReadView() noexcept;
+    const std::byte* payload_{};
+    std::uint64_t next_read_cursor_{};
+    std::uint32_t payload_bytes_{};
+    ReadStatus status_{ReadStatus::empty};
 };
 
 class SpscRingBuffer final {
@@ -115,11 +130,15 @@ class SpscRingBuffer final {
     SpscRingBuffer(SpscRingBuffer&&) = delete;
     SpscRingBuffer& operator=(SpscRingBuffer&&) = delete;
 
-    [[nodiscard]] SpscWriteHandle& write_handle() & noexcept;
-    [[nodiscard]] SpscReadHandle& read_handle() & noexcept;
+    [[nodiscard]] WriteHandle try_reserve(std::size_t exact_payload_bytes) noexcept;
+    [[nodiscard]] ReadHandle try_peek() noexcept;
+    void publish_reclaimed() noexcept;
 
-    SpscWriteHandle& write_handle() && = delete;
-    SpscReadHandle& read_handle() && = delete;
+   private:
+    void commit_write(WriteHandle& write_handle) noexcept;
+    void abort_write(WriteHandle& write_handle) noexcept;
+    void consume_read(ReadHandle& read_handle) noexcept;
+    void abandon_read(ReadHandle& read_handle) noexcept;
 
    private:
     static constexpr std::size_t kStorageAlignment = 64;
@@ -146,8 +165,41 @@ class SpscRingBuffer final {
     [[nodiscard]] static ValidatedConfig validate_config(SpscRingBufferConfig config);
 
    private:
+    struct alignas(kCacheLineSize) WriterState final {
+        std::uint64_t current_write_cursor_{};
+        std::uint64_t cached_read_cursor_{};
+        bool reservation_pending_{};
+    };
+
+    struct CursorSet final {
+        alignas(kCacheLineSize) std::atomic<std::uint64_t> write_cursor_{0};
+        alignas(kCacheLineSize) std::atomic<std::uint64_t> read_cursor_{0};
+    };
+
+    struct alignas(kCacheLineSize) ReaderState final {
+        std::uint64_t current_read_cursor_{};
+        std::uint64_t cached_write_cursor_{};
+        std::uint32_t records_since_publish_{};
+        std::uint32_t bytes_since_publish_{};
+        bool read_pending_{};
+    };
+
+    static_assert(alignof(WriterState) == kCacheLineSize);
+    static_assert(sizeof(WriterState) == kCacheLineSize);
+    static_assert(alignof(CursorSet) == kCacheLineSize);
+    static_assert(sizeof(CursorSet) == 2 * kCacheLineSize);
+    static_assert(alignof(ReaderState) == kCacheLineSize);
+    static_assert(sizeof(ReaderState) == kCacheLineSize);
+    static_assert(std::atomic<std::uint64_t>::is_always_lock_free);
+
+    friend class WriteHandle;
+    friend class ReadHandle;
     friend struct SpscRingBufferTestAccess;
+
     ColdState cold_state_;
+    WriterState writer_state_;
+    CursorSet cursors_;
+    ReaderState reader_state_;
 };
 
 }  // namespace qlog::detail
