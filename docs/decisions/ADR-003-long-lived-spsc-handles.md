@@ -1,9 +1,12 @@
 # ADR-003：长期读写 Handle 合并私有状态
 
-- 状态：已接受
+- 状态：已由 ADR-004 取代
 - 日期：2026-08-25
 - 影响范围：QLog V1 SpscRingBuffer 对象模型
 - 不改变：ADR-002 的 Frame Geometry 与连续回绕 Payload
+
+> 本文保留历史决策与推理，不再指导当前实现。现行对象模型见
+> [ADR-004：短期 Handle 与 Ring 私有读写状态](./ADR-004-short-lived-spsc-handles.md)。
 
 ## 背景
 
