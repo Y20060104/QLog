@@ -4,39 +4,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
-#include <qlog/detail/spsc_ring_buffer.hpp>
 #include <stdexcept>
 
-namespace qlog::detail {
-
-struct SpscRingBufferTestAccess {
-   public:
-    struct ConfigSnapshot {
-        std::size_t capacity_bytes;
-        std::size_t capacity_mask;
-        std::size_t max_payload_bytes;
-    };
-
-    [[nodiscard]] static ConfigSnapshot validate(SpscRingBufferConfig config) {
-        const auto validated = SpscRingBuffer::validate_config(config);
-        return {validated.capacity_bytes, validated.capacity_mask, validated.max_payload_bytes};
-    }
-
-    [[nodiscard]] static ConfigSnapshot config(const SpscRingBuffer& ring) noexcept {
-        const auto& validated = ring.cold_state_.config_;
-        return {validated.capacity_bytes, validated.capacity_mask, validated.max_payload_bytes};
-    }
-
-    [[nodiscard]] static const std::byte* storage(const SpscRingBuffer& ring) noexcept {
-        return ring.cold_state_.storage_.get();
-    }
-
-    [[nodiscard]] static constexpr std::size_t storage_alignment() noexcept {
-        return SpscRingBuffer::kStorageAlignment;
-    }
-};
-
-}  // namespace qlog::detail
+#include "spsc_ring_buffer_test_access.hpp"
 
 namespace {
 
