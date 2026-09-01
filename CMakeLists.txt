@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.20)
 
 project(QLog VERSION 0.1.0 LANGUAGES CXX)
 
+option(QLOG_BUILD_BENCHMARKS "Build QLog benchmarks" OFF)
+
 function(qlog_enable_warnings target_name)
     if(MSVC)
         target_compile_options(${target_name} PRIVATE
@@ -44,4 +46,8 @@ include(CTest)
 
 if(BUILD_TESTING)
     add_subdirectory(tests)
+endif()
+
+if(QLOG_BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
 endif()
