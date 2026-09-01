@@ -200,6 +200,9 @@ QLOG_BENCH_WITH_BQLOG=OFF ./scripts/build_benchmark.sh
     --repeat 7
 ```
 
+未显式指定 CPU 时，程序会读取 Linux sysfs topology，优先选择不同物理核；只有拓扑信息不可用时，
+才退化为两个不同逻辑 CPU。正式运行仍应显式记录并检查 CPU 组合。
+
 正式运行应选择同一 NUMA 节点、不同物理核且不是 SMT sibling 的两个 CPU。
 WSL2 结果用于开发期回归；公开“达到 BQLog 90%”前，应在稳定的原生 Linux
 环境复测并完整披露硬件、内核、编译器、commit、dirty 状态和计时边界。

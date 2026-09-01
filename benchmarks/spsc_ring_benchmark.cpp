@@ -350,8 +350,23 @@ void resolve_affinity(BenchmarkOptions& options) {
     }
 
     if (options.consumer_cpu < 0) {
-        const auto candidate = std::find_if(
-            cpus.begin(), cpus.end(), [&options](int cpu) { return cpu != options.producer_cpu; });
+        auto candidate = cpus.end();
+        const std::optional<CpuTopology> producer_topology = cpu_topology(options.producer_cpu);
+        if (producer_topology.has_value()) {
+            candidate = std::find_if(cpus.begin(), cpus.end(), [&](int cpu) {
+                if (cpu == options.producer_cpu) {
+                    return false;
+                }
+                const std::optional<CpuTopology> candidate_topology = cpu_topology(cpu);
+                return candidate_topology.has_value() &&
+                       !same_physical_core(*producer_topology, *candidate_topology);
+            });
+        }
+
+        if (candidate == cpus.end()) {
+            candidate = std::find_if(cpus.begin(), cpus.end(),
+                                     [&options](int cpu) { return cpu != options.producer_cpu; });
+        }
         options.consumer_cpu = *candidate;
     }
     if (!is_allowed(options.consumer_cpu)) {

@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <cstring>
 #include <fstream>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <thread>
@@ -50,6 +51,33 @@ inline void compiler_memory_barrier(const void* address) noexcept {
         }
     }
     return cpus;
+}
+
+struct CpuTopology {
+    int package_id{};
+    int core_id{};
+};
+
+[[nodiscard]] inline std::optional<CpuTopology> cpu_topology(int cpu) {
+    if (cpu < 0) {
+        return std::nullopt;
+    }
+
+    const std::string topology_root =
+        "/sys/devices/system/cpu/cpu" + std::to_string(cpu) + "/topology/";
+    std::ifstream package_input(topology_root + "physical_package_id");
+    std::ifstream core_input(topology_root + "core_id");
+
+    CpuTopology topology;
+    if (!(package_input >> topology.package_id) || !(core_input >> topology.core_id)) {
+        return std::nullopt;
+    }
+    return topology;
+}
+
+[[nodiscard]] inline bool same_physical_core(const CpuTopology& left,
+                                             const CpuTopology& right) noexcept {
+    return left.package_id == right.package_id && left.core_id == right.core_id;
 }
 
 [[nodiscard]] inline bool pin_current_thread(int cpu, std::string& error) {
