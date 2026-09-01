@@ -55,8 +55,13 @@ qlog_enable_warnings(qlog_geometry_test)
 
 add_executable(qlog_spsc_ring_buffer_test
     spsc_ring_buffer_header_self_contained.cpp
+    spsc_ring_buffer_layout_test.cpp
+    spsc_ring_buffer_operation_test.cpp
+    spsc_ring_buffer_payload_test.cpp
     spsc_ring_buffer_storage_test.cpp
     spsc_ring_buffer_test.cpp
+    spsc_ring_buffer_wrap_concurrency_test.cpp
+    spsc_ring_buffer_test_access.hpp
 )
 
 target_link_libraries(qlog_spsc_ring_buffer_test
