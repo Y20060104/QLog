@@ -1,260 +1,162 @@
 # QLog V1 后续两里程碑实现指南
 
-- 状态：唯一生效的后续执行计划
+- 状态：唯一生效的总体执行计划
 - 日期：2026-08-28
-- 最后修订：2026-08-29
-- 适用范围：从当前 SPSC RingBuffer 骨架到可演示、可公平基准的异步日志 V1
-- 分工：你实现生产代码；Codex 负责测试、构建门禁、评审与结果记录
+- 最后修订：2026-09-02
+- 适用范围：从 SPSC RingBuffer 到可演示、可公平基准的异步日志 V1
+- 分工：你实现生产代码；Codex 负责测试、构建门禁、benchmark 执行与结果分析
 
-旧文档中的阶段 A～D、里程碑 0～7 和 M3～M7 仅作为历史设计记录，
-不再表示后续任务数量。后续只执行下面两个里程碑，里程碑内的编号只是实现顺序。
+旧文档中的阶段 A～D、里程碑 0～7 和 M2～M7 仅保留为历史设计证据。
+项目仍只有两个顶层里程碑；里程碑内部的小步骤不再升级成新里程碑。
 
 ## 共同原则
 
-- 目标平台为 Linux x86-64，语言标准为纯 C++20。
+- Linux x86-64，纯 C++20。
 - 每个稳定生产线程独占一个 SPSC Channel，一个后台线程消费多个 Channel。
-- Producer 稳态热路径不格式化、不分配、不加锁、不阻塞，不执行 CAS 或
-  `fetch_add` 等共享原子 RMW。
+- Producer 稳态热路径不 fmt、不分配、不加锁、不阻塞，不执行共享原子 RMW。
 - 固定容量，满时 `drop_new`；失败不得推进任何游标。
 - fmt 只在后台线程执行。
-- 先证明正确，再检查 Release 汇编和 benchmark；一次只优化一个变量。
-- BQLog、spdlog、Quill 和 NanoLog 只用于学习与对照，不逐行移植实现。
+- BQLog 是主要源码参照，spdlog、Quill 和 NanoLog 用于补充对照；不逐行移植。
+- 每次只改变一个性能变量；结论必须来自同机、同负载、同计时边界的测试。
 
-## 里程碑一：完成可用且高性能的 SPSC RingBuffer
+## 里程碑一：可用且高性能的 SPSC RingBuffer
 
-### 完成结果
+### 当前状态
 
-在现有 Geometry、固定 Storage、私有读写状态和 `CursorSet` 基础上，打通：
+Geometry、固定 Storage、四缓存行热状态、单条 reserve/read、连续回绕 payload、
+批量发布读游标、Debug/Release 分层校验、对称被动 Handle API 和隔离 benchmark
+已经实现。
 
-```text
-try_reserve -> 写 payload -> commit/abort
-try_peek    -> 读 payload -> consume/abandon
-```
-
-完成后，Ring 可以由一个 Producer 和一个 Consumer 真正并发使用，不依赖 Logger、
-fmt、文件 Sink 或后台调度器。
-
-### 最小接口
-
-短期 `WriteHandle` 提供：
+ADR-005 将读写 Handle 统一为 16B 被动令牌：
 
 ```text
-operator bool / status / data / size / commit / abort
+WriteHandle = payload pointer + packed frame/status + payload bytes
+ReadHandle  = payload pointer + packed frame/status + payload bytes
 ```
 
-短期 `ReadHandle` 提供：
+二者均不保存 Ring owner 或 next cursor，没有自定义析构，不通过 RAII 改变 Ring。
 
-```text
-operator bool / status / data / size / consume / abandon
-```
-
-查询接口按以下类型实现为类内内联函数：
+### 最终接口
 
 ```cpp
-// WriteHandle
-[[nodiscard]] explicit operator bool() const noexcept;
-[[nodiscard]] ReserveStatus status() const noexcept;
-[[nodiscard]] std::byte* data() noexcept;
-[[nodiscard]] std::uint32_t size() const noexcept;
+[[nodiscard]] WriteHandle try_reserve(std::size_t payload_bytes) noexcept;
+void commit(const WriteHandle& handle) noexcept;
+void abort(const WriteHandle& handle) noexcept;
 
-// ReadHandle
-[[nodiscard]] explicit operator bool() const noexcept;
-[[nodiscard]] ReadStatus status() const noexcept;
-[[nodiscard]] const std::byte* data() const noexcept;
-[[nodiscard]] std::uint32_t size() const noexcept;
+[[nodiscard]] ReadHandle try_read() noexcept;
+void release(const ReadHandle& handle) noexcept;
+void abandon(const ReadHandle& handle) noexcept;
+
+void publish_reclaimed() noexcept;
 ```
 
-`operator bool()` 以 `ring_ != nullptr` 判断 Handle 是否 active；`status()` 返回本次结果；
-`data()` / `size()` 只读取 private 的 `payload_` / `payload_bytes_`。Ring 基础接口不构造
-`std::span`，也不公开可修改的状态字段。`deactivate()` 必须放在 private，调用者不能绕过
-`commit/abort` 或 `consume/abandon` 清除 Handle。
-
-Handle 失效状态统一为 `operator bool() == false`、`data() == nullptr`、`size() == 0`；
-`status()` 仍保留本次尝试的原始结果。该规则同时适用于失败、moved-from、commit、abort、
-consume 和 abandon。成功的零长度记录仍为 active，因此是 `bool == true`、`size() == 0`。
-`try_reserve()` 的失败优先级固定为先检查本侧 `reservation_pending_`，再检查 payload 上限和
-可用空间，确保已有 active Handle 时始终返回 `reservation_pending`。
-
-`SpscRingBuffer` 直接提供 `try_reserve()`、`try_peek()` 和
-`publish_reclaimed()`。单次 Handle 只可移动、hot API 全部 `noexcept`，目标大小不超过 32B，
-但大小不是持久 ABI，最终由 Release 汇编和 benchmark 决定。
-
-payload 写入协议固定为：
+正常路径每侧只使用两个 Ring 操作：
 
 ```text
-try_reserve(exact_payload_bytes)
-    -> Ring 写入尚未发布的 FrameHeader 并返回 data()/size()
-    -> 调用者直接编码，或把现有连续数据一次 memcpy 到 data()
-    -> commit() 只推进游标并 release-store 发布，不复制 payload
+try_reserve -> 写 payload -> commit
+try_read    -> 读 payload -> release
 ```
 
-Ring 私有 `FrameHeader` 不属于上层日志格式。未来日志层的 `RecordHeader` 和编码参数都位于
-payload 中，由编码层在 commit 前写入。WriteHandle 的地址只在 `commit/abort` 前有效；
-ReadHandle 的地址只在 `consume/abandon` 前有效。
-
-### 实现顺序
-
-1. 完成当前骨架清理，并为 WriteHandle/ReadHandle 增加最小字段、查询接口和移动后
-   inactive 语义。owner 指针为空表示 inactive，不再增加独立 active 标志。
-2. 先实现 `abort()` / `abandon()` 与析构语义：WriteHandle 默认 abort，
-   ReadHandle 默认 abandon；二者都不能隐式发布或丢弃记录。
-3. 实现单线程 `try_reserve()`：检查 pending 和 payload 上限，调用 Geometry，
-   用本地缓存判断空间；缓存不足时只 acquire-load 一次共享读游标。
-4. `try_reserve()` 在确认空间后用 `memcpy` 写入尚未发布的 `FrameHeader`，
-   调用者再直接写 Ring payload；`commit()` 只推进本地写游标并 release-store
-   发布写游标。
-5. 实现 `try_peek()`：本地快照耗尽时才 acquire-load 写游标；通过 `memcpy`
-   读取 Header，重新计算布局，返回连续只读 payload。
-6. 实现 `consume()` 与 `publish_reclaimed()`：consume 只推进本地读游标；累计
-   32 条、4 KiB、观察到 empty、切换 Channel 或 shutdown 时发布回收游标。
-7. 最后进行双线程压力、随机模型、Release 汇编检查和 Ring 微基准；根据证据
-   优化，不提前加入 branch hint、prefetch、SIMD 或平台汇编。
-
-### 固定 Storage 的写端使用顺序
-
-`try_reserve()` 是唯一负责把 Geometry offset 转换成真实地址的对象。实现顺序
-冻结为：
-
-```text
-检查 reservation_pending
--> 检查 exact_payload_bytes <= max_payload_bytes
--> 计算 FrameLayout
--> 用逻辑游标距离检查 layout.frame_bytes 是否可用
--> storage_.get() + header_offset 得到 Header 地址
--> storage_.get() + payload_offset 得到 payload 地址
--> memcpy 写入尚未发布的 FrameHeader
--> 填充 WriteHandle 并设置 pending
--> 返回给调用者直接写 payload
-```
-
-空间按逻辑距离计算：
-
-```cpp
-const std::uint64_t used =
-    writer_state_.current_write_cursor_ -
-    writer_state_.cached_read_cursor_;
-const std::size_t free =
-    capacity - static_cast<std::size_t>(used);
-```
-
-若 `free < layout.frame_bytes`，只 acquire-load 一次 `cursors_.read_cursor_`，更新
-`cached_read_cursor_` 后重新计算；仍不足才返回 `ReserveStatus::full`。不能比较
-掩码后的地址大小，也不能使用 `current + frame >= cached_read` 判断 Ring 是否满。
-
-成功 Handle 保存 `ring_`、连续 payload 地址、`next_write_cursor_`、有效 payload
-长度和 status；不保存 `FrameHeader` 或 `FrameLayout`。Header 已经位于 Ring，
-Layout 在 `try_reserve()` 返回前结束生命周期。
-
-小型 hot 函数放入 `.hpp` 或单独 `.inl` 以便内联；构造、配置校验和 Storage
-分配继续放在 `.cpp`。
+`abort/abandon` 只服务冷路径。`return` 是 C++ 关键字，因此读侧采用 `release`。
 
 ### 不可破坏的不变量
 
-- 尾端继续采用“Header 留在尾端，连续 payload 放到物理头部”；tail waste
-  计入该帧的 `frame_bytes`，不增加 padding/invalid 帧。
-- reserve 使用最终精确 payload 大小；commit 不允许修改大小。
-- Ring 的每一侧同时最多一个未终结的短期 Handle。
-- 发布游标才是提交标志；commit 前的字节对 Consumer 不可见。
-- Producer commit：payload/Header 写入 happens-before Consumer acquire。
-- Consumer reclaim：payload 读取 happens-before Producer 覆盖已回收空间。
-- peer cursor 缓存只能导致保守的少写或少读，不能扩大可访问范围。
+- Header 留在物理尾端，回绕 payload 连续放在物理头部；tail waste 计入当前 Frame。
+- reserve 使用精确 payload 大小；commit 不改变大小、不复制 Header 或 payload。
+- 每侧最多一个成功且未终结的操作。
+- 发布游标是提交标志；commit 前的字节对 Consumer 不可见。
+- Producer release-store 与 Consumer acquire-load 建立 payload 可见性。
+- Consumer 读完后才推进本地读游标；回收游标按既定阈值批量发布。
+- Handle 物理上可复制，逻辑上只能终结一次；Release 保留每侧单次 pending 契约，
+  不承担跨 Ring、重复终结或完整损坏 Frame 校验。
 - 不使用 CAS、`fetch_add`、锁、逐 Block 原子、版本号或 Ring 内部等待。
-- Debug 做完整 Header/Geometry 检查；Release 只保留避免越界和未定义行为的
-  最小检查，绝不使用不可信的 `frame_bytes` 寻找下一条记录。
 
-### 验收标准
+### 里程碑一状态
 
-- 空 payload、最大 payload、贴尾、回绕、满、drop、回收后复用全部正确。
-- abort 不可见；abandon 后再次 peek 得到同一记录。
-- 固定随机种子的参考队列模型长时间一致。
-- 真实 1P1C 传递数百万条带序号和校验模式的记录，无丢失、重复、乱序或死锁。
-- 覆盖逻辑游标跨 `UINT64_MAX` 回绕。
-- Debug、Release、ASan/UBSan、TSan 全部通过。
-- `WriterState` / `ReaderState` 仍各占独立 64B 热块，`CursorSet` 仍为两个独立
-  64B 原子缓存行。
-- Release 热路径无分配、锁、CAS、`fetch_add` 和意外 `seq_cst`。
-- 建立与 BQLog SISO 的同机、同容量、同 payload、同满队列策略微基准；
-  先以达到其 90% 吞吐为优化目标，低于目标先分析汇编和 cache miss。
+2026-09-02，SPSC RingBuffer 标记为“本地开发完成”：
 
-## 里程碑二：完成可演示、可公平基准的异步日志 V1
+1. Geometry、Storage、Frame 回绕、被动 Handle、读写游标与批量回收已经实现；
+2. Debug 47/47、Release 46 项通过且仅 1 项预期跳过、ASan/UBSan 47/47 通过；
+3. R1 读侧 pending 实验未达到 3% 性能门槛，已经回退；R2 不再执行；
+4. Release 汇编与最终 pending/校验分层契约一致；
+5. quick benchmark 的 10 个样本全部有效，数量统计无异常。
 
-### 完成结果
+原生 Linux TSan 和 clean commit 的完整重复性能矩阵仍作为正式发布门禁，后续通过 CI
+补齐；它们不阻塞里程碑二的协议设计，但在对外发布 Ring V1 性能结论前必须完成。
+
+完整交付、最终不变量、门禁证据与未完成发布项见
+[里程碑一完成报告](./MILESTONE1_COMPLETION_REPORT_CHS.md)。
+
+当前可执行细节见：
+[下一步实现指南](./NEXT_IMPLEMENTATION_GUIDE_CHS.md)。
+
+## 里程碑二：可演示、可公平基准的异步日志 V1
+
+### 目标链路
 
 ```text
 业务线程
-  -> 长期 ThreadLogger
+  -> ThreadLogger
   -> 每线程 SPSC Channel
   -> 单后台线程公平扫描
-  -> 参数解码与 fmt
+  -> Record 解码与 fmt
   -> 可复用输出缓冲区
   -> NullSink / 批量 FileSink
 ```
 
-推荐公共使用方式：
-
-```cpp
-auto thread_log = logger.attach_thread();  // 冷路径，可分配、可加锁
-QLOG_INFO(thread_log, "玩家 {} 进入场景 {}", player_id, scene_id);
-```
-
-`attach_thread()` 返回长期生产端，适合游戏服务器的长寿命工作线程。自动 TLS
-便利层可以以后增加，但不能让稳态日志调用每次查询 map。
-
 ### 实现顺序
 
-1. 冻结 Record Header、参数编码规则和静态 Callsite 元数据。调用点冷路径注册
-   `uint32_t CallsiteId`；热路径不查 map。V1 使用固定宽度整数编码，字符串使用
-   长度加字节，暂不引入 VLQ 和动态 format string。
-2. 实现编码/解码 round-trip。Producer 先精确计算记录长度，只 reserve 一次，
-   然后直接写入 Ring，不保存可能失效的用户对象引用。
-3. 实现 `AsyncLogger`、长期 `ThreadLogger`、稳定地址 Channel 与冷路径注册。
-   Logger 拥有所有 Channel，业务线程退出后才能 shutdown。
-4. 先接 `NullSink` 跑通多 Producer、单 Backend、公平轮询和关停排空，再接
-   后台 fmt。每次扫描设置记录数/字节预算，避免高流量 Channel 饿死其他线程。
-5. Backend 格式化到可复用输出缓冲区；完成复制后立即 consume/reclaim Ring，
-   再执行可能较慢的 Sink I/O，Sink 不得保留 Ring 内的 view。
-6. 实现批量 Linux FileSink，正确处理 partial write 和 `EINTR`。普通 `flush()`
-   表示排空并执行 `write()`，不宣称断电持久；`fdatasync/fsync` 必须单独定义和测量。
-7. 实现 shutdown：停止接受新日志，排空全部 accepted records，停止并 join
-   Backend，最后释放 Channel。统计满足守恒关系。
-8. 完成游戏服务器风格 demo、README、端到端压力测试和公平 benchmark。
+1. 商讨并冻结 `RecordHeader`、参数编码、字符串所有权和静态 Callsite 元数据。
+2. 实现 codec round-trip：精确计算长度，只 reserve 一次，直接编码到 Ring payload。
+3. 实现稳定地址 Channel、`ThreadLogger`、`AsyncLogger` 和冷路径注册。
+4. 用 NullSink 跑通多 Producer、单 Backend、公平扫描和关停排空。
+5. 接入后台 fmt；输出使用可复用缓冲区，Sink 不得持有 Ring view。
+6. 实现 Linux 批量 FileSink，正确处理 partial write 和 `EINTR`。
+7. 实现 shutdown、统计守恒、游戏服务器 demo 和端到端 benchmark。
 
-### Producer 热路径要求
+### 进入里程碑二前必须商讨的设计点
 
-- 无 fmt、稳态堆分配、锁、阻塞和共享原子 RMW。
-- Callsite ID 已缓存；日志级别过滤在 reserve 前完成。
-- payload 直接编码到 Ring；过大日志整体丢弃，绝不截断。
-- 每线程普通计数保存 attempted/accepted/drop 分类，不污染发布游标缓存行。
-- 初版后台调度采用 adaptive poll 加短时定时等待；Ring 内不包含唤醒逻辑，
-  Producer 初版不为每条日志主动唤醒后台线程。
+- `RecordHeader` 的字段、大小、对齐和版本方式；
+- V1 支持的参数类型集合；
+- 字符串是立即复制还是允许受约束的静态引用；
+- 时间戳、线程标识、日志级别和 `CallsiteId` 放在哪一层；
+- 静态 format string 与动态 format string 的边界；
+- 参数编码是否固定宽度，以及是否允许嵌套/自定义类型。
 
-### 验收标准
+这些决策会改变 payload ABI 和生产者成本。在书面冻结前，不开始实现 codec。
 
-- 多线程日志保持各 Channel FIFO，不承诺跨线程严格全序。
-- 数值、浮点、布尔、短字符串和长字符串能够正确编码并格式化。
-- 队列满时 Producer 立即返回；过载时明确统计 `drop_new`。
-- shutdown 后 `accepted == processed`；始终满足
-  `attempted == accepted + dropped`。
-- FileSink 正确处理短写和 `EINTR`，格式化异常不会终止 Backend。
-- Debug、Release、ASan/UBSan、TSan 和长时间压力测试通过。
-- 提供多线程游戏服务器 demo、真实文本日志和架构说明。
-- benchmark 分开报告 Producer 延迟、NullSink、后台格式化、普通文件
-  `write()` 与 durable flush；记录 P50/P99/P99.9、吞吐、CPU、RSS、accepted、
-  dropped 和 bytes。
-- 同机对比 spdlog async 与 BQLog Text；BQLog Compress 单列。初始性能目标为
-  超过 spdlog async，并尽量达到或超过 BQLog Text；任何结论必须同时报告丢弃量
-  和计时边界。
+跨窗口继续讨论时，以
+[里程碑二设计讨论指南](./MILESTONE2_DESIGN_GUIDE_CHS.md) 为入口；该文档只冻结讨论范围
+和顺序，不代表 Record ABI 已经决定。
+
+### 最终验收
+
+- 每个 Channel 保持 FIFO；不承诺跨线程严格全序。
+- `attempted == accepted + dropped`，shutdown 后 `accepted == processed`。
+- Producer 热路径没有 fmt、稳态分配、锁、阻塞或共享 RMW。
+- FileSink 正确处理短写和 `EINTR`；普通 flush 与 durable flush 分开定义。
+- benchmark 分开报告 Producer 延迟、NullSink、后台格式化、普通 `write()` 和
+  `fdatasync/fsync`，并记录吞吐、P50/P99/P99.9、CPU、RSS 和丢弃量。
+- Ring 微基准只比较 QLog SPSC 与 BQLog SISO；不把 spdlog 的带锁 MPMC 队列标成 SPSC。
+- 系统级同机对比 spdlog async 与 BQLog Text：spdlog 至少包含单 Producer/单 Backend 和
+  多 Producer/单 Backend，QLog `drop_new` 只对齐 spdlog `discard_new`；BQLog Compress
+  单列，不混合口径。具体分层见 ADR-006。
 
 ## V1 之后再考虑
 
-以下内容不允许扩张这两个里程碑：MPSC、mmap 恢复、压缩、VLQ、字符串驻留、
-跨线程全序、多 Backend 消费同一 Channel、审计级持久化、完整 Release 损坏隔离。
-只有 V1 基准指出明确瓶颈后，才为其中某一项建立新的实验分支。
+MPSC、mmap 恢复、压缩、VLQ、字符串驻留、跨线程全序、多 Backend、审计级持久化
+和完整 Release 损坏隔离均不进入 V1。只有基准证明具体瓶颈后，才为其中一项建立
+独立实验。
 
 ## 当前下一步
 
-Handle 查询接口、规范 inactive 状态以及 payload 字节测试已经完成；普通、零长度、失败、移动、
-终结、跨尾、相邻 Frame 和跨线程 release/acquire 均已覆盖，并通过 Debug、Release、ASan/UBSan
-与 Clang TSan 门禁。里程碑一的功能正确性关卡完成，下一步进入 SPSC Ring 微基准。在编写 benchmark
-代码前，先与用户冻结 workload、payload 分布、计时边界、吞吐/延迟指标和对照组；不再增加阶段 D
-或新的中间里程碑。
+进入里程碑二的设计阶段，先商讨并书面冻结 `RecordHeader` 与参数编码协议。第一轮只做
+字段归属和成本分析，不实现 codec：确定 Callsite 元数据、时间戳、线程标识、日志级别、
+参数类型集合、字符串所有权以及版本方式。协议冻结后，再实现精确长度计算、单次 reserve
+和直接编码到 Ring payload 的 codec round-trip。
+
+具体讨论问题、候选方案、产出物和新窗口浏览顺序见
+[里程碑二设计讨论指南](./MILESTONE2_DESIGN_GUIDE_CHS.md)。
+
+R1 的失败原因、回退和门禁证据继续保存在
+[读侧 R1 实验记录](./NEXT_IMPLEMENTATION_GUIDE_CHS.md)，不再作为当前实现指南。

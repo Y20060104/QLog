@@ -6,7 +6,7 @@
 
 - 状态：已接受
 - 日期：2026-08-15
-- 最后修订：2026-08-29
+- 最后修订：2026-09-02
 - 目标：Linux C++20 实时游戏服务器和实时仿真服务。
 - V1 拓扑：每个生产者线程一个 SPSC 通道，并由一个后台线程作为消费者。
 - 生产者约定：在正常日志路径中，不进行格式化、稳态堆分配、加锁、阻塞或共享原子读-改-写操作。
@@ -46,7 +46,7 @@
 28. [共享游标容器已由决策 29 修订] 阶段 C 曾将两个发布缓存行统一为 `SharedCursor` 类型，内部原子字段为 `value_`，Ring 分别内嵌 `write_cursor_` / `read_cursor_`。
 29. [成员类型名由决策 31 修订] 阶段 C 的共享游标命名与布局最终修订为：私有 `CursorSet cursors_` 统一收纳 `write_cursor_` / `read_cursor_`，两个原子成员分别使用 `alignas(kCacheLineSize)` 并各占一条缓存行，不手写 padding。四条热缓存行及 SPSC 所有权、缓存策略和后续 acquire/release 语义保持不变。
 30. 从 2026-08-28 起，后续执行计划只保留两个里程碑：一是完成可用且高性能的 SPSC RingBuffer，二是完成可演示、可公平基准的异步日志 V1。旧指南中的阶段 A～D、里程碑 0～7 和 M3～M7 保留为历史任务与设计证据，不再作为独立的后续里程碑。该合并不改变决策 1～29 已冻结的语义。
-31. ADR-004 取代 ADR-003 的对象模型。`SpscRingBuffer` 不再公开长期
+31. [Handle 所有权和终结语义由决策 35 修订] ADR-004 取代 ADR-003 的对象模型。`SpscRingBuffer` 不再公开长期
     `SpscWriteHandle` / `SpscReadHandle`；长期热状态改为 Ring 私有且各占 64B 的
     `WriterState` / `ReaderState`。Ring 直接提供 `try_reserve()` / `try_peek()`；
     每次操作按值返回短期、只可移动的 `WriteHandle` / `ReadHandle`。短期 Handle
@@ -55,7 +55,7 @@
     `ThreadLogger` 或稳定 Channel，不缓存短期 Handle。该修订删除长期 Handle 到 Ring
     的父指针依赖，但不改变四缓存行布局、尾端 Header/头部 payload、drop_new 或
     acquire/release 协议。
-32. ADR-004 的 Storage/Handle 协议冻结为：`FrameHeader` 写入 Ring 并随记录保留，
+32. [Handle 字段布局由决策 35 修订] ADR-004 的 Storage/Handle 协议冻结为：`FrameHeader` 写入 Ring 并随记录保留，
     `FrameLayout` 只作为 `try_reserve()` / `try_peek()` 的局部计算结果；短期
     `WriteHandle` 不保存 Header 或完整 Layout，只保存 Ring 指针、连续 payload
     地址、预计算的下一逻辑写游标、有效 payload 长度和本次状态，目标大小不超过
@@ -63,7 +63,7 @@
     `+ layout.payload_offset` 绑定真实地址，空间确认后写入尚未发布的 Header，再
     返回 Handle。失败 Handle 的 Ring/payload 指针为空，且不得写 Header、设置
     pending 或推进游标；commit 才以 release-store 发布，abort 不清零未发布字节。
-33. Handle 的 payload 访问接口修订为底层裸指针风格：内部继续保存 private 的
+33. [owner、终结位置和 bool 语义由决策 35 修订] Handle 的 payload 访问接口修订为底层裸指针风格：内部继续保存 private 的
     `payload_` / `payload_bytes_`，公有热接口为内联 `data()` / `size()`，不在 Ring 基础 API
     中返回 `std::span`，也不公开可修改的状态字段。`WriteHandle::data()` 返回
     `std::byte*`，`ReadHandle::data()` 返回 `const std::byte*`；`operator bool()` 以 Ring
@@ -73,7 +73,7 @@
     数据一次 `memcpy` 进入 Ring。commit 不复制 payload，只推进写游标并以 release-store 发布。
     该选择学习 BQLog 的 alloc/fill/commit 职责分层，但不复制其 public 可写 Handle 字段，也不
     宣称 `std::span` 本身必然更慢。
-34. Handle 查询状态冻结为两组正交语义：`operator bool()` 表示当前是否仍持有 active 借用，
+34. [已由决策 35 取代] Handle 查询状态冻结为两组正交语义：`operator bool()` 表示当前是否仍持有 active 借用，
     `status()` 始终保留本次 `try_reserve()` / `try_peek()` 的结果。成功且尚未终结时为
     `bool == true`、`status == ok`、`data != nullptr`、`size == exact_payload_bytes`；失败 Handle
     为 `false`、具体失败 status、`nullptr`、`0`；moved-from 以及 commit/abort/consume/abandon
@@ -81,6 +81,36 @@
     因而以 bool 而不是 size 区分成功与失败。移动操作通过 `deactivate()` 规范化源对象，不增加
     active 标志。存在未终结写预留时，新的 `try_reserve()` 必须优先返回
     `reservation_pending`，不再根据新请求的 payload 大小返回其他状态。
+35. ADR-005 将两侧 Handle 统一为 16B、非拥有、平凡可复制且平凡可析构的被动令牌。
+    Handle 不保存 Ring owner 或 64 位 next cursor，只保存 payload 指针、低 3 位编码 status
+    的 `frame_and_status_` 和 `payload_bytes_`。Ring 负责全部状态转换：写侧为
+    `try_reserve/commit`，冷路径 `abort`；读侧最终命名为 `try_read/release`，冷路径
+    `abandon`。成功 Handle 终结后不会自动清空，物理副本仍保持原始结果，但所有副本
+    共享一次性的逻辑终结权；重复终结、跨 Ring 终结和使用旧副本违反底层契约。
+    Debug 写终结路径校验 pending、Geometry 和地址归属，读取得路径校验 Header、Geometry
+    与可用范围；Release 删除这些完整检查。该修订不改变
+    Ring 私有 State、单次 pending、Header/payload 布局、批量回收阈值或内存序协议。
+36. ADR-006 冻结 benchmark 分层：Ring 微基准只横向比较相同职责的 QLog SPSC 与
+    BQLog SISO。spdlog 当前异步队列是带 `mutex/condition_variable` 的
+    `mpmc_blocking_queue<async_msg>`，不存在可直接加入该排行榜的并发 SPSC Ring；其
+    `circular_q` 不能被两个线程无同步并发访问。spdlog 在里程碑二以真实 async logger
+    身份加入单 Producer/单 Backend 与多 Producer/单 Backend 系统级对照，容量单位、
+    overflow policy、复制边界、格式化、accepted/dropped/processed 和内存占用必须分别披露。
+37. 2026-09-02，读侧 R1（仅在 Debug 保留 `read_pending_` 校验）实验未通过并决定回退。
+    Debug、Release、ASan/UBSan 与 Release 汇编门禁均通过，64KiB/64B transfer 未发现
+    可测回归；但同场成对交替纯读的 before/after 中位数仅从 50.13M/s 变为 50.51M/s，
+    改善 0.77%，低于预设 3% 且落在 MAD 噪声内。机器码更短不足以交换 Release 的
+    API 误用诊断能力。恢复四个 pending 读侧操作并重跑基线之前，不进入 R2。
+38. 2026-09-02，R1 回退与里程碑一的本地开发门禁完成。读写两侧的单次 pending
+    契约均在 Debug/Release 生效；完整 Header/Geometry 损坏校验仍为 Debug-only。
+    Debug 47/47、Release 46 项通过且仅 1 项预期跳过、ASan/UBSan 47/47 通过；
+    Release 汇编与冻结契约一致，quick benchmark 的 10 个样本全部有效。R2 不再执行。
+    里程碑一标记为“开发完成”；原生 Linux TSan 与 clean commit 正式性能矩阵仍是
+    发布门禁，可与里程碑二的协议设计并行补齐。
+39. 为跨窗口继续开发，新增里程碑一完成报告和里程碑二设计讨论指南。前者汇总最终 API、
+    Ring 不变量、门禁证据和原生 Linux 待办；后者冻结 V1 场景、Producer 热路径预算、
+    Record ABI 的讨论顺序和最终验收标准。里程碑二中的 Callsite、RecordHeader、时间戳、
+    参数类型、字符串所有权和编码方式仍是待商讨项，不因写入指南而视为已冻结决策。
 
 ## 重要限制
 
@@ -93,14 +123,19 @@
 - [ADR-001：双 span SPSC 帧环形缓冲区（已取代）](./ADR-001-spsc-frame-ring.md)
 - [ADR-002：尾端锚定帧头与连续回绕载荷（payload）](./ADR-002-tail-header-contiguous-payload.md)
 - [ADR-003：长期读写 Handle 合并私有状态（已取代）](./ADR-003-long-lived-spsc-handles.md)
-- [ADR-004：短期 Handle 与 Ring 私有读写状态](./ADR-004-short-lived-spsc-handles.md)
+- [ADR-004：短期 Handle 与 Ring 私有读写状态（Handle 部分已取代）](./ADR-004-short-lived-spsc-handles.md)
+- [ADR-005：被动且平凡可复制的 SPSC Handle](./ADR-005-passive-spsc-handles.md)
+- [ADR-006：spdlog 对照的 benchmark 分层](./ADR-006-spdlog-benchmark-layering.md)
 
 ## 架构规范
 
-- [QLog V1 SPSC 架构（已接受）](./SPSC_ARCHITECTURE_REVIEW.md)
+- [QLog V1 SPSC 架构评审（Handle 部分已取代）](./SPSC_ARCHITECTURE_REVIEW.md)
 
 ## 开发指南
 
 - [QLog V1 开发指南：SPSC 基础设施](./V1_DEVELOPMENT_GUIDE_CHS.md)
 - [里程碑 2：SpscRingBuffer 存储与类骨架](./M2_SPSC_RING_BUFFER_GUIDE_CHS.md)
 - [QLog V1 后续两里程碑实现指南（唯一生效计划）](./V1_TWO_MILESTONES_GUIDE_CHS.md)
+- [里程碑一完成报告：SPSC RingBuffer](./MILESTONE1_COMPLETION_REPORT_CHS.md)
+- [里程碑二设计讨论指南：异步日志 V1](./MILESTONE2_DESIGN_GUIDE_CHS.md)
+- [读侧 R1 实验记录：pending 校验仅保留在 Debug（未通过，已回退）](./NEXT_IMPLEMENTATION_GUIDE_CHS.md)

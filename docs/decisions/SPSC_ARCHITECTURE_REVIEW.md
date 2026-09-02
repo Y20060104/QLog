@@ -1,13 +1,17 @@
 # QLog V1 SPSC 架构评审
 
-- 状态：已接受（对象模型由 ADR-004 修订）
+- 状态：历史架构评审（Handle 模型由 ADR-005 修订）
 - 日期：2026-08-16
 - 接受日期：2026-08-16
-- 最后修订：2026-08-29
+- 最后修订：2026-09-02
 - 当前计划：完成 SPSC RingBuffer，然后完成异步日志 V1
 
 > 当前执行顺序以
 > [QLog V1 后续两里程碑实现指南](./V1_TWO_MILESTONES_GUIDE_CHS.md) 为准。
+>
+> 本文中“Handle 只可移动、保存 Ring owner/next cursor、析构自动终结、
+> `handle.commit()/consume()`”等描述已经失效。当前模型是 16B 被动令牌，
+> 由 Ring 执行 `commit/abort/release/abandon`；参见 ADR-005。
 
 ## 已冻结事项
 

@@ -1,11 +1,12 @@
 # QLog V1 开发指南：SPSC 基础设施
 
-> 历史指南：其中长期 Handle 相关内容已由 ADR-004 取代。当前实现请以
-> `V1_TWO_MILESTONES_GUIDE_CHS.md` 和 ADR-004 为准。
+> 历史指南：其中长期 Handle 相关内容已由 ADR-004 取代，ADR-004 中的 RAII
+> 短期 Handle 又由 ADR-005 取代。当前实现只以
+> `V1_TWO_MILESTONES_GUIDE_CHS.md` 和 ADR-005 为准。
 
 - 状态：历史详细参考
 - 日期：2026-08-16
-- 最后修订：2026-08-28
+- 最后修订：2026-09-02（仅更新废弃标记）
 - 适用范围：QLog V1 的字节型 SPSC Ring、Channel 与最小后台消费链路
 - 目标读者：项目实现者与代码评审者
 
