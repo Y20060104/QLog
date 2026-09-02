@@ -70,6 +70,11 @@ target_link_libraries(qlog_spsc_ring_buffer_test
         GTest::gtest_main
 )
 
+target_compile_definitions(qlog_spsc_ring_buffer_test
+    PRIVATE
+        QLOG_TEST_RING_VALIDATION=${QLOG_RING_VALIDATION_VALUE}
+)
+
 qlog_enable_warnings(qlog_spsc_ring_buffer_test)
 
 

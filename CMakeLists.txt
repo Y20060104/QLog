@@ -4,6 +4,18 @@ project(QLog VERSION 0.1.0 LANGUAGES CXX)
 
 option(QLOG_BUILD_BENCHMARKS "Build QLog benchmarks" OFF)
 
+set(
+    QLOG_ENABLE_RING_VALIDATION
+    "AUTO"
+    CACHE STRING
+    "Ring validation mode: AUTO, ON or OFF"
+)
+
+set_property(
+    CACHE QLOG_ENABLE_RING_VALIDATION
+    PROPERTY STRINGS AUTO ON OFF
+)
+
 function(qlog_enable_warnings target_name)
     if(MSVC)
         target_compile_options(${target_name} PRIVATE
@@ -41,6 +53,22 @@ target_include_directories(qlog
 )
 
 qlog_enable_warnings(qlog)
+
+if(QLOG_ENABLE_RING_VALIDATION STREQUAL "AUTO")
+    set(QLOG_RING_VALIDATION_VALUE
+        "$<IF:$<CONFIG:Debug>,1,0>")
+elseif(QLOG_ENABLE_RING_VALIDATION STREQUAL "ON")
+    set(QLOG_RING_VALIDATION_VALUE 1)
+elseif(QLOG_ENABLE_RING_VALIDATION STREQUAL "OFF")
+    set(QLOG_RING_VALIDATION_VALUE 0)
+else()
+    message(FATAL_ERROR
+        "QLOG_ENABLE_RING_VALIDATION must be AUTO, ON or OFF")
+endif()
+
+target_compile_definitions(qlog PRIVATE
+    QLOG_ENABLE_RING_VALIDATION=${QLOG_RING_VALIDATION_VALUE}
+)
 
 include(CTest)
 
