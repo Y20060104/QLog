@@ -1,11 +1,18 @@
 # ADR-004：短期 Handle 与 Ring 私有读写状态
 
-- 状态：已接受
+- 状态：部分被 ADR-005 取代，保留为历史决策
 - 日期：2026-08-28
-- 最后修订：2026-08-29
+- 最后修订：2026-09-02
 - 取代：ADR-003
+- 被取代部分：Handle 保存 owner/next cursor、只可移动、RAII 析构终结、Handle 成员 `commit/abort/consume/abandon`、终结后自动失效
 - 影响范围：QLog V1 `SpscRingBuffer` 对象模型与命名
 - 不改变：ADR-002 Frame Geometry、四缓存行布局、`drop_new` 与 acquire/release 协议
+
+> 当前 Handle 所有权、字段布局和终结接口只以
+> [ADR-005：被动且平凡可复制的 SPSC Handle](./ADR-005-passive-spsc-handles.md)
+> 为准。本文关于 Ring 私有 `WriterState` / `ReaderState`、`CursorSet`、固定 Storage、
+> 单次 pending 和 Frame 职责分层的结论仍然有效；其余 Handle 生命周期描述仅用于
+> 解释演进过程，不再指导实现。
 
 ## 背景
 
