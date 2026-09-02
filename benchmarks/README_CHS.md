@@ -23,6 +23,20 @@ BQLog 头文件不会进入 QLog 生产库，也不会执行 BQLog 自己的 CMa
 输出会记录两个仓库的 commit 与 dirty 状态。任何仓库为 dirty 时，结果标记为
 `NON_REPRODUCIBLE`，只能用于开发期分析，不能用于简历中的正式性能结论。
 
+### 为什么本层不加入 spdlog
+
+当前检查的 spdlog `v1.17.0-41-gf5f173a1` 没有并发 SPSC Ring：异步
+`thread_pool` 的队列类型是 `mpmc_blocking_queue<async_msg>`，其入队和出队使用
+`std::mutex`、`std::condition_variable` 与非线程安全的 `circular_q`。因此：
+
+- 不能让 Producer/Consumer 直接并发使用 `circular_q`，否则产生数据竞争；
+- 不能把带锁、按对象槽位计容量的 MPMC 队列放进字节型 SPSC Ring 排名；
+- 不能为适配现有 `reserve -> fill -> commit` runner 而增加临时 staging buffer，
+  因为这会改变复制次数和成功判定时刻。
+
+spdlog 会在异步日志 V1 层作为真实系统对照，而不是伪装成第三个 SPSC 实现。
+详细边界见 ADR-006。
+
 ## 首版场景
 
 ### `transfer_retry`
@@ -70,11 +84,12 @@ accepted == consumed == 0
 每个周期由 Producer 先在计时外写入少量 0B padding，再在计时区精确执行 N 次：
 
 ```text
-reserve -> 完整 payload memcpy/sequence/canary -> commit -> Handle 析构
+reserve -> 完整 payload memcpy/sequence/canary -> ring.commit
 ```
 
 Consumer 在计时外按相同顺序读空并校验。计时区不包含 padding、barrier、排空、empty 探测或
-terminal full 探测；成功 Handle 的析构保留在计时区，因为它属于当前公开 API 的真实固定成本。
+terminal full 探测。Handle 是平凡可析构的 16B 被动令牌，循环中的普通作用域结束仍保留在
+真实生成代码中，但不存在自定义析构或自动终结 Ring 的成本。
 主指标是 `accepted_records / active_elapsed`。
 
 ### `prefilled_read`
@@ -82,7 +97,7 @@ terminal full 探测；成功 Handle 的析构保留在计时区，因为它属�
 Producer 在计时外预填 N 条目标记录和必要 padding；Consumer 在计时区精确执行 N 次：
 
 ```text
-read/peek -> 长度、sequence、canary 轻量校验 -> consume -> Handle 析构
+ring.try_read -> 长度、sequence、canary 轻量校验 -> ring.release
 ```
 
 padding 的排空和 terminal empty 探测都在停表后执行。主指标是
@@ -120,10 +135,10 @@ JSONL 会同时输出：
 诊断时记 `Wq/Wb` 为 QLog/BQLog 纯写吞吐，`Rq/Rb` 为纯读吞吐，`Tq/Tb` 为
 `transfer_retry` 吞吐：
 
-- 只有写侧明显落后：分析 `WriteHandle` 生命周期与 `try_reserve`；
-- 只有读侧明显落后：优先分析 `try_peek/consume` 与 `ReadHandle`；
+- 只有写侧明显落后：分析 `try_reserve/commit`、Handle 返回值与 Frame Geometry；
+- 只有读侧明显落后：优先分析 `try_read/release`、Header 解码与批量回收；
 - 两个隔离路径都接近、并发传输仍明显落后：分析游标发布、full retry 和缓存一致性；
-- 两侧都按近似固定比例落后：共同的 Handle 返回、析构或跨翻译单元调用更可疑。
+- 两侧都按近似固定比例落后：共同的 16B Handle 返回或跨翻译单元调用更可疑。
 
 ## Payload 与计时
 
@@ -215,5 +230,13 @@ WSL2 结果用于开发期回归；公开“达到 BQLog 90%”前，应在稳�
 - normal/header-at-tail/wrapped 三种布局的受控测试；
 - BQLog `batch_read()` 最佳生产路径对照；
 - `perf stat` 的 cycles、instructions、branches 与 cache misses。
+
+等 QLog 的 `AsyncLogger + NullSink` 可用后，新增独立的 async-system benchmark：
+
+- 单 Producer + 单 Backend：QLog 每线程 SPSC 对 spdlog 单 Producer 负载下的 MPMC；
+- 多 Producer + 单 Backend：比较完整系统扩展性，不声称是 Ring 微基准；
+- QLog `drop_new` 对 spdlog `discard_new`；`overrun_oldest` 与 `block` 单独报告；
+- 同时报告 attempted/accepted/dropped/processed、Producer P50/P99/P99.9、吞吐、CPU 和 RSS；
+- spdlog 容量按对象槽位配置，QLog 按字节配置，因此同时披露记录数容量和实际内存占用。
 
 这些项目不能混入首版吞吐热循环后再声称口径相同。
