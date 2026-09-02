@@ -32,7 +32,7 @@ constexpr SpscRingBufferConfig kSmallConfig{64U, 32U};
 void commit_frame(SpscRingBuffer& ring, std::size_t payload_bytes) {
     auto handle = ring.try_reserve(payload_bytes);
     ASSERT_TRUE(SpscRingBufferTestAccess::reservation_pending(ring));
-    handle.commit();
+    ring.commit(handle);
 }
 
 TEST(SpscRingBufferCapacity, ExactCapacityCanBeFilledAndReusedAfterPublish) {
@@ -44,15 +44,15 @@ TEST(SpscRingBufferCapacity, ExactCapacityCanBeFilledAndReusedAfterPublish) {
     ASSERT_EQ(SpscRingBufferTestAccess::write_cursor(ring), 64U);
 
     auto full = ring.try_reserve(8U);
-    full.commit();
+    ring.commit(full);
 
     EXPECT_FALSE(SpscRingBufferTestAccess::reservation_pending(ring));
     EXPECT_EQ(SpscRingBufferTestAccess::current_write_cursor(ring), 64U);
     EXPECT_EQ(SpscRingBufferTestAccess::write_cursor(ring), 64U);
 
-    auto first = ring.try_peek();
-    ASSERT_TRUE(SpscRingBufferTestAccess::read_pending(ring));
-    first.consume();
+    auto first = ring.try_read();
+    ASSERT_TRUE(first);
+    ring.release(first);
 
     EXPECT_EQ(SpscRingBufferTestAccess::read_cursor(ring), 0U);
     ring.publish_reclaimed();
@@ -61,7 +61,7 @@ TEST(SpscRingBufferCapacity, ExactCapacityCanBeFilledAndReusedAfterPublish) {
     auto reused = ring.try_reserve(8U);
     ASSERT_TRUE(SpscRingBufferTestAccess::reservation_pending(ring));
     EXPECT_EQ(SpscRingBufferTestAccess::cached_read_cursor(ring), 16U);
-    reused.commit();
+    ring.commit(reused);
 
     EXPECT_EQ(SpscRingBufferTestAccess::write_cursor(ring), 80U);
 }
@@ -79,11 +79,11 @@ TEST(SpscRingBufferWrap, FrameThatExactlyFitsTailDoesNotWrap) {
     EXPECT_EQ(header.frame_bytes, 16U);
     EXPECT_EQ(header.payload_bytes, 8U);
 
-    tail.commit();
+    ring.commit(tail);
     EXPECT_EQ(SpscRingBufferTestAccess::write_cursor(ring), 64U);
 }
 
-TEST(SpscRingBufferWrap, TailWasteCountsTowardSpaceAndWrappedFrameCanBeConsumed) {
+TEST(SpscRingBufferWrap, TailWasteCountsTowardSpaceAndWrappedFrameCanBeReleased) {
     SpscRingBuffer ring{kSmallConfig};
     commit_frame(ring, 8U);
     commit_frame(ring, 8U);
@@ -91,13 +91,13 @@ TEST(SpscRingBufferWrap, TailWasteCountsTowardSpaceAndWrappedFrameCanBeConsumed)
     ASSERT_EQ(SpscRingBufferTestAccess::write_cursor(ring), 48U);
 
     auto insufficient = ring.try_reserve(16U);
-    insufficient.commit();
+    ring.commit(insufficient);
     EXPECT_FALSE(SpscRingBufferTestAccess::reservation_pending(ring));
     EXPECT_EQ(SpscRingBufferTestAccess::write_cursor(ring), 48U);
 
-    auto first = ring.try_peek();
-    ASSERT_TRUE(SpscRingBufferTestAccess::read_pending(ring));
-    first.consume();
+    auto first = ring.try_read();
+    ASSERT_TRUE(first);
+    ring.release(first);
     ring.publish_reclaimed();
     ASSERT_EQ(SpscRingBufferTestAccess::read_cursor(ring), 16U);
 
@@ -108,22 +108,22 @@ TEST(SpscRingBufferWrap, TailWasteCountsTowardSpaceAndWrappedFrameCanBeConsumed)
     EXPECT_EQ(header.frame_bytes, 32U);
     EXPECT_EQ(header.payload_bytes, 16U);
 
-    wrapped.commit();
+    ring.commit(wrapped);
     ASSERT_EQ(SpscRingBufferTestAccess::write_cursor(ring), 80U);
 
-    auto second = ring.try_peek();
-    ASSERT_TRUE(SpscRingBufferTestAccess::read_pending(ring));
-    second.consume();
+    auto second = ring.try_read();
+    ASSERT_TRUE(second);
+    ring.release(second);
     EXPECT_EQ(SpscRingBufferTestAccess::current_read_cursor(ring), 32U);
 
-    auto third = ring.try_peek();
-    ASSERT_TRUE(SpscRingBufferTestAccess::read_pending(ring));
-    third.consume();
+    auto third = ring.try_read();
+    ASSERT_TRUE(third);
+    ring.release(third);
     EXPECT_EQ(SpscRingBufferTestAccess::current_read_cursor(ring), 48U);
 
-    auto wrapped_read = ring.try_peek();
-    ASSERT_TRUE(SpscRingBufferTestAccess::read_pending(ring));
-    wrapped_read.consume();
+    auto wrapped_read = ring.try_read();
+    ASSERT_TRUE(wrapped_read);
+    ring.release(wrapped_read);
 
     EXPECT_EQ(SpscRingBufferTestAccess::current_read_cursor(ring), 80U);
     EXPECT_EQ(SpscRingBufferTestAccess::read_cursor(ring), 80U);
@@ -142,7 +142,7 @@ TEST(SpscRingBufferConcurrency, VariableFramesCrossManyWrapsWithoutLosingProgres
             auto write = ring.try_reserve(payload_bytes);
 
             if (SpscRingBufferTestAccess::reservation_pending(ring)) {
-                write.commit();
+                ring.commit(write);
                 ++produced;
             } else {
                 std::this_thread::yield();
@@ -154,10 +154,10 @@ TEST(SpscRingBufferConcurrency, VariableFramesCrossManyWrapsWithoutLosingProgres
     const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
 
     while (consumed < kRecordCount && std::chrono::steady_clock::now() < deadline) {
-        auto read = ring.try_peek();
+        auto read = ring.try_read();
 
-        if (SpscRingBufferTestAccess::read_pending(ring)) {
-            read.consume();
+        if (read) {
+            ring.release(read);
             ++consumed;
         } else {
             std::this_thread::yield();

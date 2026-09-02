@@ -37,12 +37,12 @@ class QlogSpscAdapter final {
         return handle.data();
     }
 
-    static void commit(WriteHandle& handle) noexcept {
-        handle.commit();
+    void commit(const WriteHandle& handle) noexcept {
+        ring_.commit(handle);
     }
 
     [[nodiscard]] ReadHandle read() noexcept {
-        return ring_.try_peek();
+        return ring_.try_read();
     }
 
     [[nodiscard]] static AttemptStatus read_status(const ReadHandle& handle) noexcept {
@@ -66,8 +66,8 @@ class QlogSpscAdapter final {
         return handle.size();
     }
 
-    static void consume(ReadHandle& handle) noexcept {
-        handle.consume();
+    void consume(const ReadHandle& handle) noexcept {
+        ring_.release(handle);
     }
 
    private:

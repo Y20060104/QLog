@@ -1,0 +1,15 @@
+#pragma once
+
+#ifndef QLOG_ENABLE_RING_VALIDATION
+
+#if defined(NDEBUG)
+#define QLOG_ENABLE_RING_VALIDATION 0
+#else
+#define QLOG_ENABLE_RING_VALIDATION 1
+#endif
+
+#endif
+
+#if QLOG_ENABLE_RING_VALIDATION != 0 && QLOG_ENABLE_RING_VALIDATION != 1
+#error "QLOG_ENABLE_RING_VALIDATION must be 0 or 1"
+#endif

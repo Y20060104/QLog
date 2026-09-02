@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <type_traits>
 
 namespace qlog::detail {
 
@@ -36,85 +37,106 @@ class ReadHandle;
 
 class WriteHandle final {
    public:
-    ~WriteHandle() noexcept;
-
-    WriteHandle(const WriteHandle&) = delete;
-    WriteHandle& operator=(const WriteHandle&) = delete;
-
-    WriteHandle(WriteHandle&& other) noexcept;
-    WriteHandle& operator=(WriteHandle&& other) noexcept;
-
-    void commit() noexcept;
-    void abort() noexcept;
+    WriteHandle(const WriteHandle&) noexcept = default;
+    WriteHandle& operator=(const WriteHandle&) noexcept = default;
+    WriteHandle(WriteHandle&&) noexcept = default;
+    WriteHandle& operator=(WriteHandle&&) noexcept = default;
+    ~WriteHandle() noexcept = default;
 
     [[nodiscard]] explicit operator bool() const noexcept {
-        return ring_ != nullptr;
+        return frame_bytes() != 0U;
     }
 
-    [[nodiscard]] inline ReserveStatus status() const noexcept {
-        return status_;
+    [[nodiscard]] ReserveStatus status() const noexcept {
+        return static_cast<ReserveStatus>(frame_and_status_ & kStatusMask);
     }
 
-    [[nodiscard]] inline std::byte* data() noexcept {
+    [[nodiscard]] std::byte* data() noexcept {
         return payload_;
     }
 
-    [[nodiscard]] inline std::uint32_t size() const noexcept {
+    [[nodiscard]] std::uint32_t size() const noexcept {
         return payload_bytes_;
     }
 
    private:
     friend class SpscRingBuffer;
-    WriteHandle() noexcept = default;
-    void deactivate() noexcept;
 
-    SpscRingBuffer* ring_{};
+    static constexpr std::uint32_t kStatusMask = 0x7U;
+    static_assert(static_cast<std::uint32_t>(ReserveStatus::reservation_pending) <= kStatusMask);
+
+    WriteHandle() noexcept = default;
+
+    WriteHandle(std::byte* payload, std::uint32_t payload_bytes, std::uint32_t frame_bytes) noexcept
+        : payload_(payload), frame_and_status_(frame_bytes), payload_bytes_(payload_bytes) {}
+
+    explicit WriteHandle(ReserveStatus status) noexcept
+        : frame_and_status_(static_cast<std::uint32_t>(status)) {}
+
+    [[nodiscard]] std::uint32_t frame_bytes() const noexcept {
+        return frame_and_status_ & ~kStatusMask;
+    }
+
     std::byte* payload_{};
-    std::uint64_t next_write_cursor_{};
+    std::uint32_t frame_and_status_{static_cast<std::uint32_t>(ReserveStatus::full)};
     std::uint32_t payload_bytes_{};
-    ReserveStatus status_{ReserveStatus::full};
 };
+
+static_assert(sizeof(WriteHandle) == 16U);
+static_assert(std::is_trivially_copyable_v<WriteHandle>);
+static_assert(std::is_trivially_destructible_v<WriteHandle>);
 
 class ReadHandle final {
    public:
-    ~ReadHandle() noexcept;
-
-    ReadHandle(const ReadHandle&) = delete;
-    ReadHandle& operator=(const ReadHandle&) = delete;
-
-    ReadHandle(ReadHandle&& other) noexcept;
-    ReadHandle& operator=(ReadHandle&& other) noexcept;
-
-    void consume() noexcept;
-    void abandon() noexcept;
+    ReadHandle(const ReadHandle&) noexcept = default;
+    ReadHandle& operator=(const ReadHandle&) noexcept = default;
+    ReadHandle(ReadHandle&&) noexcept = default;
+    ReadHandle& operator=(ReadHandle&&) noexcept = default;
+    ~ReadHandle() noexcept = default;
 
     [[nodiscard]] explicit operator bool() const noexcept {
-        return ring_ != nullptr;
+        return frame_bytes() != 0U;
     }
 
-    [[nodiscard]] inline ReadStatus status() const noexcept {
-        return status_;
+    [[nodiscard]] ReadStatus status() const noexcept {
+        return static_cast<ReadStatus>(frame_and_status_ & kStatusMask);
     }
 
-    [[nodiscard]] inline const std::byte* data() const noexcept {
+    [[nodiscard]] const std::byte* data() const noexcept {
         return payload_;
     }
 
-    [[nodiscard]] inline std::uint32_t size() const noexcept {
+    [[nodiscard]] std::uint32_t size() const noexcept {
         return payload_bytes_;
     }
 
    private:
     friend class SpscRingBuffer;
-    ReadHandle() noexcept = default;
-    void deactivate() noexcept;
 
-    SpscRingBuffer* ring_{};
+    static constexpr std::uint32_t kStatusMask = 0x7U;
+    static_assert(static_cast<std::uint32_t>(ReadStatus::read_pending) <= kStatusMask);
+
+    ReadHandle() noexcept = default;
+
+    ReadHandle(const std::byte* payload, std::uint32_t payload_bytes,
+               std::uint32_t frame_bytes) noexcept
+        : payload_(payload), frame_and_status_(frame_bytes), payload_bytes_(payload_bytes) {}
+
+    explicit ReadHandle(ReadStatus status) noexcept
+        : frame_and_status_(static_cast<std::uint32_t>(status)) {}
+
+    [[nodiscard]] std::uint32_t frame_bytes() const noexcept {
+        return frame_and_status_ & ~kStatusMask;
+    }
+
     const std::byte* payload_{};
-    std::uint64_t next_read_cursor_{};
+    std::uint32_t frame_and_status_{static_cast<std::uint32_t>(ReadStatus::empty)};
     std::uint32_t payload_bytes_{};
-    ReadStatus status_{ReadStatus::empty};
 };
+
+static_assert(sizeof(ReadHandle) == 16U);
+static_assert(std::is_trivially_copyable_v<ReadHandle>);
+static_assert(std::is_trivially_destructible_v<ReadHandle>);
 
 class SpscRingBuffer final {
    public:
@@ -131,14 +153,12 @@ class SpscRingBuffer final {
     SpscRingBuffer& operator=(SpscRingBuffer&&) = delete;
 
     [[nodiscard]] WriteHandle try_reserve(std::size_t exact_payload_bytes) noexcept;
-    [[nodiscard]] ReadHandle try_peek() noexcept;
+    void commit(const WriteHandle& write_handle) noexcept;
+    void abort(const WriteHandle& write_handle) noexcept;
+    [[nodiscard]] ReadHandle try_read() noexcept;
+    void release(const ReadHandle& read_handle) noexcept;
+    void abandon(const ReadHandle& read_handle) noexcept;
     void publish_reclaimed() noexcept;
-
-   private:
-    void commit_write(WriteHandle& write_handle) noexcept;
-    void abort_write(WriteHandle& write_handle) noexcept;
-    void consume_read(ReadHandle& read_handle) noexcept;
-    void abandon_read(ReadHandle& read_handle) noexcept;
 
    private:
     static constexpr std::size_t kStorageAlignment = 64;
@@ -192,8 +212,6 @@ class SpscRingBuffer final {
     static_assert(sizeof(ReaderState) == kCacheLineSize);
     static_assert(std::atomic<std::uint64_t>::is_always_lock_free);
 
-    friend class WriteHandle;
-    friend class ReadHandle;
     friend struct SpscRingBufferTestAccess;
 
     ColdState cold_state_;

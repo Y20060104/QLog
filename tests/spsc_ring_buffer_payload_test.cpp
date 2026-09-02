@@ -23,6 +23,14 @@ using qlog::detail::SpscRingBufferConfig;
 using qlog::detail::SpscRingBufferTestAccess;
 using qlog::detail::WriteHandle;
 
+#ifndef QLOG_TEST_RING_VALIDATION
+#error "QLOG_TEST_RING_VALIDATION must be provided by tests/CMakeLists.txt"
+#endif
+
+#if QLOG_TEST_RING_VALIDATION != 0 && QLOG_TEST_RING_VALIDATION != 1
+#error "QLOG_TEST_RING_VALIDATION must be 0 or 1"
+#endif
+
 constexpr SpscRingBufferConfig kSmallConfig{64U, 32U};
 
 static_assert(std::is_constructible_v<bool, const WriteHandle&>);
@@ -65,16 +73,17 @@ void write_record(SpscRingBuffer& ring, const std::array<std::byte, Size>& paylo
         std::memcpy(write.data(), payload.data(), Size);
     }
 
-    write.commit();
-    EXPECT_FALSE(static_cast<bool>(write));
+    auto* const payload_address = write.data();
+    ring.commit(write);
+    EXPECT_TRUE(static_cast<bool>(write));
     EXPECT_EQ(write.status(), ReserveStatus::ok);
-    EXPECT_EQ(write.data(), nullptr);
-    EXPECT_EQ(write.size(), 0U);
+    EXPECT_EQ(write.data(), payload_address);
+    EXPECT_EQ(write.size(), Size);
 }
 
 template <std::size_t Size>
-void expect_record_and_consume(SpscRingBuffer& ring, const std::array<std::byte, Size>& expected) {
-    auto read = ring.try_peek();
+void expect_record_and_release(SpscRingBuffer& ring, const std::array<std::byte, Size>& expected) {
+    auto read = ring.try_read();
     ASSERT_TRUE(static_cast<bool>(read));
     ASSERT_EQ(read.status(), ReadStatus::ok);
     ASSERT_NE(read.data(), nullptr);
@@ -84,14 +93,10 @@ void expect_record_and_consume(SpscRingBuffer& ring, const std::array<std::byte,
         EXPECT_EQ(std::memcmp(read.data(), expected.data(), Size), 0);
     }
 
-    read.consume();
-    EXPECT_FALSE(static_cast<bool>(read));
-    EXPECT_EQ(read.status(), ReadStatus::ok);
-    EXPECT_EQ(read.data(), nullptr);
-    EXPECT_EQ(read.size(), 0U);
+    ring.release(read);
 }
 
-TEST(SpscHandleApi, NormalPayloadRoundTripsAndTerminalStateIsCanonical) {
+TEST(SpscHandleApi, NormalPayloadRoundTripsAndWriteTokenRemainsPassive) {
     SpscRingBuffer ring{kSmallConfig};
     constexpr auto payload = make_payload<13U>(0x20U);
 
@@ -101,26 +106,23 @@ TEST(SpscHandleApi, NormalPayloadRoundTripsAndTerminalStateIsCanonical) {
     ASSERT_NE(write.data(), nullptr);
     EXPECT_EQ(write.size(), payload.size());
 
+    auto* const payload_address = write.data();
     std::memcpy(write.data(), payload.data(), payload.size());
-    write.commit();
+    ring.commit(write);
 
-    EXPECT_FALSE(static_cast<bool>(write));
+    EXPECT_TRUE(static_cast<bool>(write));
     EXPECT_EQ(write.status(), ReserveStatus::ok);
-    EXPECT_EQ(write.data(), nullptr);
-    EXPECT_EQ(write.size(), 0U);
+    EXPECT_EQ(write.data(), payload_address);
+    EXPECT_EQ(write.size(), payload.size());
 
-    auto read = ring.try_peek();
+    auto read = ring.try_read();
     ASSERT_TRUE(static_cast<bool>(read));
     EXPECT_EQ(read.status(), ReadStatus::ok);
     ASSERT_NE(read.data(), nullptr);
     EXPECT_EQ(read.size(), payload.size());
     EXPECT_EQ(std::memcmp(read.data(), payload.data(), payload.size()), 0);
 
-    read.consume();
-    EXPECT_FALSE(static_cast<bool>(read));
-    EXPECT_EQ(read.status(), ReadStatus::ok);
-    EXPECT_EQ(read.data(), nullptr);
-    EXPECT_EQ(read.size(), 0U);
+    ring.release(read);
 }
 
 TEST(SpscHandleApi, ZeroLengthPayloadIsAnActiveRecord) {
@@ -131,14 +133,14 @@ TEST(SpscHandleApi, ZeroLengthPayloadIsAnActiveRecord) {
     EXPECT_EQ(write.status(), ReserveStatus::ok);
     EXPECT_NE(write.data(), nullptr);
     EXPECT_EQ(write.size(), 0U);
-    write.commit();
+    ring.commit(write);
 
-    auto read = ring.try_peek();
+    auto read = ring.try_read();
     ASSERT_TRUE(static_cast<bool>(read));
     EXPECT_EQ(read.status(), ReadStatus::ok);
     EXPECT_NE(read.data(), nullptr);
     EXPECT_EQ(read.size(), 0U);
-    read.consume();
+    ring.release(read);
 }
 
 TEST(SpscHandleApi, FailureHandlesExposePreciseStatusWithoutPayload) {
@@ -150,7 +152,7 @@ TEST(SpscHandleApi, FailureHandlesExposePreciseStatusWithoutPayload) {
     EXPECT_EQ(too_large.data(), nullptr);
     EXPECT_EQ(too_large.size(), 0U);
 
-    auto empty = ring.try_peek();
+    auto empty = ring.try_read();
     EXPECT_FALSE(static_cast<bool>(empty));
     EXPECT_EQ(empty.status(), ReadStatus::empty);
     EXPECT_EQ(empty.data(), nullptr);
@@ -164,10 +166,10 @@ TEST(SpscHandleApi, FailureHandlesExposePreciseStatusWithoutPayload) {
     EXPECT_EQ(pending.status(), ReserveStatus::reservation_pending);
     EXPECT_EQ(pending.data(), nullptr);
     EXPECT_EQ(pending.size(), 0U);
-    active.abort();
+    ring.abort(active);
 }
 
-TEST(SpscHandleApi, FullAndReadPendingFailuresRemainInactive) {
+TEST(SpscHandleApi, FullFailureRemainsInactive) {
     SpscRingBuffer ring{kSmallConfig};
     constexpr auto payload = make_payload<8U>(0x10U);
 
@@ -180,19 +182,25 @@ TEST(SpscHandleApi, FullAndReadPendingFailuresRemainInactive) {
     EXPECT_EQ(full.status(), ReserveStatus::full);
     EXPECT_EQ(full.data(), nullptr);
     EXPECT_EQ(full.size(), 0U);
+}
 
-    auto first = ring.try_peek();
+TEST(SpscHandleApi, ReadPendingFailureRemainsInactive) {
+    SpscRingBuffer ring{kSmallConfig};
+    constexpr auto payload = make_payload<8U>(0x10U);
+    write_record(ring, payload);
+
+    auto first = ring.try_read();
     ASSERT_TRUE(static_cast<bool>(first));
 
-    auto pending = ring.try_peek();
+    auto pending = ring.try_read();
     EXPECT_FALSE(static_cast<bool>(pending));
     EXPECT_EQ(pending.status(), ReadStatus::read_pending);
     EXPECT_EQ(pending.data(), nullptr);
     EXPECT_EQ(pending.size(), 0U);
-    first.abandon();
+    ring.abandon(first);
 }
 
-TEST(SpscHandleApi, MoveConstructionCanonicalizesSourceAndTransfersPayload) {
+TEST(SpscHandleApi, MoveConstructionCopiesBothPassiveTokens) {
     SpscRingBuffer ring{kSmallConfig};
     constexpr auto payload = make_payload<7U>(0x30U);
 
@@ -202,60 +210,56 @@ TEST(SpscHandleApi, MoveConstructionCanonicalizesSourceAndTransfersPayload) {
 
     WriteHandle destination{std::move(source)};
 
-    EXPECT_FALSE(static_cast<bool>(source));
+    EXPECT_TRUE(static_cast<bool>(source));
     EXPECT_EQ(source.status(), ReserveStatus::ok);
-    EXPECT_EQ(source.data(), nullptr);
-    EXPECT_EQ(source.size(), 0U);
+    EXPECT_EQ(source.data(), payload_address);
+    EXPECT_EQ(source.size(), payload.size());
     ASSERT_TRUE(static_cast<bool>(destination));
     EXPECT_EQ(destination.status(), ReserveStatus::ok);
     EXPECT_EQ(destination.data(), payload_address);
     EXPECT_EQ(destination.size(), payload.size());
 
     std::memcpy(destination.data(), payload.data(), payload.size());
-    destination.commit();
+    ring.commit(destination);
 
-    auto read_source = ring.try_peek();
+    auto read_source = ring.try_read();
     ASSERT_TRUE(static_cast<bool>(read_source));
     const auto* const read_address = read_source.data();
 
     ReadHandle read_destination{std::move(read_source)};
 
-    EXPECT_FALSE(static_cast<bool>(read_source));
+    EXPECT_TRUE(static_cast<bool>(read_source));
     EXPECT_EQ(read_source.status(), ReadStatus::ok);
-    EXPECT_EQ(read_source.data(), nullptr);
-    EXPECT_EQ(read_source.size(), 0U);
+    EXPECT_EQ(read_source.data(), read_address);
+    EXPECT_EQ(read_source.size(), payload.size());
     ASSERT_TRUE(static_cast<bool>(read_destination));
     EXPECT_EQ(read_destination.data(), read_address);
     EXPECT_EQ(read_destination.size(), payload.size());
     EXPECT_EQ(std::memcmp(read_destination.data(), payload.data(), payload.size()), 0);
-    read_destination.consume();
+    ring.release(read_destination);
 }
 
-TEST(SpscHandleApi, MoveAssignmentReleasesOldReservationBeforeTransfer) {
-    SpscRingBuffer source_ring{kSmallConfig};
-    SpscRingBuffer destination_ring{kSmallConfig};
+TEST(SpscHandleApi, MoveAssignmentCopiesPassiveWriteToken) {
+    SpscRingBuffer ring{kSmallConfig};
     constexpr auto payload = make_payload<6U>(0x40U);
 
-    auto source = source_ring.try_reserve(payload.size());
+    auto destination = ring.try_reserve(33U);
+    ASSERT_FALSE(static_cast<bool>(destination));
+
+    auto source = ring.try_reserve(payload.size());
     ASSERT_TRUE(static_cast<bool>(source));
     std::memcpy(source.data(), payload.data(), payload.size());
 
-    auto destination = destination_ring.try_reserve(5U);
-    ASSERT_TRUE(static_cast<bool>(destination));
     destination = std::move(source);
 
-    EXPECT_FALSE(static_cast<bool>(source));
-    EXPECT_EQ(source.data(), nullptr);
-    EXPECT_EQ(source.size(), 0U);
+    EXPECT_TRUE(static_cast<bool>(source));
+    EXPECT_EQ(source.data(), destination.data());
+    EXPECT_EQ(source.size(), payload.size());
     ASSERT_TRUE(static_cast<bool>(destination));
     EXPECT_EQ(destination.size(), payload.size());
 
-    auto retry = destination_ring.try_reserve(5U);
-    ASSERT_TRUE(static_cast<bool>(retry));
-    retry.abort();
-
-    destination.commit();
-    expect_record_and_consume(source_ring, payload);
+    ring.commit(destination);
+    expect_record_and_release(ring, payload);
 }
 
 TEST(SpscRingBufferPayload, AbortAndAbandonPreserveVisibilityContract) {
@@ -266,23 +270,23 @@ TEST(SpscRingBufferPayload, AbortAndAbandonPreserveVisibilityContract) {
     auto aborted = ring.try_reserve(unpublished.size());
     ASSERT_TRUE(static_cast<bool>(aborted));
     std::memcpy(aborted.data(), unpublished.data(), unpublished.size());
-    aborted.abort();
+    ring.abort(aborted);
 
     write_record(ring, published);
 
-    auto first = ring.try_peek();
+    auto first = ring.try_read();
     ASSERT_TRUE(static_cast<bool>(first));
     ASSERT_NE(first.data(), nullptr);
     const auto* const first_address = first.data();
     EXPECT_EQ(std::memcmp(first.data(), published.data(), published.size()), 0);
-    first.abandon();
+    ring.abandon(first);
 
-    auto retry = ring.try_peek();
+    auto retry = ring.try_read();
     ASSERT_TRUE(static_cast<bool>(retry));
     EXPECT_EQ(retry.data(), first_address);
     EXPECT_EQ(retry.size(), published.size());
     EXPECT_EQ(std::memcmp(retry.data(), published.data(), published.size()), 0);
-    retry.consume();
+    ring.release(retry);
 }
 
 TEST(SpscRingBufferPayload, WrappedPayloadIsContiguousAndPreservesAdjacentFrames) {
@@ -296,7 +300,7 @@ TEST(SpscRingBufferPayload, WrappedPayloadIsContiguousAndPreservesAdjacentFrames
     write_record(ring, second_payload);
     write_record(ring, third_payload);
 
-    expect_record_and_consume(ring, first_payload);
+    expect_record_and_release(ring, first_payload);
     ring.publish_reclaimed();
 
     auto wrapped = ring.try_reserve(wrapped_payload.size());
@@ -305,11 +309,11 @@ TEST(SpscRingBufferPayload, WrappedPayloadIsContiguousAndPreservesAdjacentFrames
     ASSERT_EQ(wrapped.data(), SpscRingBufferTestAccess::storage(ring));
     ASSERT_EQ(wrapped.size(), wrapped_payload.size());
     std::memcpy(wrapped.data(), wrapped_payload.data(), wrapped_payload.size());
-    wrapped.commit();
+    ring.commit(wrapped);
 
-    expect_record_and_consume(ring, second_payload);
-    expect_record_and_consume(ring, third_payload);
-    expect_record_and_consume(ring, wrapped_payload);
+    expect_record_and_release(ring, second_payload);
+    expect_record_and_release(ring, third_payload);
+    expect_record_and_release(ring, wrapped_payload);
 }
 
 TEST(SpscRingBufferPayload, ReleaseAcquirePublishesPayloadAcrossThreads) {
@@ -338,7 +342,7 @@ TEST(SpscRingBufferPayload, ReleaseAcquirePublishesPayloadAcrossThreads) {
             for (std::size_t index = 0; index < payload_bytes; ++index) {
                 write.data()[index] = std::byte{static_cast<unsigned char>(produced + index)};
             }
-            write.commit();
+            ring.commit(write);
             ++produced;
         }
     });
@@ -348,7 +352,7 @@ TEST(SpscRingBufferPayload, ReleaseAcquirePublishesPayloadAcrossThreads) {
     const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds{10};
 
     while (consumed < kRecordCount && std::chrono::steady_clock::now() < deadline) {
-        auto read = ring.try_peek();
+        auto read = ring.try_read();
         if (read.status() == ReadStatus::empty) {
             std::this_thread::yield();
             continue;
@@ -371,7 +375,7 @@ TEST(SpscRingBufferPayload, ReleaseAcquirePublishesPayloadAcrossThreads) {
             }
         }
 
-        read.consume();
+        ring.release(read);
         ++consumed;
         if (!payload_matches) {
             break;

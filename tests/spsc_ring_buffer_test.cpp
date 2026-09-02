@@ -35,29 +35,38 @@ static_assert(std::atomic<std::uint64_t>::is_always_lock_free);
 
 static_assert(std::is_final_v<WriteHandle>);
 static_assert(!std::is_default_constructible_v<WriteHandle>);
-static_assert(!std::is_copy_constructible_v<WriteHandle>);
-static_assert(!std::is_copy_assignable_v<WriteHandle>);
+static_assert(std::is_copy_constructible_v<WriteHandle>);
+static_assert(std::is_copy_assignable_v<WriteHandle>);
 static_assert(std::is_nothrow_move_constructible_v<WriteHandle>);
 static_assert(std::is_nothrow_move_assignable_v<WriteHandle>);
 static_assert(std::is_nothrow_destructible_v<WriteHandle>);
-static_assert(sizeof(WriteHandle) <= 32U);
+static_assert(std::is_trivially_copyable_v<WriteHandle>);
+static_assert(std::is_trivially_destructible_v<WriteHandle>);
+static_assert(sizeof(WriteHandle) == 16U);
 
 static_assert(std::is_final_v<ReadHandle>);
 static_assert(!std::is_default_constructible_v<ReadHandle>);
-static_assert(!std::is_copy_constructible_v<ReadHandle>);
-static_assert(!std::is_copy_assignable_v<ReadHandle>);
+static_assert(std::is_copy_constructible_v<ReadHandle>);
+static_assert(std::is_copy_assignable_v<ReadHandle>);
 static_assert(std::is_nothrow_move_constructible_v<ReadHandle>);
 static_assert(std::is_nothrow_move_assignable_v<ReadHandle>);
 static_assert(std::is_nothrow_destructible_v<ReadHandle>);
-static_assert(sizeof(ReadHandle) <= 32U);
+static_assert(std::is_trivially_copyable_v<ReadHandle>);
+static_assert(std::is_trivially_destructible_v<ReadHandle>);
+static_assert(sizeof(ReadHandle) == 16U);
 
 static_assert(noexcept(std::declval<SpscRingBuffer&>().try_reserve(std::size_t{})));
-static_assert(noexcept(std::declval<SpscRingBuffer&>().try_peek()));
+static_assert(noexcept(std::declval<SpscRingBuffer&>().commit(std::declval<const WriteHandle&>())));
+static_assert(noexcept(std::declval<SpscRingBuffer&>().abort(std::declval<const WriteHandle&>())));
+static_assert(noexcept(std::declval<SpscRingBuffer&>().try_read()));
+static_assert(noexcept(std::declval<SpscRingBuffer&>().release(std::declval<const ReadHandle&>())));
+static_assert(noexcept(std::declval<SpscRingBuffer&>().abandon(std::declval<const ReadHandle&>())));
+static_assert(noexcept(std::declval<SpscRingBuffer&>().publish_reclaimed()));
 
 static_assert(std::same_as<decltype(std::declval<SpscRingBuffer&>().try_reserve(std::size_t{})),
                            WriteHandle>);
 
-static_assert(std::same_as<decltype(std::declval<SpscRingBuffer&>().try_peek()), ReadHandle>);
+static_assert(std::same_as<decltype(std::declval<SpscRingBuffer&>().try_read()), ReadHandle>);
 TEST(SpscRingBufferContract, CompileTimeContract) {
     SUCCEED();
 }
