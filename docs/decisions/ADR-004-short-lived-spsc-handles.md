@@ -222,10 +222,11 @@ payload，只推进本地写游标并通过 release-store 发布。
 必须区分两层 Header：
 
 ```text
-[ Ring 私有 FrameHeader ][ payload: 日志 RecordHeader | 编码后的参数... ]
+[ Ring 私有 FrameHeader ][ payload: RecordHeader | UTF-8 format | padding | tagged arguments ]
 ```
 
-`FrameHeader` 由 Ring 在 reserve 时写；未来的 `RecordHeader` 属于 payload，由日志编码层在
+`FrameHeader` 由 Ring 在 reserve 时写；`RecordHeader` 和自包含 payload 由 ADR-007 冻结，属于
+Ring payload，并由日志编码层在
 commit 前写。WriteHandle 的地址仅在 `commit()` / `abort()` 前有效，ReadHandle 的地址仅在
 `consume()` / `abandon()` 前有效。
 
