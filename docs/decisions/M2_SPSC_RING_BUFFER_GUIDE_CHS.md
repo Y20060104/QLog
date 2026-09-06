@@ -619,7 +619,7 @@ Codex 的验收任务：
 - Payload span 的实际生成。
 - full/empty 判断。
 - 游标推进。
-- TLS、后台线程、fmt、Sink、mmap。
+- TLS、后台线程、`c20_format`、Sink、mmap。
 - 吞吐量 benchmark。
 
 M2 只证明对象布局和生命周期。真正的热路径比较在 M3 状态机可运行后进行。

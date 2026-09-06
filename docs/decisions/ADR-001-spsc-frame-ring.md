@@ -7,6 +7,10 @@
 > 本 ADR 作为设计历史以及未来对比基准测试的规范予以保留。它不再是
 > V1 的生产布局。ADR-002 使用回绕到环形缓冲区物理起始位置的连续
 > payload，取代了分段 payload。
+>
+> 本文中的 `std::span` 示例同样只属于已废弃方案。当前 Ring、Record Core
+> 与 Backend 的生产接口统一使用裸指针加显式长度，不得从本文恢复
+> `std::span` 接口。
 
 ## 背景
 
@@ -105,7 +109,7 @@ consumer finishes all ring reads
 ### 跨越物理末端
 
 不插入 padding frame。回绕的 payload 直接通过它的两个 span 写入。消费者
-按照以下方式满足 fmt 对连续字符串的要求：
+按照以下方式满足 Backend formatter 对连续字符串的要求：
 
 - 连续帧：直接从环形缓冲区存储区解码；
 - 回绕帧：将完整 payload 复制到一个预先分配的 8 KiB 暂存缓冲区中，然后
