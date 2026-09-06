@@ -2,11 +2,14 @@
 
 > 历史指南：其中长期 Handle 相关内容已由 ADR-004 取代，ADR-004 中的 RAII
 > 短期 Handle 又由 ADR-005 取代。当前实现只以
-> `V1_TWO_MILESTONES_GUIDE_CHS.md` 和 ADR-005 为准。
+> `V1_TWO_MILESTONES_GUIDE_CHS.md`、ADR-005、ADR-007～ADR-010 与里程碑二实现设计指南为准。
+> 本文早期的“格式化后 release、再把输出交给 Sink”后台顺序也已由 ADR-010 取代；当前合同是
+> 私有 64KiB scratch 形成完整行、交给 Sink 内存 batch、release Frame，最后才执行可能阻塞的
+> `write`/`fdatasync`。
 
 - 状态：历史详细参考
 - 日期：2026-08-16
-- 最后修订：2026-09-02（仅更新废弃标记）
+- 最后修订：2026-09-05（同步 ADR-010 Backend/Sink 所有权边界）
 - 适用范围：QLog V1 的字节型 SPSC Ring、Channel 与最小后台消费链路
 - 目标读者：项目实现者与代码评审者
 
@@ -30,7 +33,7 @@
 ```
 
 前一个里程碑没有达到退出条件，不进入下一个里程碑。Ring 正确之前，
-不得开始 fmt、文件 Sink、TSC、mmap 或 MPSC。
+不得开始 Backend formatter、文件 Sink、TSC、mmap 或 MPSC。
 
 ### 1.1 固定协作分工
 
@@ -58,8 +61,8 @@ Codex 的职责：
 - Linux x86-64、C++20。
 - 长生命周期线程较多的游戏服务器和实时仿真服务。
 - 业务线程优先保证低尾延迟，日志系统过载时不得阻塞主业务。
-- 每个生产线程使用独立 SPSC Channel，一个后台线程消费多个 Channel。
-- V1 输出人类可读文本，fmt 只在后台线程执行。
+- 每个 `(生产线程, AsyncLogger)` 使用独立 SPSC Channel，一个后台线程消费多个 Channel。
+- V1 输出人类可读文本，自研 `c20_format` 只在后台线程执行。
 
 ### 2.2 Producer 热路径契约
 
@@ -99,11 +102,11 @@ QLog 采用“问题 -> 原理 -> 自己的规格 -> 自己的测试 -> 自己�
 
 | 项目 | 可以学习 | QLog V1 不照搬 |
 |---|---|---|
-| BQLog | SISO 的 8B 分配单位、小型单次 Handle、peer cursor 缓存与两阶段提交 | SISO 的 reinterpret/packed/mmap 技巧；MISO 的 union block、逐 Block status 和多生产者协调 |
+| BQLog | SISO 的 8B 分配单位、小型单次 Handle、peer cursor 缓存与两阶段提交；Producer `size_seq`/type copy 和 Backend `layout::c20_format` 的职责分离 | SISO 的 reinterpret/packed/mmap 技巧；4B type cell、align4 参数 ABI、未对齐 typed-pointer 访问；MISO 的 union block、逐 Block status 和多生产者协调 |
 | spdlog | Logger/Sink/Formatter 分层；异步消息类型；明确区分 block、overwrite-oldest、discard-new；后台异常边界与 shutdown | 它的异步核心是带 mutex/CV 的共享 MPMC 队列，不符合 QLog 每线程 SPSC 热路径；不复制其 async message、thread pool 或 shared ownership 路径 |
 | Quill | 每前端线程一个 SPSC；前后端分离；静态 metadata、参数类型特化 decode；后台统一 fmt；对队列模式、时间戳和 shutdown 的完整工程化处理 | 不复制其宏、metadata 布局、codec、队列代码、全局排序算法或完整功能面；V1 不为排序引入 grace period |
 | NanoLog | 静态内容与动态参数分离；把工作移出运行时热路径；延迟格式化；文本和二进制 benchmark 必须分榜 | 不引入源码预处理器和构建期代码生成；V1 不要求离线解码；不把二进制吞吐冒充在线文本吞吐 |
-| fmt | 类型安全格式语法和后台文本生成 | Producer 不创建 dynamic format store，不执行 formatter，不保存可能失效的用户对象引用 |
+| `{fmt}` | 可作为非生产的语法/性能对照 | V1 生产代码不依赖；不把其 parser、dynamic argument store 或内部 API 引入 Producer/Backend |
 
 学习源码时必须留下自己的研究笔记，至少回答：
 
@@ -120,27 +123,29 @@ QLog 采用“问题 -> 原理 -> 自己的规格 -> 自己的测试 -> 自己�
 ## 4. 已冻结的总体架构
 
 ```text
-业务线程 A -> TLS Producer -> Channel A -> SPSC Ring --\
-业务线程 B -> TLS Producer -> Channel B -> SPSC Ring ----> Backend
-业务线程 C -> TLS Producer -> Channel C -> SPSC Ring --/      |
-                                                             v
-                                                fmt 到后台复用 buffer
-                                                             |
-                                                consume/reclaim Ring
-                                                             |
-                                                     Sink / 文件 I/O
+(线程 A, Logger X) -> ProducerHandle AX -> Channel AX --\
+(线程 A, Logger Y) -> ProducerHandle AY -> Channel AY ----> Backend
+(线程 B, Logger X) -> ProducerHandle BX -> Channel BX --/      |
+                                                          v
+                                      c20_format 到 Backend 私有 64KiB scratch
+                                                          |
+                                           交给 Sink 的内存 batch
+                                                          |
+                                                    consume/reclaim Ring
+                                                          |
+                                                可能阻塞的文件 I/O
 ```
 
 职责边界：
 
 - `SpscRingBuffer`：存储、游标、reserve/commit、peek/consume。
-- `Channel`：Ring 加线程冷元数据、状态和统计。
+- `Channel`：Ring 加线程/Logger 冷元数据、Frame/Record 版本、状态和统计。
 - `SpscWriteHandle`：长期写入口，同时拥有写端私有状态。
 - `SpscReadHandle`：长期读入口，同时拥有读端私有状态。
-- `Backend`：公平扫描 Channel、解码、fmt、批量写 Sink。
+- `Backend`：公平扫描 Channel、解码、`c20_format`、批量写 Sink。
 - `Logger/Registry`：冷路径注册、生命周期和 shutdown。
 
-Ring 不知道 fmt、文件、TLS、条件变量、eventfd、mmap 或 Logger。
+Ring 不知道 format grammar、文件、TLS、条件变量、eventfd、mmap 或 Logger。
 
 ## 5. 推荐文件边界
 
@@ -322,7 +327,8 @@ class WriteReservation {
 public:
     [[nodiscard]] explicit operator bool() const noexcept;
     [[nodiscard]] ReserveStatus status() const noexcept;
-    [[nodiscard]] std::span<std::byte> payload() noexcept;
+    [[nodiscard]] std::byte* data() noexcept;
+    [[nodiscard]] std::uint32_t size() const noexcept;
     void commit() noexcept;
     void abort() noexcept;
 };
@@ -337,7 +343,8 @@ class ReadView {
 public:
     [[nodiscard]] explicit operator bool() const noexcept;
     [[nodiscard]] ReadStatus status() const noexcept;
-    [[nodiscard]] std::span<const std::byte> payload() const noexcept;
+    [[nodiscard]] const std::byte* data() const noexcept;
+    [[nodiscard]] std::uint32_t size() const noexcept;
     void consume() noexcept;
     void abandon() noexcept;
 };
@@ -352,7 +359,7 @@ public:
 - 未 commit 的 Reservation 析构等价于 abort，不发布、不移动游标。
 - 同一 `SpscReadHandle` 最多一个未结束 ReadView。
 - ReadView 默认 abandon，不隐式丢掉日志。
-- `consume()` 后 span 立即失效。
+- `consume()` 后先前取得的 `data()` 与 `size()` 范围立即失效。
 - Ring 与长期 Handle 均不能复制或移动；单次对象不能复制；Ring 地址从构造到析构保持稳定。
 
 ## 9. 里程碑 0：建立代码契约
@@ -368,7 +375,7 @@ public:
 ### 退出条件
 
 - 所有声明能够编译。
-- 还没有 reserve/commit 函数体、并发、fmt 或后台线程。
+- 还没有 reserve/commit 函数体、并发、formatter 或后台线程。
 - 你能逐字段回答“谁写、谁读、为什么是否需要 atomic”。
 
 ## 10. 里程碑 1：纯 Geometry
@@ -447,7 +454,7 @@ public:
 
 - 分配只发生在 cold path。
 - 长期 Handle 和单次对象都不拥有 Ring 生命周期。
-- 没有 TLS、注册表、后台线程、fmt 或 mmap。
+- 没有 TLS、注册表、后台线程、formatter 或 mmap。
 - 源码中没有任何 M3 状态机行为。
 
 ## 12. 里程碑 3：单线程状态机
@@ -557,7 +564,7 @@ ARM64 CI。
 
 ### Consumer 校验顺序
 
-在构造任何可能越界的 span 之前，重新计算布局并检查：
+在形成任何可能越界的指针-长度范围之前，重新计算布局并检查：
 
 - payload 不超过配置上限。
 - frame bytes 至少为 8、按 8B 对齐、不超过 capacity。
@@ -605,9 +612,10 @@ Ring 单体门禁全部通过后才实现：
 Channel
     -> TLS Producer 冷路径注册
     -> Backend round-robin 扫描
-    -> 直接格式化到后台复用 buffer
+    -> 直接格式化到 BackendWorker 私有 64KiB scratch
+    -> 仅把完整行交给 Sink 内存 batch
     -> consume/reclaim Ring
-    -> 批量 Sink I/O
+    -> 可能阻塞的批量 Sink I/O
 ```
 
 Backend 每次访问一个 Channel 使用记录数/字节预算，避免高流量线程饿死
@@ -619,8 +627,9 @@ Backend 每次访问一个 Channel 使用记录数/字节预算，避免高流�
 - 高流量 Channel 不饿死低流量 Channel。
 - 每个 Channel 内 FIFO。
 - 格式化异常被捕获，并明确 consume 或 quarantine。
-- fmt 完成后、文件 I/O 前释放 Ring。
-- formatter 和 Sink 不保留 Ring 内的 `string_view`。
+- `c20_format` 在私有 scratch 中完成；只有完整成功的行才交给 Sink 内存 batch，batch 接收完成后
+  release Ring，可能阻塞的 `write`/`fdatasync` 位于 release 之后。
+- formatter 和 Sink 不保留 Ring 内的 `string_view`；Sink batch 接收返回后也不得借用 Backend scratch。
 - 业务线程全部 join 后再 shutdown Logger；shutdown 排空 accepted records，
   join Backend，最后释放 Channel。
 
@@ -672,7 +681,7 @@ branch misses / cache misses（平台允许时）
 - Payload：16、64、256、1024、8192B。
 - Ring：16 KiB、64 KiB、1 MiB，并确保 max payload 配置合法。
 - 无回绕、强制回绕、稳定流量、突发流量、持续 2 倍过载。
-- 单测 geometry、纯 Ring、Ring 加 Consumer、编码/fmt、Null Sink、页缓存
+- 单测 geometry、纯 Ring、Ring 加 Consumer、编码/`c20_format`、Null Sink、页缓存
   文件、`fdatasync` 分层测试。
 
 ### 18.3 跨项目公平性

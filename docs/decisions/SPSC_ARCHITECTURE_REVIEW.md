@@ -3,7 +3,7 @@
 - 状态：历史架构评审（Handle 模型由 ADR-005 修订）
 - 日期：2026-08-16
 - 接受日期：2026-08-16
-- 最后修订：2026-09-02
+- 最后修订：2026-09-05
 - 当前计划：完成 SPSC RingBuffer，然后完成异步日志 V1
 
 > 当前执行顺序以
@@ -12,6 +12,10 @@
 > 本文中“Handle 只可移动、保存 Ring owner/next cursor、析构自动终结、
 > `handle.commit()/consume()`”等描述已经失效。当前模型是 16B 被动令牌，
 > 由 Ring 执行 `commit/abort/release/abandon`；参见 ADR-005。
+>
+> 本文早期的“格式化后先 release，再把输出交给 Sink”后台顺序同样已经失效，并由 ADR-010
+> 取代。当前顺序是私有 64KiB scratch 形成完整行、交给 Sink 内存 batch、release Frame，
+> 随后才执行可能阻塞的 `write`/`fdatasync`；Backend 不得持有 Frame 跨越阻塞 I/O。
 
 ## 已冻结事项
 
@@ -30,13 +34,13 @@
     -> 通道拥有的 SPSC 环形缓冲区
                                     \
 业务线程                              -> 一个后台调度器
-    -> 长期 ThreadLogger / Channel         /      -> 可复用的 fmt 输出缓冲区
+    -> 长期 ThreadLogger / Channel         /      -> 可复用的 c20_format 输出缓冲区
     -> 通道拥有的 SPSC 环形缓冲区            -> sink 写缓存 -> 文件 I/O
 ```
 
 ### SPSC 环形缓冲区
 
-环形缓冲区类型冻结为 `SpscRingBuffer`。它仅拥有存储、游标状态以及预留/读取机制，不知道 fmt、文件、线程注册、休眠或 mmap。
+环形缓冲区类型冻结为 `SpscRingBuffer`。它仅拥有存储、游标状态以及预留/读取机制，不知道 format grammar、文件、线程注册、休眠或 mmap。
 
 已冻结的所有权：
 
@@ -97,7 +101,8 @@ public:
 ```
 
 - 成功的预留通过内联 `data()` / `size()` 暴露一个连续 payload；字段仍为 private。
-- Ring 基础接口不返回 `std::span`。这是底层 API 取舍，不代表 span 本身必然更慢。
+- Ring 基础接口不返回 `std::span`。当前约束已扩展到 I1 Record Core 与后续 Backend 的生产接口：
+  所有连续 byte 范围均使用裸 `data()`/指针与显式 `size()`/长度。这是 V1 的底层 API 一致性决定。
 - `try_reserve()` 计算暂定布局，但不推进已提交的生产者游标。
 - `try_reserve()` 在空间确认后写入尚不可见的 8 字节帧头；`commit()` 只推进
   `current_write_cursor_`，然后对 `cursors_.write_cursor_` 执行 release-store。
@@ -149,16 +154,20 @@ public:
 
 ## 后台调度
 
-后台线程以轮询方式扫描活动通道。每次访问都有记录数/字节数预算，避免一个高噪声生产者使其他线程饥饿。对于每条记录：
+后台线程以轮询方式扫描活动通道。每次访问都有记录数/字节数预算，避免一个高噪声生产者使其他线程饥饿。
+本节最初记录的“先回收 Ring、稍后再把输出交给 Sink”已由 ADR-010 取代。当前每条记录按以下顺序处理：
 
 ```text
 查看环形缓冲区中的连续载荷（payload）
-    -> 直接解码并格式化到后台线程可复用的输出缓冲区
-    -> 消费环形缓冲区记录，并在满足条件时发布回收进度
-    -> 稍后将输出缓冲区写入 sink
+    -> 解码并格式化到 BackendWorker 私有 64KiB scratch
+    -> 仅把完整成功行交给 Sink 的内存 batch
+    -> 消费 Frame，并在满足条件时发布回收进度
+    -> 执行可能阻塞的 write/fdatasync
 ```
 
-因此，同步格式化读取载荷（payload）期间必须保留环形缓冲区中的记录，但在可能较慢的文件 I/O 之前释放它。格式化器或 sink 都不得保留指向环形缓冲区存储的 `string_view`。
+同步格式化和 Sink batch 接收期间必须保留 Ring Frame；batch 接收返回后不再依赖 Ring 或 scratch，
+此时 release Frame。可能较慢的文件 I/O 只能发生在 release 之后。格式化器和 Sink 都不得保留
+指向 Ring 存储的 `string_view`，Sink batch 也不得在接收返回后借用 scratch。
 
 唤醒属于调度器，而不属于 SPSC 环形缓冲区。这样可使队列正确性独立于 Linux `eventfd`、信号量、条件变量或定时等待。
 
@@ -194,7 +203,9 @@ current_read_cursor_  % 8 == 0
 ## 已接受的评审决策
 
 1. **存储所有权。** 环形缓冲区拥有对齐存储，其运行时选择的容量不可变。外部存储和 mmap 存储不属于 V1。
-2. **后台线程边界。** 后台线程直接从环形缓冲区格式化到可复用输出缓冲区，在格式化之后回收空间，随后才执行文件 I/O。
+2. **后台线程边界。[已由 ADR-010 取代]** 本评审最初接受“格式化后回收、随后再把输出交给 Sink”。
+   当前合同改为在 BackendWorker 私有 64KiB scratch 形成完整行，先交给 Sink 内存 batch，随后
+   release Frame；可能阻塞的 `write`/`fdatasync` 仍必须位于 release 之后。
 3. **空闲唤醒策略。** 第一版实现采用自适应轮询加短时定时等待，不增加任何生产者侧的唤醒访问。带调度器休眠标志和低频通知路径的方案保留为后续测量选项。两种情况下，唤醒均位于 Ring 之外。
 4. **生命周期约定。** 生产者线程在 Logger 关闭前停止；V1 中地址稳定的通道存储保留到关闭时。
 5. **损坏处理策略。** Debug 模式完整检查 Header、长度、对齐和 Geometry。Release 模式只保留避免越界和未定义行为的最小检查；损坏隔离、详细统计与紧急报告推迟到 M6，不进入 M3 热路径。任何模式都绝不使用不可信的 `frame_bytes` 定位下一条记录。

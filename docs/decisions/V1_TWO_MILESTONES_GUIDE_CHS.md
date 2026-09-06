@@ -2,7 +2,7 @@
 
 - 状态：唯一生效的总体执行计划
 - 日期：2026-08-28
-- 最后修订：2026-09-02
+- 最后修订：2026-09-05
 - 适用范围：从 SPSC RingBuffer 到可演示、可公平基准的异步日志 V1
 - 分工：你实现生产代码；Codex 负责测试、构建门禁、benchmark 执行与结果分析
 
@@ -12,10 +12,10 @@
 ## 共同原则
 
 - Linux x86-64，纯 C++20。
-- 每个稳定生产线程独占一个 SPSC Channel，一个后台线程消费多个 Channel。
-- Producer 稳态热路径不 fmt、不分配、不加锁、不阻塞，不执行共享原子 RMW。
+- 每个稳定 `(生产线程, AsyncLogger)` 独占一个 SPSC Channel，一个后台线程消费多个 Channel。
+- Producer 稳态热路径不解析/格式化、不分配、不加锁、不阻塞，不执行共享原子 RMW。
 - 固定容量，满时 `drop_new`；失败不得推进任何游标。
-- fmt 只在后台线程执行。
+- 自研 `c20_format` 只在后台线程执行。
 - BQLog 是主要源码参照，spdlog、Quill 和 NanoLog 用于补充对照；不逐行移植。
 - 每次只改变一个性能变量；结论必须来自同机、同负载、同计时边界的测试。
 
@@ -96,45 +96,66 @@ try_read    -> 读 payload -> release
 
 ```text
 业务线程
-  -> ThreadLogger
-  -> 每线程 SPSC Channel
+  -> ProducerHandle
+  -> 每个（线程, AsyncLogger）SPSC Channel
   -> 单后台线程公平扫描
-  -> Record 解码与 fmt
-  -> 可复用输出缓冲区
-  -> NullSink / 批量 FileSink
+  -> Record 解码与 c20_format 到 BackendWorker 私有 64KiB scratch
+  -> NullSink 计数 / TextFileSink 接收完整行到内存 batch
+  -> release Frame
+  -> TextFileSink 执行可能阻塞的 write/fdatasync
 ```
 
 ### 实现顺序
 
-1. 商讨并冻结 `RecordHeader`、参数编码、字符串所有权和静态 Callsite 元数据。
-2. 实现 codec round-trip：精确计算长度，只 reserve 一次，直接编码到 Ring payload。
-3. 实现稳定地址 Channel、`ThreadLogger`、`AsyncLogger` 和冷路径注册。
-4. 用 NullSink 跑通多 Producer、单 Backend、公平扫描和关停排空。
-5. 接入后台 fmt；输出使用可复用缓冲区，Sink 不得持有 Ring view。
-6. 实现 Linux 批量 FileSink，正确处理 partial write 和 `EINTR`。
-7. 实现 shutdown、统计守恒、游戏服务器 demo 和端到端 benchmark。
+1. I0 已完成：ADR-007～ADR-010、RecordHeader/ArgumentTag、静态断言和 ABI tests；
+2. I1 按 [企业级开发规范](./MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md) 一次完成 hash、
+   包装器/traits、checked measure、独立的裸指针加显式长度 codec 和完整测试；
+3. I2 一次完成 Channel/ProducerHandle/AsyncLogger、过滤、一次 reserve、时间戳、Ring 直写和统计；
+4. I3 一次完成 Backend 公平扫描、固定解码槽、NullSink、错误隔离和关停排空；
+5. I4 一次完成 `c20_format`、固定 cache、BackendWorker 私有 64KiB scratch、Sink 内存 batch、
+   TextFileSink、demo 和端到端 benchmark。
 
-### 进入里程碑二前必须商讨的设计点
+### 已冻结的 Record/Backend 设计点
 
-- `RecordHeader` 的字段、大小、对齐和版本方式；
-- V1 支持的参数类型集合；
-- 字符串是立即复制还是允许受约束的静态引用；
-- 时间戳、线程标识、日志级别和 `CallsiteId` 放在哪一层；
-- 静态 format string 与动态 format string 的边界；
-- 参数编码是否固定宽度，以及是否允许嵌套/自定义类型。
+- [已冻结] `RecordHeader` 为 32B/8B 对齐，字段偏移和尾部 `arg_count/level/flags`；
+- [已冻结] 不使用 Callsite；format 深拷贝，参数逐条携带 type tag；
+- [已冻结] thread/Logger/版本放 Channel，category/level 放每条 Record；
+- [已冻结] D3 使用 Unix Epoch 纳秒；`CLOCK_REALTIME_COARSE` 为主时钟，
+  `CLOCK_REALTIME` 为 fallback；成功 reserve 后、写 Record 前采集 admission timestamp；
+  `flags` 低两位为 primary/fallback/unavailable/reserved，值 3 只叫 reserved；不做校准或
+  时间戳排序，`time_value` 不用于耗时计算，跨线程不承诺全局时间顺序；
+- [已冻结] D4 只支持固定基本类型、显式 Pointer64/UTF-8，拒绝用户 formatter，参数上限 32；
+- [已冻结] D5 所有字符串 commit 前深拷贝，裸 C 字符串拒绝，仅 `qlog::cstr` 有界扫描，
+  null wrapper 编码 `NullUtf8`；
+- [已冻结] D6 使用 `[u8 tag][payload]` packed LE 协议，`args_alignment = 1`，禁止未对齐 typed-pointer 解引用；
+- [已冻结] `crc32c4x64_v1` 使用 BQLog 式四路 CRC32C 原始折叠得到 64-bit hash，raw 0
+  规范化为 1，Header 的 0 保留为 sentinel；字面量仅可把逐位一致的 constexpr hash 作为优化，
+  运行时 format 在 reserve 成功后执行 fused copy-and-hash；
+- [已冻结] 严格自动索引 `c20_format` 子集、256-entry/4-way BackendWorker 私有解析缓存、
+  8KiB format、32 fields、32B spec、width 4096、precision 64，以及包含元数据前缀与换行的
+  64KiB 完整文本行；禁止回溯、递归和完整 format 重扫，不设置独立 work-unit 上限；
+- [已冻结] Text 路径先在私有 scratch 形成完整行，再交给 Sink 内存 batch；batch 接收完成后
+  release Frame，可能阻塞的 `write`/`fdatasync` 位于 release 之后。精确合同见 ADR-010。
 
-这些决策会改变 payload ABI 和生产者成本。在书面冻结前，不开始实现 codec。
+设计门禁已经关闭；实现必须按照 ADR-010 的 hash 兼容性、Backend 固定分配和最坏工作量边界执行。
 
-跨窗口继续讨论时，以
-[里程碑二设计讨论指南](./MILESTONE2_DESIGN_GUIDE_CHS.md) 为入口；该文档只冻结讨论范围
-和顺序，不代表 Record ABI 已经决定。
+跨窗口继续讨论时，以 [ADR-007](./ADR-007-self-contained-record-header.md)、
+[ADR-008](./ADR-008-realtime-coarse-admission-timestamp.md)、
+[ADR-009](./ADR-009-v1-packed-tagged-arguments.md) 和
+[ADR-010](./ADR-010-v1-backend-c20-format.md) 以及
+[里程碑二实现设计指南](./MILESTONE2_RECORD_IMPLEMENTATION_GUIDE_CHS.md) 为总体基线；I1 实施必须继续遵循
+[I1 Record Core 企业级开发规范](./MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md)；
+[里程碑二设计讨论指南](./MILESTONE2_DESIGN_GUIDE_CHS.md) 记录 D1～D6 的决策状态与顺序。
 
 ### 最终验收
 
 - 每个 Channel 保持 FIFO；不承诺跨线程严格全序。
-- `attempted == accepted + dropped`，shutdown 后 `accepted == processed`。
-- Producer 热路径没有 fmt、稳态分配、锁、阻塞或共享 RMW。
-- FileSink 正确处理短写和 `EINTR`；普通 flush 与 durable flush 分开定义。
+- `calls == filtered + attempted`、`attempted == accepted + dropped`，shutdown 后
+  `accepted == processed`。
+- Producer 热路径没有 format parser、稳态分配、锁、阻塞或共享 RMW。
+- Sink 只接收完整日志行；内存 batch 接收后先 release Frame，再执行可能阻塞的文件 I/O，
+  且不得保留 Ring 或 Backend scratch view。
+- TextFileSink 正确处理短写和 `EINTR`；普通 flush 与 durable flush 分开定义。
 - benchmark 分开报告 Producer 延迟、NullSink、后台格式化、普通 `write()` 和
   `fdatasync/fsync`，并记录吞吐、P50/P99/P99.9、CPU、RSS 和丢弃量。
 - Ring 微基准只比较 QLog SPSC 与 BQLog SISO；不把 spdlog 的带锁 MPMC 队列标成 SPSC。
@@ -150,13 +171,13 @@ MPSC、mmap 恢复、压缩、VLQ、字符串驻留、跨线程全序、多 Back
 
 ## 当前下一步
 
-进入里程碑二的设计阶段，先商讨并书面冻结 `RecordHeader` 与参数编码协议。第一轮只做
-字段归属和成本分析，不实现 codec：确定 Callsite 元数据、时间戳、线程标识、日志级别、
-参数类型集合、字符串所有权以及版本方式。协议冻结后，再实现精确长度计算、单次 reserve
-和直接编码到 Ring payload 的 codec round-trip。
+D1～D6、H1～H4 和 I0 已完成。当前直接进入 I1“独立 Record Core”：同一任务提交 hash、`ptr/cstr`
+包装器、argument traits、checked measure、裸指针加显式长度 encoder/decoder，以及 known-vector、golden、
+round-trip、corruption 和 compile-fail tests。I1 不接 Ring，也不实现 `c20_format`。
 
-具体讨论问题、候选方案、产出物和新窗口浏览顺序见
-[里程碑二设计讨论指南](./MILESTONE2_DESIGN_GUIDE_CHS.md)。
+总体协议见 [里程碑二实现设计指南](./MILESTONE2_RECORD_IMPLEMENTATION_GUIDE_CHS.md)；I1 的模块边界、
+错误合同、测试矩阵、工具链和性能验收以
+[I1 Record Core 企业级开发规范](./MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md) 为准。
 
 R1 的失败原因、回退和门禁证据继续保存在
 [读侧 R1 实验记录](./NEXT_IMPLEMENTATION_GUIDE_CHS.md)，不再作为当前实现指南。
