@@ -77,6 +77,20 @@ target_compile_definitions(qlog_spsc_ring_buffer_test
 
 qlog_enable_warnings(qlog_spsc_ring_buffer_test)
 
+add_executable(qlog_record_header_test
+    argument_tag_self_contained.cpp
+    argument_tag_test.cpp
+    record_header_self_contained.cpp
+    record_header_layout_test.cpp
+)
+
+target_link_libraries(qlog_record_header_test
+    PRIVATE
+        QLog::qlog
+        GTest::gtest_main
+)
+
+qlog_enable_warnings(qlog_record_header_test)
 
 include(GoogleTest)
 
@@ -88,4 +102,9 @@ gtest_discover_tests(qlog_geometry_test
 gtest_discover_tests(qlog_spsc_ring_buffer_test
     TEST_PREFIX "qlog."
     PROPERTIES LABELS spsc_ring_buffer
+)
+
+gtest_discover_tests(qlog_record_header_test
+    TEST_PREFIX "qlog."
+    PROPERTIES LABELS record_header
 )
