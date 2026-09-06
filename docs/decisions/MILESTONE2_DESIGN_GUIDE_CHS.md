@@ -1,8 +1,8 @@
 # QLog 里程碑二设计讨论指南：异步日志 V1
 
-- 状态：等待商讨，尚未冻结 Record ABI
+- 状态：D1～D6 与 H1～H4 已由 ADR-007～ADR-010 全部冻结；ABI 声明与测试完成
 - 前置条件：里程碑一已本地开发完成
-- 当前规则：先完成设计决策和 ADR，再编写 codec
+- 当前规则：不再拆分设计小轮次；下一实现任务为完整的独立 Record Core
 - 目标场景：Linux C++ 实时游戏服务器 / 实时服务
 
 ## 1. 已冻结的产品边界
@@ -11,12 +11,13 @@ V1 面向 1～128 个长期稳定的业务线程：
 
 ```text
 业务线程
-  -> ThreadLogger
-  -> 每线程固定容量 SPSC Channel
+  -> ProducerHandle
+  -> 每个（线程, AsyncLogger）固定容量 SPSC Channel
   -> 单后台线程公平扫描
-  -> Record 解码与 fmt
-  -> 可复用输出缓冲区
-  -> NullSink / 批量 FileSink
+  -> Record 解码与 c20_format 到 BackendWorker 私有 64KiB scratch
+  -> NullSink 计数 / TextFileSink 接收完整行到内存 batch
+  -> release Frame
+  -> TextFileSink 执行可能阻塞的 write/fdatasync
 ```
 
 Producer 热路径目标：
@@ -36,111 +37,126 @@ MPSC、mmap 恢复、压缩、VLQ、字符串驻留、跨线程全序、多 Back
 - Producer 获得一段精确长度、连续、可写的 payload；填充完成后 commit。
 - Consumer 获得连续只读 payload；其生命周期只持续到 release/abandon。
 - Ring 内部 FrameHeader 已保存 frame/payload 长度，Record 协议不应无理由重复字段。
-- Channel 本身可以携带稳定的线程、logger 或时钟校准元数据，避免每条记录重复保存。
+- Channel 本身可以携带稳定的线程、logger 或时钟描述元数据，避免每条记录重复保存。
 
-## 3. 第一轮必须按顺序讨论的问题
+## 3. 已冻结的 D1～D6 与后续讨论顺序
 
-### D1：Callsite 元数据与每条 Record 如何拆分
+### D1：字段归属（已冻结）
 
-候选静态元数据包括：format string、源文件、函数、行号、参数类型 schema、logger/category。
-候选动态字段包括：时间戳、CallsiteId、日志级别、参数值和少量 flags。
+[ADR-007](./ADR-007-self-contained-record-header.md) 已选择 BQLog 式自包含 Ring Record：
 
-需要决定：
+- V1 不使用 `CallsiteId`、Callsite 注册表、静态参数 schema 或格式化 thunk；
+- 所有受支持的 format 来源都深拷贝 UTF-8 bytes 进 Ring，并使用同一 Record ABI；
+- 参数类型以 tagged arguments 随每条 Record 保存；
+- `category_id` 与 `level` 都是逐 Record 动态字段，过滤发生在长度计算和复制之前；
+- thread/Logger 身份、时钟域、Ring Frame/Record 版本和 hash policy 属于 Channel；
+- 一个 Channel 永久绑定一个生产线程和一个 `AsyncLogger`，同线程写两个 Logger 使用两个 Channel；
+- V1 不保存 file/function/line 源码位置。
 
-- CallsiteId 是进程内运行时注册，还是构建期稳定 ID；
-- 静态元数据由首次使用注册，还是显式预注册；
-- 动态 format string 是否进入 V1；若进入，是否只能走明确的慢路径；
-- 插件/动态库卸载前如何保证已接受记录排空。
+因此，模块停止调用日志 API 后，已经发布的 Record 不依赖模块内指针或代码，可以继续消费；
+Logger、Channel、category 名称表和 Backend 仍需存活到排空。
 
-### D2：RecordHeader 的职责、大小和对齐
+### D2：32B RecordHeader（已冻结）
 
-先比较，不立即冻结：
+| 偏移 | 大小 | 字段 |
+|---:|---:|---|
+| 0 | 8 | `time_value` |
+| 8 | 8 | `format_hash` |
+| 16 | 4 | `format_bytes` |
+| 20 | 4 | `args_bytes` |
+| 24 | 4 | `category_id` |
+| 28 | 2 | `arg_count` |
+| 30 | 1 | `level` |
+| 31 | 1 | `flags` |
 
-- 16B 最小 Header：例如 64 位时间值、32 位 CallsiteId、32 位 packed metadata；
-- 24B 扩展 Header：显式加入线程 ID、额外长度或序列字段，但增加每条日志带宽。
+`sizeof(RecordHeader) == 32`、`alignof(RecordHeader) == 8`，不使用 C++ bit-field，
+不逐 Record 保存 ABI version。版本在 Channel 注册时校验一次；未来文件版本由独立
+`BinaryFileHeader` 承担。外层 `FrameHeader::payload_bytes` 仍是可访问边界权威，Record 内的
+`format_bytes`/`args_bytes` 只负责安全划分 payload，并必须受 Frame 边界约束。
+V1 限定 little-endian host。Header/参数使用已对齐局部值配合固定宽度 `memcpy`/`load_le`/`store_le`，
+禁止把 Ring 地址转换为 `RecordHeader*` 或未对齐 typed pointer 后解引用。
 
-讨论原则：
+### D3：admission timestamp（已冻结）
 
-- 每线程 Channel 已隐含线程身份，优先考虑把 thread ID 放在 Channel 元数据而非每条记录；
-- Ring FrameHeader 已有 payload 长度，不默认在 RecordHeader 重复；
-- level、参数数量、版本与 flags 可评估是否打包；
-- 必须用 `static_assert(sizeof/alignof)` 和十六进制 golden bytes 固定 ABI。
+[ADR-008](./ADR-008-realtime-coarse-admission-timestamp.md) 冻结：
 
-### D3：时间戳模型
+- `time_value` 保存 Unix Epoch 纳秒；单位不代表默认时钟具有纳秒精度；
+- primary 为 `CLOCK_REALTIME_COARSE`，fallback 为 `CLOCK_REALTIME`，两者同域同单位且无需校准；
+- 在成功 `try_reserve()` 后、写 payload 前采样，正式名称为 admission timestamp；
+- `flags & 0x03` 的值 0/1/2 分别表示 primary/fallback/unavailable，值 3 只叫 `reserved`；
+- 墙钟回退时保留原值，不 clamp；Channel FIFO 才是线程内顺序权威；
+- `time_value` 不用于耗时计算，也不承诺跨线程全局时间顺序；
+- V1 不实现 TSC 或 monotonic-to-wall 校准。
 
-需要比较：
+### D4：V1 参数类型集合（已冻结）
 
-- 每条调用 `system_clock`；
-- 每条调用 `steady_clock`，后台结合校准点转换墙上时间；
-- 读取 TSC 并后台校准。
+[ADR-009](./ADR-009-v1-packed-tagged-arguments.md) 冻结最小基本类型集合：bool、普通 char、
+1/2/4/8B signed/unsigned integer、float、double、enum underlying value、显式 `qlog::ptr()`/
+裸 `nullptr` 的 Pointer64，以及 UTF-8 字符串。`kMaxArgCount = 32`。
 
-V1 不因理论速度直接选择 TSC。必须同时考虑跨核一致性、校准、休眠/频率变化、可移植性
-以及 Producer P99。时间值是否记录纳秒、时钟 tick 或 delta 也需要冻结。
+V1 拒绝裸 C 字符串指针、未包装对象指针、函数/成员指针、long double、128 位整数、宽字符、
+blob、named args、容器、chrono、用户 formatter 和隐式用户转换。
 
-### D4：V1 参数类型集合
+### D5：字符串所有权（已冻结）
 
-建议从可明确编码的最小集合开始讨论：
+- format 与字符串参数都只在调用期间借用，commit 前逐 Record 深拷贝进 Ring；
+- 所有 format 来源走同一 Record 写入路径；字面量可预计算长度，并仅允许把 constexpr hash 作为
+  实现优化，且结果必须与 `crc32c4x64_v1` 一致；运行时 view 在 reserve 成功后使用一次 fused
+  copy-and-hash，但两者不形成不同的 Header、flags、参数 ABI 或 Decoder；
+- `std::string[_view]`、`std::u8string[_view]` 和字符串数组使用显式/静态长度；
+- 裸 `const char*` 默认拒绝，仅 `qlog::cstr(ptr, max_scan)` 执行有界扫描；
+- `qlog::cstr(nullptr, n)` 编码 `NullUtf8`，空字符串编码长度为 0 的 `Utf8String`；
+- V1 不验证 UTF-8、不截断，也不从 `string_view` 猜测静态生命周期。
 
-- `bool`、有符号/无符号整数；
-- `float`、`double`；
-- 字符、枚举、指针值；
-- UTF-8 字符串；
-- 是否支持二进制 blob。
+### D6：参数编码方式（已冻结）
 
-数组、容器、嵌套对象和任意自定义类型默认不进入第一版。需要为不支持类型设计清晰的
-编译期报错或显式慢路径。
+参数使用 `[u8 tag][紧随 payload]` 的 packed little-endian 协议；字符串为
+`[u8 Utf8String][u32_le length][bytes]`，`NullUtf8` 只有 1B tag。`args_alignment = 1`，
+format/args 之间、参数之间和逻辑 Record 尾部都没有 padding。
 
-### D5：字符串所有权
+Header 和参数都必须通过局部对象 + `memcpy` 或显式 `load_le/store_le` 访问，禁止把 Ring 地址转换为
+`RecordHeader*` 或未对齐 typed pointer 后解引用。Decoder 同时受 `args_bytes`、`arg_count <= 32`
+和 Frame 边界限制；未知 tag 只放弃当前 Record 并安全 release。
 
-- 任意运行时字符串默认必须在 Producer 侧复制进 Ring，不能跨异步边界保存裸
-  `string_view`；
-- format string、文件名等具有静态生命周期的内容可以保存在 Callsite 元数据；
-- 是否提供显式 `static_string`/interned string 优化，必须单独命名，不能从普通
-  `string_view` 猜测生命周期。
+## 4. 已关闭的 G0 门禁
 
-### D6：参数编码方式
+[ADR-010](./ADR-010-v1-backend-c20-format.md) 已一次性冻结：
 
-需要比较两条路线：
+- `crc32c4x64_v1`：BQLog 式四路 CRC32C 原始折叠为 64-bit，raw 结果 0 规范化为 1，
+  Header 中的 0 保留为“未计算” sentinel；可选 constexpr、hash-only 与 fused copy-and-hash
+  必须逐位一致；
+- 仅 `{}`/`{:spec}` 自动索引的严格 `c20_format` 子集；
+- 256-entry、4-way、BackendWorker 私有解析缓存，完整字节验证碰撞；
+- 8KiB format、32B spec、32 fields、4096 width、64 precision，以及包含元数据前缀与换行的
+  64KiB 完整文本行上限；
+- parser/formatter 禁止回溯、递归和完整 format 重扫；以上输入、字段、spec、width、precision 与
+  输出上限共同保证最坏工作量有界，不再设置独立的 128Ki work-unit 计数；
+- 动态 width/precision、显式/命名索引、locale、chrono 与用户 formatter 全部不进入 V1。
 
-- 自描述 tagged encoding：每个参数携带类型，动态灵活但增加字节和分支；
-- Callsite schema encoding：类型保存在静态元数据，Record 只写值，速度和密度更好，
-  但依赖注册表与模板实例化。
+完整常量、类型组合和错误合同见 ADR-010；总体实施任务见
+[里程碑二实现设计指南](./MILESTONE2_RECORD_IMPLEMENTATION_GUIDE_CHS.md)，I1 的企业级执行合同见
+[I1 Record Core 开发规范](./MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md)。
 
-可以讨论“静态 fast path + 明确动态 slow path”的双路径，但必须分别 benchmark，不能把
-两者的结果混成一个吞吐数字。
+## 5. 紧凑实现顺序
 
-## 4. 第一轮讨论必须产出的结果
-
-第一轮结束时只要求形成一份 Record ABI ADR，至少包含：
-
-1. RecordHeader 字段表、偏移、大小、对齐和字节序；
-2. Callsite 元数据表和注册/生命周期规则；
-3. V1 参数类型与每类编码长度；
-4. 字符串所有权与最大长度规则；
-5. 版本兼容和未知类型处理；
-6. payload 精确长度公式；
-7. 正常路径与失败路径伪代码。
-
-在这些项目书面冻结前，不创建 codec 生产实现。
-
-## 5. 冻结后的实现顺序
-
-1. 只实现 `encoded_size()`、`encode()`、`decode()` 与 golden/round-trip 测试；
-2. 接入一次 `try_reserve()` 和 Ring 内直接编码，验证失败不污染 Ring；
-3. 实现稳定地址 Channel、ThreadLogger 与冷路径注册；
-4. 实现单 Backend 公平扫描、NullSink、shutdown 排空和统计守恒；
-5. 接入后台 fmt 与可复用输出缓冲区；
-6. 实现 Linux 批量 FileSink，正确处理 partial write 与 `EINTR`；
-7. 完成游戏服务器 demo 和分层端到端 benchmark。
+1. **I0 已完成**：RecordHeader/ArgumentTag ABI、静态断言、layout 与 wire-value tests；
+2. **I1 独立 Record Core**：按企业级开发规范一次完成 hash、包装器/traits、checked measure、裸指针加显式长度的
+   codec 及完整测试；I1 拥有 decode 结果类型，且不依赖 Ring/Channel；
+3. **I2 Producer/Channel**：冷路径绑定、过滤、一次 reserve、时间戳、Ring 直写与统计；
+4. **I3 Backend/NullSink**：公平扫描、固定解码槽、错误隔离、排空和生命周期；
+5. **I4 Text/验收**：`c20_format`、固定 cache、BackendWorker 私有 64KiB scratch、Sink 内存 batch、
+   TextFileSink、demo 和正式 benchmark。
 
 这些是里程碑二内部步骤，不再拆成新的顶层里程碑。
 
 ## 6. 里程碑二最终验收
 
 - 每个 Channel 保持 FIFO；
-- `attempted == accepted + dropped`，shutdown 后 `accepted == processed`；
-- Producer 热路径无 fmt、稳态分配、锁、阻塞或共享 RMW；
-- Sink 不持有已 release 的 Ring view；
+- `calls == filtered + attempted`、`attempted == accepted + dropped`，shutdown 后
+  `accepted == processed`；
+- Producer 热路径无 format parser、稳态分配、锁、阻塞或共享 RMW；
+- Text 路径只把格式化成功的完整行交给 Sink 内存 batch；batch 接收完成后 release Frame，
+  可能阻塞的 `write`/`fdatasync` 只能发生在 release 之后；Sink 不持有已 release 的 Ring view；
 - FileSink 正确处理短写和 `EINTR`；普通 flush 与 durable flush 分开；
 - 分别报告 Producer 延迟、NullSink、后台格式化、普通写与 durable flush；
 - 报告吞吐、P50/P99/P99.9、CPU、RSS、accepted/dropped/processed；
@@ -151,13 +167,22 @@ V1 不因理论速度直接选择 TSC。必须同时考虑跨核一致性、校�
 
 1. 本文；
 2. [里程碑一完成报告](./MILESTONE1_COMPLETION_REPORT_CHS.md)；
-3. [V1 决策日志](./V1_DECISION_LOG.md)；
-4. `include/qlog/detail/spsc_ring_buffer.hpp` 与 `src/spsc_ring_buffer.cpp`；
-5. ADR-005（Handle）与 ADR-006（benchmark 分层）；
-6. 再对照 BQLog、NanoLog/fmtlog 与 spdlog 的 Record、参数所有权和异步边界实现。
+3. [ADR-007](./ADR-007-self-contained-record-header.md)；
+4. [ADR-008](./ADR-008-realtime-coarse-admission-timestamp.md)；
+5. [ADR-009](./ADR-009-v1-packed-tagged-arguments.md)；
+6. [ADR-010](./ADR-010-v1-backend-c20-format.md)；
+7. [里程碑二实现设计指南](./MILESTONE2_RECORD_IMPLEMENTATION_GUIDE_CHS.md)；
+8. [I1 Record Core 企业级开发规范](./MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md)；
+9. [V1 决策日志](./V1_DECISION_LOG.md)；
+10. `include/qlog/detail/spsc_ring_buffer.hpp` 与 `src/spsc_ring_buffer.cpp`；
+11. ADR-005（Handle）与 ADR-006（benchmark 分层）。
 
 新窗口的第一句话可以直接使用：
 
-> 阅读 `docs/decisions/MILESTONE2_DESIGN_GUIDE_CHS.md` 和里程碑一完成报告，继续与我商讨
-> D1 Callsite 元数据拆分和 D2 RecordHeader，不要开始写 codec。
-
+> 阅读 `docs/decisions/ADR-007-self-contained-record-header.md`、
+> `docs/decisions/ADR-009-v1-packed-tagged-arguments.md`、
+> `docs/decisions/ADR-010-v1-backend-c20-format.md` 和
+> `docs/decisions/MILESTONE2_RECORD_IMPLEMENTATION_GUIDE_CHS.md`，再以
+> `docs/decisions/MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md` 为 I1 唯一执行规范，
+> 一次完成独立 Record Core；
+> 不接 Ring，也不实现 `c20_format`。
