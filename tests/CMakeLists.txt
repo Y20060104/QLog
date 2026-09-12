@@ -92,6 +92,21 @@ target_link_libraries(qlog_record_header_test
 
 qlog_enable_warnings(qlog_record_header_test)
 
+add_executable(qlog_argument_model_test
+    arguments_self_contained.cpp
+    argument_traits_self_contained.cpp
+    argument_model_test.cpp
+    record_measure_self_contained.cpp
+)
+
+target_link_libraries(qlog_argument_model_test
+    PRIVATE
+        QLog::qlog
+        GTest::gtest_main
+)
+
+qlog_enable_warnings(qlog_argument_model_test)
+
 include(GoogleTest)
 
 gtest_discover_tests(qlog_geometry_test
@@ -108,3 +123,44 @@ gtest_discover_tests(qlog_record_header_test
     TEST_PREFIX "qlog."
     PROPERTIES LABELS record_header
 )
+
+gtest_discover_tests(qlog_argument_model_test
+    TEST_PREFIX "qlog."
+    PROPERTIES LABELS record_core
+)
+
+# I1-B hash and I1-C codec validation.
+add_executable(qlog_format_hash_test
+    format_hash_self_contained.cpp
+    format_hash_reference_self_contained.cpp
+    format_hash_test.cpp
+)
+add_executable(qlog_record_codec_test
+    record_types_self_contained.cpp
+    record_encoder_self_contained.cpp
+    record_types_test.cpp
+    record_encoder_test.cpp
+    record_decoder_self_contained.cpp
+    record_decoder_test.cpp
+)
+foreach(target_name IN ITEMS qlog_format_hash_test qlog_record_codec_test)
+    target_link_libraries(${target_name} PRIVATE QLog::qlog GTest::gtest_main)
+    target_include_directories(${target_name} PRIVATE ${PROJECT_SOURCE_DIR}/src)
+    target_compile_definitions(${target_name} PRIVATE
+        QLOG_TEST_HAS_X86_CRC32C=${QLOG_HASH_X86_VALUE})
+    qlog_enable_warnings(${target_name})
+endforeach()
+gtest_discover_tests(qlog_format_hash_test
+    TEST_PREFIX "qlog."
+    PROPERTIES LABELS record_core
+)
+gtest_discover_tests(qlog_record_codec_test
+    TEST_PREFIX "qlog."
+    PROPERTIES LABELS record_core
+)
+
+# Apply list-valued labels after GoogleTest discovery without flattening semicolons.
+set_property(DIRECTORY APPEND PROPERTY TEST_INCLUDE_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/record_core_labels.cmake")
+
+include(i1d.cmake)
