@@ -52,6 +52,7 @@ TEST(SpscRingBufferWrite, ReservationRemainsInvisibleUntilCommit) {
     EXPECT_EQ(SpscRingBufferTestAccess::write_cursor(ring), 0U);
 
     auto read = ring.try_read();
+    EXPECT_EQ(read.status(), qlog::detail::ReadStatus::empty);
     EXPECT_FALSE(SpscRingBufferTestAccess::read_pending(ring));
     EXPECT_EQ(SpscRingBufferTestAccess::current_read_cursor(ring), 0U);
 
@@ -114,6 +115,7 @@ TEST(SpscRingBufferWrite, HandleDestructorDoesNotMutateRingState) {
 
     {
         auto write = ring.try_reserve(8U);
+        ASSERT_TRUE(write);
         ASSERT_TRUE(SpscRingBufferTestAccess::reservation_pending(ring));
     }
 
