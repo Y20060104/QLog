@@ -1,5 +1,7 @@
 # QLog 里程碑二 Record 实现指南：V1 冻结版
 
+2026-09-10 实现进度：hash/types/encoder 基线已验证；下一步 decoder，I1 整体验收仍待完成。证据见 [2026-09-10 修复与验证报告](./I1_HASH_ENCODER_VALIDATION_20260910_CHS.md)。
+
 - 状态：D1～D6、H1～H4 已冻结；ABI 声明与测试已完成
 - 日期：2026-09-05
 - Record 基线：[ADR-007：32B 自包含 RecordHeader 与统一格式记录](./ADR-007-self-contained-record-header.md)
@@ -7,6 +9,7 @@
 - 参数基线：[ADR-009：V1 参数类型、字符串与 packed tagged arguments](./ADR-009-v1-packed-tagged-arguments.md)
 - 格式化基线：[ADR-010：V1 format hash、c20_format、解析缓存与工作量边界](./ADR-010-v1-backend-c20-format.md)
 - I1 执行规范：[I1 Record Core 企业级开发规范](./MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md)
+- 当前动手入口：[I1-C 编解码与 I1 收口动手指南（合并第 2、3 轮）](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md)
 - 前置交付：[里程碑一完成报告](./MILESTONE1_COMPLETION_REPORT_CHS.md)
 - 目标：把 V1 Record、hash、formatter、cache 和工作量合同转换为紧凑的实现与验收任务
 
@@ -275,7 +278,7 @@ flags bits 2..7 = 0
 const char (&)[N] / const char8_t (&)[N] -> N - 1 bytes
 std::string / std::u8string              -> size() bytes
 std::string_view / std::u8string_view    -> explicit size bytes
-qlog::cstr(ptr, max_scan)                -> bounded compatibility path
+qlog::cstr(ptr)                          -> caller-guaranteed NUL-terminated compatibility path
 ```
 
 所有输入只借用到本次日志调用结束；commit 前必须完成深拷贝。Producer 不验证 UTF-8、不转码、不保存
@@ -288,7 +291,7 @@ qlog::cstr(ptr, max_scan)                -> bounded compatibility path
 
 ```text
 "" / std::string_view{}     -> Utf8String(length=0)
-qlog::cstr(nullptr, bound)   -> NullUtf8
+qlog::cstr(nullptr)          -> NullUtf8
 裸 nullptr                   -> Pointer64(0)
 qlog::ptr(nullptr)           -> Pointer64(0)
 ```
@@ -301,17 +304,14 @@ qlog::ptr(nullptr)           -> Pointer64(0)
 
 ```text
 ptr == nullptr -> NullUtf8，不扫描
-ptr != nullptr -> effective_scan_limit = min(max_scan, remaining content budget + 1)
-                -> 只扫描 [0, effective_scan_limit)
-找到 NUL       -> 下标为 byte_length，复用到 encode
-未找到且 max_scan <= remaining budget -> invalid_cstr
-未找到且 max_scan > remaining budget  -> payload_too_large
+ptr != nullptr -> 调用方保证从 ptr 开始可读且存在 NUL
+                -> measure 恰好调用一次 strlen
+                -> 缓存 byte_length，encode 直接复用
 ```
 
-非空 `ptr` 且 `max_scan == 0` 为非法。扫描结果必须直接用于 `encoded_size`，同一次调用不得再次执行
-`strlen`。初始 content budget 必须先扣除 32B Header、format、所有非 cstr 的完整编码大小、null cstr 的
-1B tag，以及每个非空 cstr 的 5B tag/length 前缀。bounded scan 只限制工作量，不能验证地址；调用方必须
-保证本次实际扫描范围可读。V1 不截断字符串；容量提前终止的 `payload_too_large` 携带当前 cstr 参数下标。
+`qlog::cstr` 是显式兼容入口。非空指针若不可读或没有可达 NUL，属于调用方违反前置条件，不是
+`measure_record` 的可恢复错误。`strlen` 的结果必须先检查能否表示为 u32，再参与 checked aggregate 和
+Channel payload 上限判断。V1 不截断字符串；同一次调用只求长一次。
 
 ## 8. D6：packed wire protocol
 
@@ -399,8 +399,8 @@ calls++
 这些路径都不能读取时钟或调用 reserve。
 
 参数数量、tag 和固定宽度值的单项大小可在编译期确定；字符串并非都能编译期计长：数组 extent 可为
-编译期常量，`std::string[_view]`/`std::u8string[_view]` 从运行期 `size()` 取长度，`qlog::cstr` 则运行期
-有界扫描一次。实现应把固定贡献与运行期长度做 checked sum，并复用扫描结果，不能再次 `strlen`。
+编译期常量，`std::string[_view]`/`std::u8string[_view]` 从运行期 `size()` 取长度，`qlog::cstr` 则在调用方
+保证 NUL 的前提下运行期调用一次 `strlen`。实现应把固定贡献与运行期长度做 checked sum，并复用结果。
 
 ### 9.2 唯一 Record 写入路径
 
@@ -592,7 +592,7 @@ padding 左少右多。文本默认左对齐，数字和 pointer 默认右对齐
 | `NullUtf8` | 省略、`s` | `<null>` |
 
 Pointer64 始终输出小写 `0x` 加最短 hex，0 为 `0x0`。裸 nullptr 是 Pointer64(0)；
-`qlog::cstr(nullptr, n)` 是 `NullUtf8`；`qlog::cstr("", n)` 是长度 0 的 Utf8String，三者不可混淆。
+`qlog::cstr(nullptr)` 是 `NullUtf8`；`qlog::cstr("")` 是长度 0 的 Utf8String，三者不可混淆。
 裸 `char*`/`const char*` 继续拒绝。
 
 浮点 `f/e` precision 表示小数位，`g` 表示有效位，范围 `0..64`；`g` 的 0 按有效 precision 1。
@@ -670,8 +670,10 @@ include/qlog/detail/record_header.hpp
 include/qlog/detail/argument_tag.hpp
 include/qlog/detail/checked_size.hpp
 include/qlog/detail/format_hash.hpp
-include/qlog/detail/record_codec.hpp
-src/record_codec.cpp
+include/qlog/detail/record_types.hpp
+include/qlog/detail/record_encoder.hpp
+include/qlog/detail/record_decoder.hpp
+src/record_decoder.cpp
 
 include/qlog/arguments.hpp          // ptr/cstr 显式包装器
 include/qlog/async_logger.hpp
@@ -704,6 +706,8 @@ Backend -> record decoder -> c20_format -> Sink
 ```
 
 RingBuffer 不知道日志类型、format grammar、category 或 Sink。
+I1 内部文件边界于 2026-09-09 细化：types 不依赖 measure/hash/traits；encoder 模板头消费 prepared/hash；
+decoder 声明头与 `.cpp` 只依赖公共类型、Header/tag/limits。原 record_codec 文件建议由此取代。
 
 ## 14. 紧凑实现任务
 
@@ -729,6 +733,10 @@ I1-A 的实现归属和不变量以企业级规范第 5.1、6.1、7.4、8.1 节�
 `argument_traits.hpp`；`PreparedRecord<N>` 位于 `record_measure.hpp` 并使用显式 private 构造；最终
 `encoded_size` 根据 normalized `ArgumentTag` 计算。该分层是 compile-time admission、runtime
 normalization 与 wire encoding 的边界，不得为减少类型数量而合并。
+
+当前实施按 [合并动手指南](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md) 完成：A 章先收口最新 hash 草稿，
+再实现四个 codec 文件、四个 u64 level mask policy 和 16B DecodedArg。维护者负责生产代码与生产接线；
+Codex 负责后续测试/benchmark 支持、执行和报告。此次只更新文档，不把 hash/codec/I1-D 标记完成。
 
 退出条件：所有 tag、边界值、0/1/32/33 参数、字符串/null、overflow 和 corruption 用例通过
 Debug/Release/ASan/UBSan；known vectors、constexpr、SW/HW hash-only/copy-and-hash 逐位一致；
@@ -767,7 +775,7 @@ tail latency、吞吐、CPU、RSS 与 dropped/processed 数据齐全；QLog Text
 - F32/F64 普通值、正负零、无穷和 NaN bit pattern；
 - Pointer64 零值和非零值；
 - 空字符串、短字符串、内嵌 NUL、u8 输入；
-- `qlog::cstr(nullptr, n)`、立即 NUL、边界前 NUL；
+- `qlog::cstr(nullptr)`、空 C 字符串、普通 NUL 结尾 C 字符串；
 - 0、1、31、32 个参数。
 
 ### 15.2 Producer 拒绝
@@ -775,11 +783,11 @@ tail latency、吞吐、CPU、RSS 与 dropped/processed 数据齐全；QLog Text
 - 不支持类型的 compile-fail tests；
 - 33 个参数；
 - 最后元素不是 NUL 的受支持字符数组在 reserve 前返回运行时 `invalid_string_metadata`；
-- 非空指针 `cstr(..., 0)`；
-- `max_scan` 内无 NUL；
 - 非零长度 null view；
 - string/args/payload 长度溢出和超过 Channel 上限；
 - null runtime format。
+
+不可读指针或没有可达 NUL 的 `qlog::cstr` 输入违反调用方前置条件，不属于可恢复拒绝测试。
 
 ### 15.3 Decoder 损坏矩阵
 
@@ -840,7 +848,7 @@ Producer 基准至少覆盖：
 - 静态短 format + 两个整数；
 - 静态游戏日志：整数、float、短字符串混合；
 - runtime format copy-and-hash；
-- `qlog::cstr` bounded-scan 慢路径；
+- `qlog::cstr` 单次 `strlen` 兼容路径；
 - 32 参数上限；
 - Ring 接近满和持续 `drop_new`。
 
@@ -867,7 +875,10 @@ BQLog Text 比较；BQLog Compress 单列。
 
 ## 18. 下一实现入口
 
-D1～D6 与 H1～H4 已全部冻结，I0 完成。下一步直接执行 I1“独立 Record Core”，一次提交应同时包含：
+D1～D6 与 H1～H4 已全部冻结，I0 完成，I1-A 保留主规范中的已有实现/验证记录。
+2026-09-09 当前入口是 [合并第 2、3 轮动手指南](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md)：
+先补齐最新 I1-B hash 草稿，再完成 I1-C；Codex 在生产交接后补齐 I1-D 验证。
+I1 最终交付仍包含：
 
 ```text
 format_hash
@@ -879,4 +890,4 @@ format_hash
 
 具体合同以 [I1 Record Core 企业级开发规范](./MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md)
 为准。I1 不接 Ring、不创建 Logger，也不实现 `c20_format`。这样保持测试边界清晰，同时避免把同一层拆成
-多轮小任务。
+多轮小任务。维护者不负责编写测试；指南与文档交付不等于上述生产实现或验收已经完成。

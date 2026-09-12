@@ -1,7 +1,10 @@
 # QLog 里程碑二 I1 Record Core 企业级开发规范
 
+> 2026-09-13 当前状态：decoder 已验证，I1-D 测试已执行；完整结果与未关闭门禁见 [I1-D 验收报告](./I1D_VALIDATION_20260913_CHS.md)。下文旧日期进度为历史记录。
+
 - 状态：已接受，可进入实现
 - 日期：2026-09-05
+- 实现指南更新：2026-09-09；合并第 2、3 轮，仅文档交付，生产代码由维护者实现
 - 适用任务：I1 独立 Record Core
 - 实现责任：项目维护者编写生产代码；独立评审/测试方补充测试、执行门禁并记录结果
 - 规范性质：本文定义接口语义、模块边界、错误合同和验收标准，不提供生产实现代码
@@ -60,6 +63,60 @@ I1 只有一个总体验收点。内部压缩为四个密集工作包，不升�
 | I1-D | 单测、compile-fail、property/fuzz、sanitizer、benchmark 和双编译器门禁 |
 
 工作包可以按依赖顺序提交到同一 I1 分支，但只有全部满足第 17 节 Definition of Done 才算 I1 完成。
+
+### 2.1 性能范围与集中指导（2026-09-09，第 2、3 轮合并）
+
+第 1 轮的具体文件位置、接口骨架和逐函数实现步骤见 [I1-B 动手指南](./MILESTONE2_I1B_HANDS_ON_GUIDE_CHS.md)。
+
+保留当前 wire 和已完成的 I1-A measure：32B Header、packed tagged arguments、
+`crc32c4x64_v1`、递归参数规范化和一次 `strlen` 缓存长度均不重做。当前
+`PreparedRecord<N>` / `NormalizedArgument` 表示作为第一版基线，不仅因对象 `sizeof` 而重构。
+
+Producer 参数编码优先采用可内联实现，模板定义放在职责对应的头文件。不强制采用“薄模板入口加完全
+非模板编码核心”；先检查真实 measure -> encode 组合中固定 tag/宽度、描述符临时写入和分派能否消除。
+Decoder 仍按运行时 tag 解码，可以保留非模板实现。可内联不等于已经内联，也不构成性能结论。
+
+允许按同机测量调整 prepared 的内部表示以及 dispatch 的稳定分支/不可变函数指针选择。只有观察到
+组合路径存在实质成本才引入 typed prepared 对照；保留成功构造约束、标量快照、字符串借用期、长度缓存、
+确定性错误和强失败保证。采用变体时同步修改本规范对应物理表示条款；不改变 wire，不同时维护两套
+公共 prepared API。Reference 保持独立易核对；SW/HW 优化实现可共享编译期参数化分块核心。
+
+本次性能探索只围绕三项：hash/copy-and-hash 与预计算、prepared 到可内联参数编码的连接、
+measure -> encode 与独立 decode 的组合基线。默认不扩展 ARM、Callsite registry、新 wire、第三种 hash
+或大量 SIMD 变体。checked arithmetic、Release 解码校验、目标不变的编码失败保证继续保留。
+
+原三轮计划中，第 1 轮继续使用 I1-B 指南；维护者于 2026-09-08 确认将第 2、3 轮合并，
+2026-09-09 根据最新 hash 修改复查更新入口。不逐函数追加教学轮次：
+
+| 轮次 | 范围 | 集中交付 |
+|---|---|---|
+| 1 | I1-B | 接口/文件职责、CRC 与分块推导、reference/SW/HW、copy-and-hash、dispatch、测试顺序 |
+| 2+3 | I1-C、I1-D 与收口 | 第一轮必要补齐、metadata/policy/result、可内联 encoder、独立 decoder、评审/验证/组合基准、优化取舍、文档同步 |
+
+合并轮具体实施入口为 [I1-C 编解码与 I1 收口动手指南](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md)。
+其 A 章保留 2026-09-09 历史诊断；最新完成状态以第 2.2 节为准，不重复已修复的 hash/types/encoder。
+
+本次明确的内部实现方案：`record_types.hpp` 公共类型与共享 metadata 校验；`record_encoder.hpp`
+头内编码；`record_decoder.hpp` 声明与 `src/record_decoder.cpp` 解码。policy 使用四个 u64 level mask
+与 fallback bool；新的 DecodedArg 采用 16B tag/union/length 表示，现有 producer prepared 不改。
+这些内部细化不改变 Record wire 或错误优先级。
+
+项目维护者编写生产实现；指导提供准确签名、关键伪代码、原因、步骤、反例和验收点。
+集中指导是教学组织约束，不降低第 17 节 DoD，不把未执行的 native Linux、长时 fuzz 或 coverage 门禁写成完成。
+测试文件、测试构建接线、benchmark/验证支持、门禁执行与报告由 Codex 在生产交接后承担；维护者不负责测试。
+默认教学分工是维护者完成生产实现；2026-09-10 本轮按用户明确授权由 Codex 完成生产修复与测试，见第 2.2 节。
+
+### 2.2 当前进度快照（2026-09-10，生产修复与验证）
+
+本轮用户授权 Codex 直接完善修复和测试，覆盖 I1-B、公共类型与现有 encoder。
+I1-A 保留并随全量回归；I1-B 可调用与正确性基线，以及 I1-C types/encoder 已通过本轮验证。
+GCC/Clang Debug 各 88 项通过，Release 各 87 通过/1 个原有 Debug-only skip；
+Clang ASan+UBSan 88 项通过；禁用硬件的 GCC Release 82 通过/6 个预期 skip，均无失败。
+`record_core` 38 项由 arguments 13、format_hash 16、codec 9 组成；codec 当前仅测 types/encoder。
+完整证据与边界见 [2026-09-10 修复与验证报告](./I1_HASH_ENCODER_VALIDATION_20260910_CHS.md)。
+
+下一步是 I1CD D 章 decoder。完整 compile-fail/property/fuzz/coverage、性能与其余 I1-D 门禁仍待完成，
+本轮不关闭整个 I1，也不将 WSL 开发结果替代额外 native runner 证据。
 
 ## 3. 严格非目标
 
@@ -125,13 +182,15 @@ include/qlog/detail/checked_size.hpp
 include/qlog/detail/argument_traits.hpp
 include/qlog/detail/record_measure.hpp
 include/qlog/detail/format_hash.hpp
-include/qlog/detail/record_codec.hpp
+include/qlog/detail/record_types.hpp
+include/qlog/detail/record_encoder.hpp
+include/qlog/detail/record_decoder.hpp
 
 src/format_hash.cpp
 src/format_hash_software.cpp
 src/format_hash_x86_crc32c.cpp
 src/format_hash_aarch64_crc32c.cpp      // 仅在实际支持该目标时加入
-src/record_codec.cpp
+src/record_decoder.cpp
 ```
 
 已有且不得改变 wire 的文件：
@@ -153,7 +212,10 @@ I1-A 的具体类型归属固定为：
   `SupportedArgument` 和 `NormalizedArgument`；
 - `record_measure.hpp` 定义 `FormatInput`、measure 错误/结果、`PreparedRecord<N>`、measure 声明及全部
   依赖参数 pack 的模板实现；不再拆分 `record_measure.inl`；
-- `record_codec.hpp` 消费 successful prepared result，但不重新定义 traits、normalization 或计长规则。
+- `record_types.hpp` 定义 metadata、policy、共享校验、编码/解码错误、DecodedArg、view/result 和内部构造工厂；
+- `record_encoder.hpp` 消费 successful prepared result，包含可内联编码 helper/模板，不重新定义计长规则；
+- `record_decoder.hpp` 只声明解码入口并依赖公共类型；实现位于 `src/record_decoder.cpp`，不 include encoder；
+- 旧建议 `record_codec.hpp/.cpp` 由上述明确边界取代，不增加无实际消费者的聚合头。
 
 ### 5.2 允许的依赖方向
 
@@ -172,6 +234,8 @@ format_hash
 
 Decoder 不依赖 public wrappers、argument traits、hash、formatter 或 Ring。Hash 模块不依赖 RecordHeader、
 argument codec 或 Logger。依赖必须单向，不允许为方便测试建立循环 include。
+`record_types.hpp` 仅依赖基础标准库、record_header、argument_tag 和 record_limits；不反向 include
+measure/hash/encoder。这样 decoder 的实际 include 链也满足上述边界，而非仅在运行时不用这些模块。
 
 ### 5.3 公共与内部稳定性
 
@@ -221,7 +285,7 @@ I1 不建立“静态 Record”和“动态 Record”。所有 format 最终产�
 - 借用的 format 裸指针与显式字节数；
 - 可选预计算 stored hash；值 0 表示 encode 阶段执行 copy-and-hash；
 - 每个参数规范化后的 tag、标量值或借用 byte 指针与显式字节数；
-- 已完成有界扫描的 cstr 长度；
+- 已通过一次 `strlen` 取得的 cstr 长度；
 - `format_bytes`、`args_bytes`、`payload_bytes`、`arg_count`；
 - 本次测量使用的 `max_payload_bytes`。
 
@@ -297,56 +361,23 @@ Backend 永远不把 `Pointer64` 转回指针或解引用。wrapper 工厂必须
 ### 7.2 `qlog::cstr`
 
 V1 `qlog::cstr` 只服务 `char` C 字符串参数，不是 runtime format 入口。runtime format 必须使用显式长度
-`std::string_view`/`std::u8string_view`。wrapper 构造时只保存 `const char*` 和 `max_scan`，不执行扫描。
+`std::string_view`/`std::u8string_view`。wrapper 构造时只保存 `const char*`，不执行扫描。
 
 ```text
 ptr == nullptr
-  -> NullUtf8，不扫描；max_scan 可以为 0
-
-ptr != nullptr and max_scan == 0
-  -> invalid_cstr
+  -> NullUtf8，不调用 strlen
 
 ptr != nullptr
-  -> 只读取 [ptr, ptr + effective_scan_limit)
-  -> 首个 NUL 下标成为 byte_length
+  -> 调用方保证 ptr 指向可读且以 NUL 终止的 char 字符串
+  -> measure 恰好调用一次 strlen(ptr)
+  -> 首个 NUL 下标成为 byte_length，并缓存 {pointer, byte_length}
 ```
 
-为了让最坏扫描受当前 Record 容量约束，measure 先计算一个共享的初始“cstr 内容预算”。从
-`max_payload_bytes` 中依次扣除：
-
-```text
-32B RecordHeader
-format_bytes
-所有非 cstr 参数的完整编码大小
-每个 null cstr 的 1B tag
-每个非空 cstr 的 1B tag + 4B length prefix
-```
-
-只有扣除后剩余的 bytes 才能由各个非空 cstr 的内容共同使用。已知贡献超过 quota 时内容预算饱和为 0，
-不能使用无符号减法下溢。随后按原参数顺序对每个非空 cstr 使用：
-
-```text
-effective_scan_limit = min(max_scan, remaining_encodable_string_budget + 1)
-```
-
-- 在 `effective_scan_limit` 内找到 NUL：接受并复用长度；
-- `max_scan <= remaining budget` 且没有 NUL：`invalid_cstr`；
-- 扫到 `remaining budget + 1` 仍没有 NUL：`payload_too_large`；
-- 任何路径都不得读取 `max_scan` 之外或重复扫描。
-
-实现先收集全部非 cstr 长度候选与每个 cstr 的固定开销以计算预算，但预收集阶段只能记录较后参数的错误，
-不能提前返回；对调用方可观察的 metadata/cstr/单参数长度错误仍严格按原参数从左到右决定。多个 cstr 的
-剩余内容预算按其成功得到的 `byte_length` 逐项递减。每个成功的非空 cstr 还必须读取一个终止 NUL，因此
-一次调用中全部成功 cstr 的总读取量最多为“初始内容预算 + 非空 cstr 数量”；`arg_count <= 32` 使额外
-终止符读取同样有界，而不是“参数数 × payload 上限”。失败项至多读取其 `remaining budget + 1` 个 bytes。
-
-当某个 cstr 因 `max_scan > remaining budget` 且在 `remaining budget + 1` 内仍无 NUL 而失败时，立即返回
-参数级 `payload_too_large`，其 `argument_index` 是该 cstr 的原始下标。这里有意优先保证有界扫描；实现不再
-继续读取以猜测未知的完整 cstr 长度。所有参数均成功归一化后，最终 Record quota 检查产生的
-`payload_too_large` 才使用非参数下标 `0xFF`。
-
-bounded scan 不能证明任意地址安全。调用方仍必须保证实际读取范围有效；非法地址 fault 属于调用方违约，
-不在 QLog 可恢复保证内。
+非空指针无效、不可读或没有 NUL 终止符属于调用方违约，行为与直接调用 `strlen` 相同，不映射成
+`MeasureError`。`strlen` 返回值超过 UInt32 时返回参数级 `argument_length_out_of_range`。全部参数完成
+规范化后再执行 checked aggregate 和最终 quota 检查，因此 `payload_too_large` 使用非参数下标 `0xFF`。
+`max_payload_bytes` 不限制 `strlen` 的读取量；这是换取单一 cstr API、递归/单-fold 单阶段遍历和更少
+scratch 的明确取舍。Encoder 必须复用缓存长度，不得再次调用 `strlen`。
 
 ### 7.3 traits 匹配顺序
 
@@ -389,7 +420,7 @@ template <class T>
 
 它没有运行时参数，只返回内部分类。`ArgumentKind` 至少包含 `Unsupported` 和 `CStr`；二者都不是可直接
 写入 Record 的 tag。`ArgumentTag` 则只表示最终 wire 类型：`Invalid` 是 `0x00` 的保留非法 tag，
-`NullUtf8` 只由运行时确认的 `qlog::cstr(nullptr, max_scan)` 产生。被拒绝的 `std::byte`、标量
+`NullUtf8` 只由运行时确认的 `qlog::cstr(nullptr)` 产生。被拒绝的 `std::byte`、标量
 `char8_t/char16_t/char32_t/wchar_t` 必须返回 `ArgumentKind::Unsupported`，绝不能返回 `NullUtf8`。
 
 类型处理顺序必须保留 reference、array extent 和 volatile 信息：
@@ -488,7 +519,6 @@ invalid_limits
 invalid_format_metadata
 format_too_large
 invalid_string_metadata
-invalid_cstr
 argument_length_out_of_range
 args_length_out_of_range
 size_overflow
@@ -509,8 +539,7 @@ payload_too_large
 不支持类型与编译期可知的参数超限不进入运行时枚举。错误结果附带固定大小的 `argument_index`/byte count，
 不得构造诊断字符串或记录日志。非参数错误的 `argument_index` 固定为 `0xFF`；参数错误使用原 parameter
 pack 的从零开始下标。`byte_count` 使用触发判断的可观察量：format/string 错误使用其声明长度，
-`invalid_cstr` 使用实际检查字节数，cstr 容量提前终止使用 `remaining budget + 1`，args/Record/quota 错误
-使用已成功计算的对应总长，checked overflow 使用导致失败的右操作数。
+args/Record/quota 错误使用已成功计算的对应总长，checked overflow 使用导致失败的右操作数。
 
 检查优先级固定为：
 
@@ -519,8 +548,7 @@ compile-time type/count admission
 -> invalid limits
 -> format metadata
 -> format limit
--> each argument from left to right: metadata/cstr, then per-argument representability;
-   cstr bounded-scan quota failure is parameter-indexed payload_too_large here
+-> each argument from left to right: metadata/strlen normalization, then per-argument representability
 -> aggregate args checked sum, then u32 representability
 -> total checked sum, then u32 representability
 -> final max_payload_bytes quota; this payload_too_large uses argument_index 0xFF
@@ -534,8 +562,77 @@ compile-time type/count admission
 - 不读取 clock，不 reserve，不更新统计；
 - 无分配、无锁、无 syscall、无 shared atomic RMW；
 - 固定宽度参数的 tag/size 由类型决定；
-- `std::string[_view]` 使用一次 `size()`；cstr 最多扫描一次；
+- `std::string[_view]` 使用一次 `size()`；非空 cstr 调用一次 `strlen`；
 - 所有加法/乘法在转换到窄整数前完成范围检查。
+
+### 8.4 单阶段递归 parameter-pack 遍历
+
+当前实现练习选择递归模板展开，而不是 fold expression。递归层只负责“处理第一个参数，再处理剩余参数”，
+所有实际规范化逻辑放在只依赖当前参数类型的 `normalize_one<T>` 中：
+
+```cpp
+template <std::size_t Index>
+[[nodiscard]] bool normalize_pack(State&) noexcept {
+    return true;
+}
+
+template <std::size_t Index, class First, class... Rest>
+[[nodiscard]] bool normalize_pack(State& state, const First& first,
+                                  const Rest&... rest) noexcept {
+    if (!normalize_one(state, Index, first)) {
+        return false;
+    }
+    return normalize_pack<Index + 1U>(state, rest...);
+}
+```
+
+递归不变量是：进入 `normalize_pack<Index>` 时，`[0, Index)` 已经保存最终
+`NormalizedArgument`，当前只处理原参数包下标 `Index`。空参数包命中基础重载并返回 true；首个参数错误
+立即返回 false，因此运行时错误顺序天然从左到右。`normalize_one` 接收普通 `std::size_t index`，不要把
+`Index` 继续作为其模板参数，否则相同 `T` 出现在不同位置会产生不必要的重复实例。
+
+入口保留 `Args&&...` 用于正确推导类型并保留数组 extent，但递归 helper 直接读取命名形参并接收
+`const T&`；不得 `std::forward`/`std::move`，不得构造会复制字符串并 decay 数组的 tuple。非空 cstr 在
+对应的 `normalize_one` 中调用一次 `strlen`，之后与 string/view 一样只保存 `{pointer, byte_length}`。
+
+异构参数规范化后，最终 exact `args_size` 通过同构 `NormalizedArgument` 数组的普通 checked loop 聚合；
+这是第二次访问小型描述符数组，不是再次展开参数包，也不会再次调用 `size()` 或 `strlen`。复杂度为
+`O(N + strlen 实际读取字节数)`，且不得引入分配、虚调用、锁、系统调用或 shared atomic RMW。递归与
+fold 的运行性能必须以 Release 汇编和基准判断；递归实现的主要工程代价是更多模板实例与更深诊断链。
+
+开始实现 `measure_record()` 前，`argument_traits.hpp` 必须先通过 self-contained 编译与准入矩阵测试，
+`encoded_size()` 必须证明每个成功 tag 写入精确结果、`Invalid`/兜底失败保持输出参数不变；否则后续模板
+诊断和总长度结果都不可信。
+
+### 8.5 与 BQLog/fmt 的对照及 `strlen` 决策（2026-09-07）
+
+BQLog 的 Producer 也采用“先计长、再精确申请、最后编码”的两阶段结构。参考 checkout 中，
+`bq_log_wrapper_tools.h` 的 `make_size_seq<true>` 第一次遍历参数并只为动态长度参数保存 `size_t`，
+`bq_log_impl.h` 的 `_do_log_args_fill` 第二次遍历并复用该长度；因此 parameter pack 被处理两次，
+但 C 字符串内容只扫描一次。BQLog 对真正的 `char*` 使用 `__builtin_strlen/strlen`，数组使用 extent，
+string/view 类使用 `size()`。可借鉴的是“固定尺寸编译期化、动态长度缓存、精确 reserve、encode 不再求长”；
+不可照搬的是它的 4B 参数对齐、较宽松的 pointer/POD/custom-type 准入，以及部分未经 checked arithmetic
+保护的 `size_t -> uint32_t` 窄化。
+
+fmt 的参数存储同样把编译期类型 descriptor 与运行时 value/string-view 分离；已知长度字符串保存
+`{pointer, size}`，`const char*` 则保存为 cstring 并在同步格式化时通过 `basic_string_view(s)` 调用
+`__builtin_strlen`。fmt 的 `formatted_size` 会完整运行一次格式解析和 formatter，并不是 QLog 这种只计算
+Record wire 长度的 Producer preflight。fmt 的借用参数存储也不是稳定 wire ABI，不能整体复制进 Ring。
+
+当前决定与 BQLog/fmt 的 cstring 前置条件对齐：wrapper 为 `qlog::cstr(ptr)`；非空 `ptr` 由调用方保证
+可读且 NUL 终止，measure 恰好调用一次 `strlen` 并缓存长度。此前的 `max_scan`、`invalid_cstr`、共享 cstr
+内容预算和双阶段 fold 合同由本决定取代。代价是 quota 不再限制 `strlen` 的读取量，非法或未终止指针属于
+调用方违约；收益是 cstr API、错误模型、scratch 与遍历控制流更小。普通热路径仍优先使用字面量、
+`std::string[_view]` 或 `std::u8string[_view]`，它们分别从 extent 或 `size()` 取得长度，不扫描内容。
+
+当前学习实现选择第 8.4 节的递归模板 driver。driver 只依赖 `Index/First/Rest...` 并调用单参数
+`normalize_one<T>`；`strlen`、UTF-8 metadata 检查和 checked aggregate 等逻辑应保持在单参数或非模板 helper
+中，避免把完整业务逻辑沿递归层重复实例化。
+`RecordMeasureAccess` 的 success/failure factory 保持 private，并只精确 friend 受约束的
+`measure_record` 模板，防止其他 detail 调用者绕过校验伪造 successful `PreparedRecord`。
+
+递归版本完成后必须重新执行 Release codegen sanity check；此前 fold 版本的汇编观察不能作为递归版本证据。
+该检查只用于发现明显抽象开销，不是吞吐/延迟结论，最终性能仍由第 15 节基准决定。
 
 ## 9. Hash 子系统合同
 
@@ -640,6 +737,17 @@ fallback_timestamp_allowed // Channel 是否声明 fallback source
   不 include Channel，也不逐 Record 分支选择版本。
 
 这样 I1 可以完整测试结构和 policy 行为，同时不会由实现指南偷偷冻结尚未讨论的 public level 数值。
+
+2026-09-08 确认、2026-09-09 具体化的第一版表示为 `std::array<uint64_t,4>` 与 fallback bool，
+完整参数构造、无 setter，查询按 `level >> 6` 定位 word、按 `level & 63` 定位 bit。全零 mask 合法，
+含义是全部拒绝；四个 mask 表示所有 uint8 值，不能只接受小于 64 的 level。
+入口按 `const RecordValidationPolicy&` 传递，不逐 Record 复制整个位图。
+
+共用的 `RecordMetadata` 只保存 time_value/category_id/level/flags。
+头内 `record_metadata_impl::validate_record_metadata` 返回 optional<MetadataError>，
+严格按 level、unknown flags、reserved status、time/status、fallback policy 检查；无错误为 nullopt。
+encoder/decoder 分别映射为自身错误（decoder 额外生成固定 offset/index），不用枚举数值强转映射。
+primary/fallback time_value=0 合法；只有 time_unavailable 配非零时间返回 invalid_time_value。
 
 ## 11. Encoder 合同
 
@@ -836,6 +944,20 @@ Frame release。
 
 失败不返回可用 Record view；workspace 已写槽位全部视为未定义逻辑结果，调用方不得读取。
 
+#### 12.3.1 已确认的内部表示与文件归属
+
+`DecodedArg` 在 `record_types.hpp` 中采用 `union Value { uint64_t bits; const std::byte* bytes; }`，
+union 之外依次保存 `uint32_t byte_count` 和 `ArgumentTag tag`。Tier 1 固定 sizeof=16、alignof=8，
+并保持 standard-layout/trivially-copyable；32 槽对象共 512B。这不是 wire 结构，也不是性能通过声明。
+默认 Invalid 激活 bits=0；仅 Utf8String 激活 bytes（空字符串亦如此）；其他 tag 用 bits，NullUtf8 bits=0。
+固定值以等宽 unsigned bit pattern 零扩展保存，解释 signed 时先等宽 bit_cast 后符号扩展，float 同理保留位模式。
+禁止读取未激活的 union 成员，不清零/序列化 padding，不将该布局回推到 producer 的 NormalizedArgument。
+
+DecodedRecordView 只保存 Header 值副本、format 指针和 const DecodedArg*；format_size/argument_count
+从 Header 派生。EncodeResult/DecodeResult 使用完整的私有成功/失败构造及 detail 内 RecordCodecAccess 工厂；
+所有备用逻辑字段初始化，访问器成功/失败互斥，不让 optional::emplace 越过私有构造权限。
+decoder header 只 include 公共类型，模板 encoder 独立在 record_encoder.hpp；准确签名/定义顺序见合并指南 B～D。
+
 ### 12.4 Decoder 明确不做
 
 - 不计算或校验 hash；任何 uint64 `format_hash`，包括 0，都可结构解码；
@@ -873,6 +995,8 @@ CRC lookup table 和 dispatch 发布后必须不可变。Hash、measure、encode
 
 ### 14.1 targets 和 labels
 
+2026-09-10 更新：hash 与 types/encoder 测试已新增；后文 2026-09-08 数量为历史记录，最新结果见 [2026-09-10 修复与验证报告](./I1_HASH_ENCODER_VALIDATION_20260910_CHS.md)。
+
 I1 测试不塞回 `qlog_record_header_test`，必须新增并拆为：
 
 | Target | 主要内容 | Labels |
@@ -882,8 +1006,18 @@ I1 测试不塞回 `qlog_record_header_test`，必须新增并拆为：
 | `qlog_record_codec_test` | golden、round-trip、corruption | `record_core;codec` |
 | `qlog_record_property_test` | deterministic property/corpus replay | `record_core;property` |
 
-这些 target/label 当前尚未在 `tests/CMakeLists.txt` 注册；在注册完成前，`ctest -L record_core` 不能作为
-通过证据。所有 label 过滤命令必须带 `--no-tests=error`，防止零测试假绿。
+截至 2026-09-08，项目维护者已完成递归版 `record_measure_impl` 与 `measure_record`：异构参数包按原始顺序
+规范化一次，随后通过 `NormalizedArgument` 数组汇总精确大小；非空 `qlog::cstr` 恰好调用一次 `strlen`，
+Encoder 后续必须复用缓存长度。`qlog_argument_model_test` 已在 `tests/CMakeLists.txt` 注册并使用
+`record_core;arguments` labels，现有 13 项 wrappers/traits/measure 测试在标准 Debug 与 Release 构建中均
+为 13/13 通过。同期全量测试结果为 Debug 63/63 通过；Release 62 项通过、1 项既有的 Debug-only
+corrupt-frame 测试按预期跳过；`./scripts/format.sh --check` 与 `git diff --check` 通过。
+
+以上是当前 WSL 开发证据，只关闭 I1-A 的现有实现与行为测试，不等于 I1 总体验收完成。其余
+`qlog_format_hash_test`、`qlog_record_codec_test`、`qlog_record_property_test` 仍待对应工作包实现，I1-A 的
+扩展边界、compile-fail、property/fuzz、sanitizer、双编译器与性能证据仍按后续条款补齐。因此不能把当前
+`ctest -L record_core` 结果单独作为 I1 完成证据。
+所有 label 过滤命令必须带 `--no-tests=error`，防止零测试假绿。
 
 每个新增 public/detail header 必须有“自身作为首个 include”的 self-contained translation unit。
 
@@ -918,15 +1052,15 @@ GCC/Clang 平台注册。
 - 所有冻结 tag、cv/ref 归一化、native integer alias；
 - enum underlying width/signedness，以及 enum-bool rejection；
 - Pointer64 null/non-null/char address；
-- cstr null、首 byte NUL、最后允许位置 NUL、无 NUL、zero bound、容量提前终止；
-- 多个 cstr 的聚合扫描上限，以及“较早 cstr 错误优先于较后显式字符串 metadata 错误”；
+- cstr null、空串、普通 NUL 终止串、首个 NUL 之前的 byte length；
+- 多个 cstr 的缓存长度与 exact/one-byte-too-large payload；
 - empty view、embedded NUL、char/char8 array/string/view；
 - fixed encoded sizes、无 padding、0/1/31/32 arguments；
 - 8192/8193 format，exact payload capacity 与 one-byte-too-large；
 - checked add/multiply 的 exact max/overflow；
 - invalid limits、单参数/args/Record u32 表示边界与 Channel quota 分类；
 - measure 结果等于实际成功写入长度；
-- cstr scan 结果复用，encode 不发生第二次扫描；
+- cstr 的 `strlen` 结果复用，encode 不发生第二次扫描；
 - MeasureError 优先级和 argument index。
 
 compile-fail 至少覆盖：
@@ -1019,7 +1153,7 @@ arbitrary byte contents in a real readable `(data, size)` range never overread, 
 qlog_fuzz_record_decode
 qlog_fuzz_record_roundtrip
 qlog_fuzz_format_hash_equivalence
-qlog_fuzz_cstr_bounded_scan
+qlog_fuzz_cstr_length_cache
 ```
 
 - PR：ASan+UBSan 全量测试与 corpus replay；
@@ -1048,7 +1182,7 @@ benchmark 结果当作 Record Core 证据：
 | 组件 | 场景 |
 |---|---|
 | hash-only/copy-and-hash | 0/1/3/4/7/8/15/16/31/32/33/64/128/256/1024/8192B；aligned/unaligned |
-| checked measure | 2 integers、混合游戏参数、短/长 string、cstr、32 args |
+| checked measure | 无 cstr 的 2 integers/混合游戏参数；1/2/32 个 cstr；cstr 位于首/中/尾；短/长 string；exact quota 与 one-byte-too-large |
 | encode/decode | empty、2 integers、mixed game record、short/long string、32 args |
 
 setup、allocation、随机数据生成和结果校验不进入计时区，但 benchmark 必须在计时外消费输出，防止优化删除。
@@ -1059,6 +1193,10 @@ clock。报告 compiler/version、flags、CPU、active hash path、record/format
 
 I1 第一次建立基线，不设拍脑袋的绝对吞吐。后续在同机同 compiler 下 before/after 交替多轮，以 median + MAD
 判断；回归超过 3% 且超过合并 MAD 时必须解释并阻断。不得以单次数字或 BQLog README 数字宣称更快。
+以当前递归规范化、长度缓存和描述符 checked aggregate 为 measure 基线；不再要求恢复已被取代的
+共享 cstr 预算/双阶段实现作为候选。优先比较真实 measure -> encode 与独立 decode，报告 Record bytes。
+prepared 表示或 dispatch 变体在相同输入上交替多轮比较，遵守上面的 median + MAD 门禁；可靠 PMU
+可用时补充 instructions/branch misses。单独返回长度的优化汇编不能替代真实编码路径或延迟/吞吐证据。
 
 Release 汇编检查至少证明：
 
@@ -1106,6 +1244,7 @@ I1 只有在以下条件全部成立时完成：
 - [ ] 只修改批准的 Record Core、test、benchmark 和必要 build-support 文件；
 - [ ] I1 头文件不依赖 Ring/Channel/Logger/Backend/formatter/Sink；
 - [ ] public wrapper 和所有 detail header 通过 self-contained compile；
+- [ ] policy 覆盖全部 u8 level，DecodedArg 16B 布局/有效 union 成员、结果构造与借用工作区合同通过验证；
 - [ ] `RecordHeader`/`ArgumentTag` static_assert 与旧测试零回归；
 - [ ] wrappers/traits/measure/hash/codec 的全部合同测试通过；
 - [ ] hand-written vectors/golden 不由 production code 生成；
@@ -1131,7 +1270,7 @@ median/MAD、已知限制和下一入口。WSL 结果必须标注为开发证据
 - prepared/decoded view 的借用期是否清楚且没有跨日志操作或 workspace 复用点缓存？
 - I1 生产头与实现是否完全没有 `std::span`，所有范围是否显式携带并校验长度？
 - `qlog::ptr` 是否保存数值而非原始指针？
-- cstr 是否有界扫描一次并复用长度？
+- 非空 cstr 是否只调用一次 `strlen` 并复用长度？
 - public API 是否仅增加 `arguments.hpp` 所需内容？
 
 ### Wire 与边界

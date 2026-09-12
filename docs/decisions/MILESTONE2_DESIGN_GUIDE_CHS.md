@@ -1,5 +1,7 @@
 # QLog 里程碑二设计讨论指南：异步日志 V1
 
+2026-09-10 实现进度：hash/types/encoder 基线已验证；下一步 decoder，I1 整体验收仍待完成。证据见 [2026-09-10 修复与验证报告](./I1_HASH_ENCODER_VALIDATION_20260910_CHS.md)。
+
 - 状态：D1～D6 与 H1～H4 已由 ADR-007～ADR-010 全部冻结；ABI 声明与测试完成
 - 前置条件：里程碑一已本地开发完成
 - 当前规则：不再拆分设计小轮次；下一实现任务为完整的独立 Record Core
@@ -104,8 +106,8 @@ blob、named args、容器、chrono、用户 formatter 和隐式用户转换。
   实现优化，且结果必须与 `crc32c4x64_v1` 一致；运行时 view 在 reserve 成功后使用一次 fused
   copy-and-hash，但两者不形成不同的 Header、flags、参数 ABI 或 Decoder；
 - `std::string[_view]`、`std::u8string[_view]` 和字符串数组使用显式/静态长度；
-- 裸 `const char*` 默认拒绝，仅 `qlog::cstr(ptr, max_scan)` 执行有界扫描；
-- `qlog::cstr(nullptr, n)` 编码 `NullUtf8`，空字符串编码长度为 0 的 `Utf8String`；
+- 裸 `const char*` 默认拒绝；显式 `qlog::cstr(ptr)` 对非空指针调用一次 `strlen`，调用方保证可读且 NUL 终止；
+- `qlog::cstr(nullptr)` 编码 `NullUtf8`，空字符串编码长度为 0 的 `Utf8String`；
 - V1 不验证 UTF-8、不截断，也不从 `string_view` 猜测静态生命周期。
 
 ### D6：参数编码方式（已冻结）
@@ -149,6 +151,12 @@ Header 和参数都必须通过局部对象 + `memcpy` 或显式 `load_le/store_
 
 这些是里程碑二内部步骤，不再拆成新的顶层里程碑。
 
+2026-09-09 当前实施入口：[I1-C 编解码与 I1 收口动手指南（合并第 2、3 轮）](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md)。
+I1-A 保留已完成实现；先按新指南 A 章补齐最新 hash 修改的剩余问题，再实现独立 codec。
+文件细化为 record_types.hpp、record_encoder.hpp、record_decoder.hpp 与 src/record_decoder.cpp；
+采用四个 u64 level mask policy、16B tag/union/length DecodedArg。维护者写生产代码和生产接线，
+Codex 在交接后负责测试/benchmark 支持与验证。本次只更新文档，不关闭 I1。
+
 ## 6. 里程碑二最终验收
 
 - 每个 Channel 保持 FIFO；
@@ -177,6 +185,8 @@ Header 和参数都必须通过局部对象 + `memcpy` 或显式 `load_le/store_
 10. `include/qlog/detail/spsc_ring_buffer.hpp` 与 `src/spsc_ring_buffer.cpp`；
 11. ADR-005（Handle）与 ADR-006（benchmark 分层）。
 
+开始动手时直接打开 [合并实现指南](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md)，按 A～F 的顺序推进。
+
 新窗口的第一句话可以直接使用：
 
 > 阅读 `docs/decisions/ADR-007-self-contained-record-header.md`、
@@ -184,5 +194,6 @@ Header 和参数都必须通过局部对象 + `memcpy` 或显式 `load_le/store_
 > `docs/decisions/ADR-010-v1-backend-c20-format.md` 和
 > `docs/decisions/MILESTONE2_RECORD_IMPLEMENTATION_GUIDE_CHS.md`，再以
 > `docs/decisions/MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md` 为 I1 唯一执行规范，
-> 一次完成独立 Record Core；
+> 按 `docs/decisions/MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md` 衔接当前 hash 进度；
+> 维护者完成生产实现，Codex 在交接后负责测试和验证；
 > 不接 Ring，也不实现 `c20_format`。

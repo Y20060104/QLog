@@ -87,7 +87,7 @@ try_read    -> 读 payload -> release
 完整交付、最终不变量、门禁证据与未完成发布项见
 [里程碑一完成报告](./MILESTONE1_COMPLETION_REPORT_CHS.md)。
 
-当前可执行细节见：
+里程碑一历史实验细节见：
 [下一步实现指南](./NEXT_IMPLEMENTATION_GUIDE_CHS.md)。
 
 ## 里程碑二：可演示、可公平基准的异步日志 V1
@@ -125,8 +125,8 @@ try_read    -> 读 payload -> release
   `flags` 低两位为 primary/fallback/unavailable/reserved，值 3 只叫 reserved；不做校准或
   时间戳排序，`time_value` 不用于耗时计算，跨线程不承诺全局时间顺序；
 - [已冻结] D4 只支持固定基本类型、显式 Pointer64/UTF-8，拒绝用户 formatter，参数上限 32；
-- [已冻结] D5 所有字符串 commit 前深拷贝，裸 C 字符串拒绝，仅 `qlog::cstr` 有界扫描，
-  null wrapper 编码 `NullUtf8`；
+- [已冻结] D5 所有字符串 commit 前深拷贝，裸 C 字符串拒绝；显式 `qlog::cstr(ptr)` 对非空指针
+  调用一次 `strlen` 并缓存长度，调用方保证 NUL 终止，null wrapper 编码 `NullUtf8`；
 - [已冻结] D6 使用 `[u8 tag][payload]` packed LE 协议，`args_alignment = 1`，禁止未对齐 typed-pointer 解引用；
 - [已冻结] `crc32c4x64_v1` 使用 BQLog 式四路 CRC32C 原始折叠得到 64-bit hash，raw 0
   规范化为 1，Header 的 0 保留为 sentinel；字面量仅可把逐位一致的 constexpr hash 作为优化，
@@ -171,9 +171,11 @@ MPSC、mmap 恢复、压缩、VLQ、字符串驻留、跨线程全序、多 Back
 
 ## 当前下一步
 
-D1～D6、H1～H4 和 I0 已完成。当前直接进入 I1“独立 Record Core”：同一任务提交 hash、`ptr/cstr`
-包装器、argument traits、checked measure、裸指针加显式长度 encoder/decoder，以及 known-vector、golden、
-round-trip、corruption 和 compile-fail tests。I1 不接 Ring，也不实现 `c20_format`。
+D1～D6、H1～H4、I0 已完成，I1-A 保留既有实现。
+2026-09-10 用户授权 Codex 修复生产代码并测试，I1-B hash 基线与 I1-C types/encoder 已通过本轮验证。
+准确结果见 [2026-09-10 修复与验证报告](./I1_HASH_ENCODER_VALIDATION_20260910_CHS.md)。
+下一步进入 [I1CD 指南 D 章](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md#record-decoder)，实现独立 decoder，
+再补齐 decoder 测试、其余 I1-D 和性能门禁。整个 I1 尚未完成，仍不接 Ring 或 c20_format。
 
 总体协议见 [里程碑二实现设计指南](./MILESTONE2_RECORD_IMPLEMENTATION_GUIDE_CHS.md)；I1 的模块边界、
 错误合同、测试矩阵、工具链和性能验收以
