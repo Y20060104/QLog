@@ -284,8 +284,8 @@ Pointer64 固定输出 `0x` 加无前导零的小写十六进制，0 输出 `0x0
 `qlog::ptr(nullptr)` 编码为 `Pointer64(0)`。裸 `char*`/`const char*` 无论是否为空都在 Producer API 拒绝：
 
 ```text
-qlog::cstr(nullptr, max_scan) -> NullUtf8 -> <null>
-qlog::cstr("", max_scan)      -> Utf8String(length=0) -> empty output
+qlog::cstr(nullptr) -> NullUtf8 -> <null>
+qlog::cstr("")      -> Utf8String(length=0) -> empty output
 ```
 
 空字符串配 width 时只输出 padding；`nullptr` 不等于空字符串。

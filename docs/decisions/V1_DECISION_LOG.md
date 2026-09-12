@@ -6,7 +6,7 @@
 
 - 状态：已接受
 - 日期：2026-08-15
-- 最后修订：2026-09-05
+- 最后修订：2026-09-09
 - 目标：Linux C++20 实时游戏服务器和实时仿真服务。
 - V1 拓扑：每个 `(生产线程, AsyncLogger)` 绑定一个独立 SPSC Channel，并由一个后台线程作为消费者。
 - 生产者约定：在正常日志路径中，不进行格式化、稳态堆分配、加锁、阻塞或共享原子读-改-写操作。
@@ -187,7 +187,7 @@
 48. `record_measure.hpp` 同时承载 measure 类型、声明和所有依赖 parameter pack 的模板定义；I1 不创建或
     include `record_measure.inl`。不依赖模板参数且值得隐藏实现的 helper 才进入 `.cpp`，同时保持每个头文件
     self-contained。
-49. `qlog::cstr` 的实际扫描上限由当前 Record quota 约束。初始共享内容预算先扣除 Header、format、全部
+49. [已由决策 51 取代] `qlog::cstr` 的实际扫描上限由当前 Record quota 约束。初始共享内容预算先扣除 Header、format、全部
     非 cstr 完整编码贡献、null cstr 的 1B tag 和非空 cstr 的 5B tag/length 前缀；每项只扫描
     `min(max_scan, remaining_budget + 1)`。未找到 NUL 且 `max_scan <= remaining_budget` 返回
     `invalid_cstr`；否则返回携带当前参数下标的 `payload_too_large`。调用方只需保证本次实际扫描范围可读，
@@ -197,6 +197,29 @@
     null/capacity，Encoder 在首次写入前完成等价 preflight 后可调用 raw backend。Decoder 的“不可信”只指
     payload 内容；非空地址仍须由调用方保证真实范围有效，workspace 还须指向 32 个已存活、对齐且可写的
     `DecodedArg`，成功 view 的有效期同时受 payload 和 workspace 复用约束。
+51. `qlog::cstr` 与 BQLog/fmt 的 C 字符串前置条件对齐：接口改为 `qlog::cstr(ptr)`，非空 `ptr` 由调用方
+    保证指向可读且以 NUL 终止的 `char` 字符串。measure 恰好调用一次 `strlen` 并缓存
+    `{pointer, byte_length}`，Encoder 不再求长；null 仍编码 `NullUtf8`。删除 `max_scan`、`invalid_cstr`、
+    quota-bounded scan、共享 cstr 内容预算及其双阶段遍历合同。完整长度求出后再做 u32/checked aggregate/
+    payload quota 检查；最终 `payload_too_large` 使用非参数下标 `0xFF`。非法、不可读或未 NUL 终止的非空
+    指针属于调用方违约，不建模为可恢复错误。Record wire ABI 不变。
+
+52. 2026-09-08：维护者确认 I1 性能范围收敛（教学轮次随后由决策 53 合并）。保留当前 wire 与 I1-A measure，优先采用可内联参数编码；
+    prepared 物理表示和 dispatch 的稳定分支/不可变函数指针允许按同机组合基准调整。先保留现有 prepared
+    基线，仅在 measure -> encode 的真实成本证据支持时比较 typed prepared，不按 `sizeof` 或源码形状重构。
+    继续保留精确计长、一次 cstr 扫描、确定性错误、强失败保证与 Release 解码检查。后续指导集中为三轮：
+    I1-B、I1-C、I1-D/评审/性能收口；三轮不降低 DoD 或伪称未执行门禁完成。具体范围见
+    [I1 规范第 2.1 节](./MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md)。
+53. 2026-09-08 维护者确认、2026-09-09 文档落地：合并第 2、3 轮为 I1-C 与 I1-D 收口动手指南，
+    开头保留第一轮 hash 的必要补齐，并依据 2026-09-09 修改复查移除已完成项。
+    生产文件边界明确为 record_types.hpp、record_encoder.hpp、record_decoder.hpp、src/record_decoder.cpp；
+    types 不反向依赖 measure/hash，encoder 保持头内可内联，decoder 保持独立运行时解析。
+    policy 采用四个 u64 level mask 加 fallback bool，覆盖全部 256 值；DecodedArg 采用独立 tag/length
+    与 bits/pointer union，Tier 1 sizeof=16、alignof=8，按 tag 使用有效成员。DecodedRecordView 的长度/数量
+    从 Header 副本派生。保留当前 producer prepared、wire、错误顺序、强失败保证和 Release 边界检查。
+    维护者实现全部生产修复/算法/生产构建接线；Codex 在交接后负责测试、benchmark/验证支持、执行和报告。
+    本次仅交付指南与更新文档，未修改生产/测试代码或构建文件，未执行代码门禁，不宣称 hash/codec/I1 已完成。
+    具体入口为 [合并第 2、3 轮动手指南](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md)。
 
 ## 重要限制
 
@@ -232,4 +255,12 @@
 - [里程碑二设计讨论指南：异步日志 V1](./MILESTONE2_DESIGN_GUIDE_CHS.md)
 - [里程碑二 Record 实现指南：V1 冻结版](./MILESTONE2_RECORD_IMPLEMENTATION_GUIDE_CHS.md)
 - [I1 Record Core 企业级开发规范](./MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md)
+- [I1-B 第一轮动手指南](./MILESTONE2_I1B_HANDS_ON_GUIDE_CHS.md)
+- [I1-C 编解码与 I1 收口动手指南（合并第 2、3 轮）](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md)
 - [读侧 R1 实验记录：pending 校验仅保留在 Debug（未通过，已回退）](./NEXT_IMPLEMENTATION_GUIDE_CHS.md)
+
+
+## 2026-09-10：hash 与 encoder 生产修复和基线验证
+
+用户授权 Codex 完善生产修复与测试。完成 hash 短输入/尾窗/硬件链接、encoder 写入修复及 25 项新增测试；wire 与 measure 合同不变。
+六组构建验证均无失败，准确通过/skip 数和未完成项见 [2026-09-10 修复与验证报告](./I1_HASH_ENCODER_VALIDATION_20260910_CHS.md)。下一步 decoder；I1 未整体关闭。

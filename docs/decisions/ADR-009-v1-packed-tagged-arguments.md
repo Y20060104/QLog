@@ -83,7 +83,7 @@ V1 接受：
 - `const char (&)[N]` 字符串字面量/数组约定，编码 `N - 1` 个字节且要求最后元素为 `\0`；
 - `std::string`、`std::string_view`；
 - `const char8_t (&)[N]`、`std::u8string`、`std::u8string_view`，按 UTF-8 原始字节复制；
-- 显式 `qlog::cstr(ptr, max_scan)` 兼容包装器。
+- 显式 `qlog::cstr(ptr)` 兼容包装器。
 
 标量 `char8_t` 不作为字符参数支持。显式长度字符串可以包含内嵌 `\0`，长度字段始终是字节数。
 Producer 不验证 UTF-8 合法性，也不做转码；调用方负责输入为 UTF-8。该选择避免热路径二次遍历。
@@ -117,7 +117,7 @@ V1 编译期拒绝：
 - 固定宽度值、`Pointer64` 和 `NullUtf8` 的编码大小是编译期常量；
 - `const char/char8_t (&)[N]` 的 extent 是编译期常量，按本 ADR 的数组约定编码 `N - 1` 字节；
 - `std::string[_view]`、`std::u8string[_view]` 的 byte length 在运行期通过 `size()` 取得；
-- `qlog::cstr` 的 byte length 必须在运行期有界扫描一次；
+- 非空 `qlog::cstr` 的 byte length 在运行期通过一次 `strlen` 取得并缓存；
 - 只要存在运行期长度字符串，最终 `args_bytes` 就是“编译期固定贡献 + 运行期长度贡献”的 checked sum。
 
 Producer 不需要、也不得为了计算 tag 或参数大小而解析 format 占位符。tag 来自参数的 C++ 类型，长度来自
@@ -172,42 +172,37 @@ measure/reserve/write/commit 流程，并产生相同 Record；前端只利用�
 裸 `const char*` 默认拒绝。需要兼容 C API 时必须显式写：
 
 ```cpp
-qlog::cstr(ptr, max_scan)
+qlog::cstr(ptr)
 ```
 
-I1 在扫描前先从 `max_payload_bytes` 扣除 32B Header、format、全部非 cstr 参数的完整编码大小，以及
-每个 cstr 的固定开销：null cstr 为 1B tag，非空 cstr 为 1B tag 加 4B length。剩余值才是全部非空
-cstr 共享的 `remaining_encodable_string_budget`。精确定义：
+精确定义：
 
 ```text
 ptr == nullptr
-  -> NullUtf8
+  -> NullUtf8，不调用 strlen
 
 ptr != nullptr
-  -> effective_scan_limit = min(max_scan, remaining_encodable_string_budget + 1)
-  -> 最多检查 [0, effective_scan_limit) 内的字节
-  -> 找到第一个 NUL：其下标是 byte_length
-  -> 未找到且 max_scan <= remaining budget：invalid_cstr
-  -> 未找到且 max_scan > remaining budget：payload_too_large
+  -> 调用方保证 ptr 指向可读且以 NUL 终止的 char 字符串
+  -> measure 恰好调用一次 strlen(ptr)
+  -> 返回值是 byte_length，并缓存 {pointer, byte_length}
+  -> byte_length 超过 UInt32：argument_length_out_of_range
 ```
 
-非空指针且 `max_scan == 0` 无法证明存在终止符，因此是 `invalid_cstr`。该接口明确属于兼容慢路径；
-扫描结果必须复用于精确长度计算，不能在同一次调用中再次执行 `strlen`。
-
-bounded scan 只限制最多检查的字节数，不能验证任意地址本身安全。成功时，调用方必须保证从 `ptr` 到实际
-找到的首个 NUL（含 NUL）可读；未找到 NUL 的失败路径必须保证本次实际检查的完整范围可读。实现不得仅因
-计算出更大的 `effective_scan_limit` 就读取首个 NUL 之后的 byte。不满足该前置条件属于调用方错误。容量提前
-终止产生的 `payload_too_large` 仍属于当前 cstr 的参数错误，携带它的参数下标；它不是截断。
+`qlog::cstr` 不拥有字符串。非空 `ptr` 无效、不可读或没有 NUL 终止符属于调用方违约，行为与直接调用
+`strlen` 相同，不建模为可恢复的 `MeasureError`。`max_payload_bytes` 不限制 `strlen` 的读取量；measure 在求得
+完整长度后执行 checked aggregate，再以非参数下标 `0xFF` 返回最终 `payload_too_large`。Encoder 必须复用
+缓存长度，不能再次调用 `strlen`。该取舍与 BQLog/fmt 的 C 字符串前置条件对齐，以更小的 API、scratch 和
+模板控制流换取由调用方承担 NUL 终止保证。
 
 ### 4. null 字符串与空指针
 
 `NullUtf8` 仅由显式字符串包装器产生：
 
 ```text
-qlog::cstr(nullptr, max_scan) -> NullUtf8
-"" / std::string_view{}     -> Utf8String，长度 0
-裸 nullptr                   -> Pointer64(0)
-qlog::ptr(nullptr)           -> Pointer64(0)
+qlog::cstr(nullptr)      -> NullUtf8
+"" / std::string_view{} -> Utf8String，长度 0
+裸 nullptr              -> Pointer64(0)
+qlog::ptr(nullptr)      -> Pointer64(0)
 ```
 
 `NullUtf8` 只占一个 tag，不带长度或 payload。Text Sink 的 `c20_format` 把它格式化为 `<null>`；不得把
@@ -446,7 +441,7 @@ load helper 访问。
 ### 代价
 
 - 每条 Record 复制 format 并携带参数 tag；
-- `qlog::cstr` 兼容路径需要一次有界扫描；
+- 非空 `qlog::cstr` 兼容路径需要一次 `strlen`，调用方承担 NUL 终止前置条件；
 - packed payload 要求严格的 byte-wise codec；
 - 未知 tag 不能单项跳过，只能放弃当前 Record；
 - V1 类型集合有意较小，调用方需要显式转换用户类型。
