@@ -81,7 +81,7 @@ template <class T>
 
         using Character = std::remove_const_t<Element>;
 
-        if constexpr (std::is_const_v<Element> &&
+        if constexpr (std::extent_v<Raw> != 0U && std::is_const_v<Element> &&
                       (std::is_same_v<char, Character> || std::is_same_v<char8_t, Character>)) {
             return ArgumentKind::Utf8String;
         } else {
@@ -231,9 +231,10 @@ concept SupportedArgument = ArgumentTraits<T>::supported;
         case ArgumentTag::Int64:
         case ArgumentTag::UInt64:
         case ArgumentTag::F64:
-        case ArgumentTag::Pointer64:
-            return 1U + 8U;
-
+        case ArgumentTag::Pointer64: {
+            output = 1U + 8U;
+            return true;
+        }
         case ArgumentTag::Utf8String: {
             output = 1U + 4U + static_cast<std::size_t>(argument.byte_count);
             return true;
@@ -245,15 +246,11 @@ concept SupportedArgument = ArgumentTraits<T>::supported;
         }
 
         case ArgumentTag::Invalid: {
-            output = 0U;
             return false;
         }
     }
 
-    {
-        output = 0U;
-        return false;
-    }
+    return false;
 }
 
 }  // namespace qlog::detail

@@ -12,7 +12,6 @@ struct PointerArgument final {
 
 struct CStrArgument final {
     const char* data{};
-    std::size_t max_scan{};
 };
 
 template <class P>
@@ -40,8 +39,8 @@ template <detail::QlogObjectPointer P>
     return {};
 }
 
-[[nodiscard]] constexpr detail::CStrArgument cstr(const char* value,
-                                                  std::size_t max_scan) noexcept {
-    return {value, max_scan};
+// A non-null value must point to a readable NUL-terminated string.
+[[nodiscard]] constexpr detail::CStrArgument cstr(const char* value) noexcept {
+    return {value};
 }
 }  // namespace qlog
