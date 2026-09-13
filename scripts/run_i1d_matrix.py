@@ -1,6 +1,6 @@
 from pathlib import Path
 import subprocess,concurrent.futures,json,os
-r=Path(__file__).resolve().parents[1];out=r/'build/validation/i1d/matrix';out.mkdir(parents=True,exist_ok=True)
+r=Path(__file__).resolve().parents[1];out=r/'build/validation/i1d-acceptance/matrix';out.mkdir(parents=True,exist_ok=True)
 variants=[('gcc-debug','g++','Debug',False,True),('gcc-release','g++','Release',False,True),('clang-debug','clang++-18','Debug',False,True),('clang-release','clang++-18','Release',False,True),('clang-asan-ubsan','clang++-18','Debug',True,True),('gcc-software-release','g++','Release',False,False)]
 def run(v):
     name,compiler,mode,san,hw=v;b=r/'build/test'/('i1d-'+name)

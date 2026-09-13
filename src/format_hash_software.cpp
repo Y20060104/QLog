@@ -9,7 +9,8 @@ namespace qlog::detail {}  // namespace qlog::detail
 
 namespace qlog::detail::hash_impl {
 
-constexpr std::array<std::uint32_t, 256> make_crc_table() noexcept {
+// This helper constructs immutable program data and must never execute at runtime.
+consteval std::array<std::uint32_t, 256> make_crc_table() noexcept {
     std::array<std::uint32_t, 256> result{};
     for (std::size_t i = 0U; i < result.size(); ++i) {
         std::uint32_t state = static_cast<std::uint32_t>(i);

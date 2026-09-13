@@ -142,6 +142,7 @@ add_executable(qlog_record_codec_test
     record_encoder_test.cpp
     record_decoder_self_contained.cpp
     record_decoder_test.cpp
+    record_decoder_boundary_test.cpp
 )
 foreach(target_name IN ITEMS qlog_format_hash_test qlog_record_codec_test)
     target_link_libraries(${target_name} PRIVATE QLog::qlog GTest::gtest_main)

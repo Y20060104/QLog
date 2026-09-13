@@ -5,3 +5,7 @@
 CMakeUserPresets.json
 compile_commands.json
 *.log
+
+# Python validation-script bytecode caches
+__pycache__/
+*.py[cod]

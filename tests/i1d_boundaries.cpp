@@ -1,11 +1,14 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <cstring>
 #include <limits>
 #include <qlog/detail/checked_size.hpp>
 #include <qlog/detail/format_hash.hpp>
 #include <qlog/detail/format_hash_reference.hpp>
 #include <qlog/detail/record_measure.hpp>
+
+#include "format_hash_test_access.hpp"
 namespace {
 using namespace qlog::detail;
 TEST(RecordArithmetic, CheckedAddExactMaximumAndOverflowPreservesOutput) {
@@ -120,5 +123,41 @@ TEST(HashReference, RuntimeCharAndChar8ArraysMatchRawReference) {
               qlog::detail::stored_hash_from_raw(expected));
     EXPECT_EQ(qlog::detail::hash_literal_stored(utf8),
               qlog::detail::stored_hash_from_raw(expected));
+}
+}  // namespace
+
+namespace {
+TEST(HashReference, RuntimeEmptyLiteralUsesStoredZeroNormalization) {
+    char empty[] = {0};
+    char8_t empty_utf8[] = {0};
+    using EmptyHash = std::uint64_t (*)(const char(&)[1]) noexcept;
+    EmptyHash volatile runtime_hash = &qlog::detail::hash_literal_stored<char, 1>;
+    EXPECT_EQ(runtime_hash(empty), 1U);
+    EXPECT_EQ(qlog::detail::hash_literal_stored(empty_utf8), 1U);
+}
+}  // namespace
+
+namespace {
+TEST(HashReference, NonemptyFrozenRawZeroVectorNormalizesToOne) {
+    // Independently solved over GF(2) with the bitwise CRC32C polynomial, not produced by QLog.
+    const std::array<std::uint8_t, 32> bytes{0, 0,    0,    0,    0xD4, 0x3A, 0x70, 0x58, 0, 0, 0,
+                                             0, 0x92, 0x3B, 0xA1, 0x5B, 0,    0,    0,    0, 0, 0,
+                                             0, 0,    0,    0,    0,    0,    0,    0,    0, 0};
+    char text[33]{};
+    std::memcpy(text, bytes.data(), bytes.size());
+    EXPECT_EQ(qlog::detail::format_hash_reference::hash_raw_ref(text, 32), 0U);
+    using LiteralHash = std::uint64_t (*)(const char(&)[33]) noexcept;
+    LiteralHash volatile runtime_hash = &qlog::detail::hash_literal_stored<char, 33>;
+    EXPECT_EQ(runtime_hash(text), 1U);
+    const auto* source = reinterpret_cast<const std::byte*>(bytes.data());
+    const auto verify = [&](const qlog::detail::FormatHashDispatch& dispatch) {
+        EXPECT_EQ(dispatch.hash_raw_unchecked(source, bytes.size()), 0U);
+        const auto result = qlog::detail::hash_format_stored(dispatch, source, bytes.size());
+        ASSERT_TRUE(result.succeeded());
+        EXPECT_EQ(*result.stored_hash(), 1U);
+    };
+    verify(qlog::detail::FormatHashTestAccess::software());
+    verify(qlog::detail::FormatHashDispatch::automatic());
+    if (auto hardware = qlog::detail::FormatHashTestAccess::hardware()) verify(*hardware);
 }
 }  // namespace

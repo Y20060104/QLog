@@ -1,6 +1,6 @@
 from pathlib import Path
 import subprocess,os,json
-r=Path(__file__).resolve().parents[1];b=r/'build/test/i1d-clang-coverage';o=r/'build/validation/i1d/coverage';o.mkdir(parents=True,exist_ok=True)
+r=Path(__file__).resolve().parents[1];b=r/'build/test/i1d-acceptance-clang-coverage';o=r/'build/validation/i1d-acceptance/coverage';o.mkdir(parents=True,exist_ok=True)
 with (o/'run.log').open('w') as log:
     def run(cmd,env=None):
         cmd=[x for x in cmd if not x.startswith('-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=') or Path(x.split('=',1)[1]).exists()]
@@ -11,8 +11,10 @@ with (o/'run.log').open('w') as log:
     for old in raw.glob('*.profraw'):old.unlink()
     env=os.environ.copy();env['LLVM_PROFILE_FILE']=str(raw/'%m-%p.profraw')
     run(['ctest','--test-dir',str(b),'-L','record_core','--output-on-failure','--no-tests=error','--parallel','4'],env)
+    if (r/'build/tools/qemu/root/usr/bin/qemu-x86_64').exists():
+        run(['python3',str(r/'scripts/run_i1d_cpu_fallback.py')])
     profile=o/'merged.profdata';run(['llvm-profdata-18','merge','-sparse']+[str(p) for p in raw.glob('*.profraw')]+['-o',str(profile)])
-    objects=[b/'tests'/name for name in ['qlog_argument_model_test','qlog_format_hash_test','qlog_record_codec_test','qlog_record_property_test']]
+    objects=[b/'tests'/name for name in ['qlog_argument_model_test','qlog_format_hash_test','qlog_record_codec_test','qlog_record_property_test','qlog_record_allocation_test']]
     sources=[r/'include/qlog/arguments.hpp']+list((r/'include/qlog/detail').glob('*.hpp'))+list((r/'src').glob('format_hash*'))+[r/'src/record_decoder.cpp']
     sources=[p for p in sources if not any(x in p.name for x in ['spsc','ring','cache_line','geometry'])]
     common=[str(objects[0])]+[v for p in objects[1:] for v in ['-object',str(p)]]+['-instr-profile='+str(profile)]+[str(p) for p in sources]
@@ -20,3 +22,10 @@ with (o/'run.log').open('w') as log:
     with (o/'export.json').open('w') as f:subprocess.run(['llvm-cov-18','export']+common,stdout=f,check=True)
     run(['llvm-cov-18','show']+common+['-format=html','-output-dir='+str(o/'html'),'-show-branches=count'])
 print((o/'report.txt').read_text(),flush=True)
+
+data=json.loads((o/'export.json').read_text())['data'][0]
+totals=data['totals']
+thresholds={'functions':100.0,'lines':95.0,'branches':90.0}
+passed=all(totals[name]['percent']>=minimum for name,minimum in thresholds.items())
+(o/'gate.json').write_text(json.dumps({'passed':passed,'thresholds':thresholds,'totals':totals,'note':'aggregate numerical gate; critical branch exceptions require the separate audit'},indent=2))
+if not passed:raise SystemExit('Coverage numerical gate failed')

@@ -2,8 +2,8 @@ from pathlib import Path
 import argparse,subprocess,shutil,concurrent.futures,json,time,os
 ROOT=Path(__file__).resolve().parents[1]
 if not (ROOT/'include/qlog').exists(): ROOT=Path('/home/qq344/QLog')
-ap=argparse.ArgumentParser();ap.add_argument('--seconds',type=int,default=600);ap.add_argument('--output',default='fuzz');args=ap.parse_args()
-b=ROOT/'build/test/i1d-clang-fuzz';o=ROOT/'build/validation/i1d'/args.output;o.mkdir(parents=True,exist_ok=True)
+ap=argparse.ArgumentParser();ap.add_argument('--seconds',type=int,default=600);ap.add_argument('--output',default='fuzz');ap.add_argument("--targets", nargs="+", choices=["record_decode","record_roundtrip","format_hash_equivalence","cstr_length_cache"]); ap.add_argument("--build-dir",default="i1d-clang-fuzz");args=ap.parse_args()
+b=ROOT/'build/test'/args.build_dir;o=ROOT/'build/validation/i1d'/args.output;o.mkdir(parents=True,exist_ok=True)
 flags='-O1 -g -fsanitize=fuzzer-no-link,address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer'
 config=['cmake','-S',str(ROOT),'-B',str(b),'-G','Ninja','-DCMAKE_CXX_COMPILER=clang++-18','-DCMAKE_BUILD_TYPE=Debug','-DQLOG_BUILD_FUZZERS=ON','-DCMAKE_CXX_FLAGS='+flags,'-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST='+str(ROOT/'build/test/debug/_deps/googletest-src')]
 config=[x for x in config if not x.startswith('-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=') or Path(x.split('=',1)[1]).exists()]
@@ -11,6 +11,7 @@ names=['record_decode','record_roundtrip','format_hash_equivalence','cstr_length
 with (o/'build.log').open('w') as log:
     subprocess.run(config,stdout=log,stderr=subprocess.STDOUT,check=True)
     subprocess.run(['cmake','--build',str(b),'--parallel','4','--target']+['qlog_fuzz_'+n for n in names],stdout=log,stderr=subprocess.STDOUT,check=True)
+if args.targets: names=args.targets
 def run(name):
     c=o/name;c.mkdir(exist_ok=True)
     for p in (ROOT/'tests/corpus/record_core').iterdir():shutil.copy2(p,c/p.name)
@@ -23,7 +24,7 @@ def run(name):
         result=subprocess.run(cmd,stdout=log,stderr=subprocess.STDOUT,env=env)
     status={'target':name,'code':result.returncode,'seconds':round(time.monotonic()-start,2)}
     print(status,flush=True);return status
-print('Starting four fuzz targets',flush=True)
+print('Starting fuzz targets: '+', '.join(names),flush=True)
 with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:results=list(pool.map(run,names))
 (o/'results.json').write_text(json.dumps(results,indent=2))
 raise SystemExit(any(x['code'] for x in results))
