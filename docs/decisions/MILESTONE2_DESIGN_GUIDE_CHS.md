@@ -1,10 +1,13 @@
 # QLog 里程碑二设计讨论指南：异步日志 V1
 
-2026-09-10 实现进度：hash/types/encoder 基线已验证；下一步 decoder，I1 整体验收仍待完成。证据见 [2026-09-10 修复与验证报告](./I1_HASH_ENCODER_VALIDATION_20260910_CHS.md)。
+> 当前 I2 接口已由 [ADR-013](./ADR-013-v1-automatic-producer-context.md) 更新为 Logger::try_log + TLS 自动上下文；旧显式绑定/冷注册锁说明失效。后续以 [主指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md) 和 [计划](./MILESTONE2_I2_IMPLEMENTATION_PLAN_CHS.md) 为准。
+
+> 多 Appender 最新合同：[ADR-012](./ADR-012-v1-multi-appender.md)。一个 Logger 可分发多个目标，配置 reset 支持增删/替换；处理时过滤，各 Text 目标可独立时区。旧文中的单 Sink 流程须按该合同扩展。
+> 2026-09-13 当前状态：I1 已按 WSL2 开发范围收口；I2 设计已冻结，生产骨架已开始，尚未验收。合同见 [ADR-011](./ADR-011-v1-producer-channel.md)，执行见 [I2 计划](./MILESTONE2_I2_IMPLEMENTATION_PLAN_CHS.md) 与 [I2 动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)。原生 Linux 发布复核与自动 CI 后续补齐。
 
 - 状态：D1～D6 与 H1～H4 已由 ADR-007～ADR-010 全部冻结；ABI 声明与测试完成
 - 前置条件：里程碑一已本地开发完成
-- 当前规则：不再拆分设计小轮次；下一实现任务为完整的独立 Record Core
+- 当前规则：不再拆分设计小轮次；当前实现任务为 I2 Producer/Channel
 - 目标场景：Linux C++ 实时游戏服务器 / 实时服务
 
 ## 1. 已冻结的产品边界
@@ -17,7 +20,7 @@ V1 面向 1～128 个长期稳定的业务线程：
   -> 每个（线程, AsyncLogger）固定容量 SPSC Channel
   -> 单后台线程公平扫描
   -> Record 解码与 c20_format 到 BackendWorker 私有 64KiB scratch
-  -> NullSink 计数 / TextFileSink 接收完整行到内存 batch
+  -> ConsoleAppender 完整行缓冲/输出 / TextFileSink 接收完整行到内存 batch
   -> release Frame
   -> TextFileSink 执行可能阻塞的 write/fdatasync
 ```
@@ -145,13 +148,13 @@ Header 和参数都必须通过局部对象 + `memcpy` 或显式 `load_le/store_
 2. **I1 独立 Record Core**：按企业级开发规范一次完成 hash、包装器/traits、checked measure、裸指针加显式长度的
    codec 及完整测试；I1 拥有 decode 结果类型，且不依赖 Ring/Channel；
 3. **I2 Producer/Channel**：冷路径绑定、过滤、一次 reserve、时间戳、Ring 直写与统计；
-4. **I3 Backend/NullSink**：公平扫描、固定解码槽、错误隔离、排空和生命周期；
+4. **I3 Backend/ConsoleAppender**：公平扫描、固定解码槽、错误隔离、排空和生命周期；
 5. **I4 Text/验收**：`c20_format`、固定 cache、BackendWorker 私有 64KiB scratch、Sink 内存 batch、
    TextFileSink、demo 和正式 benchmark。
 
 这些是里程碑二内部步骤，不再拆成新的顶层里程碑。
 
-2026-09-09 当前实施入口：[I1-C 编解码与 I1 收口动手指南（合并第 2、3 轮）](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md)。
+2026-09-13 当前实施入口：[I2 动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)，合同见 [ADR-011](./ADR-011-v1-producer-channel.md)。
 I1-A 保留已完成实现；先按新指南 A 章补齐最新 hash 修改的剩余问题，再实现独立 codec。
 文件细化为 record_types.hpp、record_encoder.hpp、record_decoder.hpp 与 src/record_decoder.cpp；
 采用四个 u64 level mask policy、16B tag/union/length DecodedArg。维护者写生产代码和生产接线，
@@ -160,13 +163,14 @@ Codex 在交接后负责测试/benchmark 支持与验证。本次只更新文档
 ## 6. 里程碑二最终验收
 
 - 每个 Channel 保持 FIFO；
-- `calls == filtered + attempted`、`attempted == accepted + dropped`，shutdown 后
+- `calls == filtered + rejected_pre_admission + attempted`、
+  `attempted == accepted + dropped_full + failed_after_attempt`；Debug/诊断构建及 Release 外部测试验证，shutdown 后
   `accepted == processed`；
 - Producer 热路径无 format parser、稳态分配、锁、阻塞或共享 RMW；
 - Text 路径只把格式化成功的完整行交给 Sink 内存 batch；batch 接收完成后 release Frame，
   可能阻塞的 `write`/`fdatasync` 只能发生在 release 之后；Sink 不持有已 release 的 Ring view；
 - FileSink 正确处理短写和 `EINTR`；普通 flush 与 durable flush 分开；
-- 分别报告 Producer 延迟、NullSink、后台格式化、普通写与 durable flush；
+- 分别报告 Producer 延迟、无输出测试消费者基线（非生产 Appender）、后台格式化、普通写与 durable flush；
 - 报告吞吐、P50/P99/P99.9、CPU、RSS、accepted/dropped/processed；
 - Ring 微基准只对比 QLog SPSC 与 BQLog SISO；
 - 系统级对比 QLog、spdlog async 与 BQLog Text；BQLog Compress 单列。
@@ -185,15 +189,10 @@ Codex 在交接后负责测试/benchmark 支持与验证。本次只更新文档
 10. `include/qlog/detail/spsc_ring_buffer.hpp` 与 `src/spsc_ring_buffer.cpp`；
 11. ADR-005（Handle）与 ADR-006（benchmark 分层）。
 
-开始动手时直接打开 [合并实现指南](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md)，按 A～F 的顺序推进。
+开始动手时打开 [I2 动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)，按 0/A/B/C/D/E/F/G/H 推进。
 
-新窗口的第一句话可以直接使用：
+新窗口先读 ADR-011、I2 执行计划、I2 动手指南及 AGENTS.md；确认实际目录为 /home/qq344/QLog。
+当前不重新实现 I1，也不提前加入 Backend/c20_format/MPSC。
 
-> 阅读 `docs/decisions/ADR-007-self-contained-record-header.md`、
-> `docs/decisions/ADR-009-v1-packed-tagged-arguments.md`、
-> `docs/decisions/ADR-010-v1-backend-c20-format.md` 和
-> `docs/decisions/MILESTONE2_RECORD_IMPLEMENTATION_GUIDE_CHS.md`，再以
-> `docs/decisions/MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md` 为 I1 唯一执行规范，
-> 按 `docs/decisions/MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md` 衔接当前 hash 进度；
-> 维护者完成生产实现，Codex 在交接后负责测试和验证；
-> 不接 Ring，也不实现 `c20_format`。
+
+2026-09-15 当前覆盖决定：生产取消 NullAppender，空 Appender 配置默认 Console；I3 包含 Console 所需基础格式化，I4 扩展 TextFile。详见 [I2 主指南 N](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md#i2-current-next)，历史测试基线不代表生产输出类型。

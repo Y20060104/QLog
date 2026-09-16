@@ -1,5 +1,7 @@
 # QLog I1-B 从当前骨架开始的动手指南
 
+> 当前后续入口（2026-09-13）：I1 已按 WSL2 开发范围收口，I2 设计冻结。后续执行 [I2 计划](./MILESTONE2_I2_IMPLEMENTATION_PLAN_CHS.md) 和 [I2 动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)，本文旧任务/行号仅用于 I1 实现历史。
+
 2026-09-10：本指南的 hash 正确性基线已完成，见 [2026-09-10 修复与验证报告](./I1_HASH_ENCODER_VALIDATION_20260910_CHS.md)。正文保留最初教学起点，当前继续 I1CD 的 decoder。
 
 日期：2026-09-08。承接 I1 规范第 2.1 节；这是第 1 轮指导的改写，不增加教学轮次。

@@ -1,5 +1,7 @@
 # QLog I1-C 编解码与 I1 收口动手指南（合并第 2、3 轮）
 
+> 当前后续入口（2026-09-13）：I1 已按 WSL2 开发范围收口，I2 设计冻结。后续执行 [I2 计划](./MILESTONE2_I2_IMPLEMENTATION_PLAN_CHS.md) 和 [I2 动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)，本文旧任务/行号仅用于 I1 实现历史。
+
 > 2026-09-13 当前状态：Record Core（I1）已按 WSL2 开发范围完成阶段收口。六配置、覆盖率、连续一小时 decoder fuzz、完整性能基线已通过；经用户确认，原生 Linux 发布前复核暂缓，不阻塞后续模块开发。详见 [验收及收口报告](./I1D_ACCEPTANCE_20260913_CHS.md)。下文旧日期进度为历史记录。
 
 方案确认：2026-09-08。最新进度：2026-09-10，hash/types/encoder 基线已修复并验证，decoder 与完整 I1-D 待完成。

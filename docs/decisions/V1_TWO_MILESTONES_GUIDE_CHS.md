@@ -1,5 +1,10 @@
 # QLog V1 后续两里程碑实现指南
 
+> 当前 I2 接口已由 [ADR-013](./ADR-013-v1-automatic-producer-context.md) 更新为 Logger::try_log + TLS 自动上下文；旧显式绑定/冷注册锁说明失效。后续以 [主指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md) 和 [计划](./MILESTONE2_I2_IMPLEMENTATION_PLAN_CHS.md) 为准。
+
+> 多 Appender 最新合同：[ADR-012](./ADR-012-v1-multi-appender.md)。一个 Logger 可分发多个目标，配置 reset 支持增删/替换；处理时过滤，各 Text 目标可独立时区。旧文中的单 Sink 流程须按该合同扩展。
+> 2026-09-13 当前状态：I1 已按 WSL2 开发范围收口；I2 设计已冻结，生产骨架已开始，尚未验收。合同见 [ADR-011](./ADR-011-v1-producer-channel.md)，执行见 [I2 计划](./MILESTONE2_I2_IMPLEMENTATION_PLAN_CHS.md) 与 [I2 动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)。原生 Linux 发布复核与自动 CI 后续补齐。
+
 - 状态：唯一生效的总体执行计划
 - 日期：2026-08-28
 - 最后修订：2026-09-05
@@ -100,7 +105,7 @@ try_read    -> 读 payload -> release
   -> 每个（线程, AsyncLogger）SPSC Channel
   -> 单后台线程公平扫描
   -> Record 解码与 c20_format 到 BackendWorker 私有 64KiB scratch
-  -> NullSink 计数 / TextFileSink 接收完整行到内存 batch
+  -> ConsoleAppender 完整行缓冲/输出 / TextFileSink 接收完整行到内存 batch
   -> release Frame
   -> TextFileSink 执行可能阻塞的 write/fdatasync
 ```
@@ -110,8 +115,8 @@ try_read    -> 读 payload -> release
 1. I0 已完成：ADR-007～ADR-010、RecordHeader/ArgumentTag、静态断言和 ABI tests；
 2. I1 按 [企业级开发规范](./MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md) 一次完成 hash、
    包装器/traits、checked measure、独立的裸指针加显式长度 codec 和完整测试；
-3. I2 一次完成 Channel/ProducerHandle/AsyncLogger、过滤、一次 reserve、时间戳、Ring 直写和统计；
-4. I3 一次完成 Backend 公平扫描、固定解码槽、NullSink、错误隔离和关停排空；
+3. I2 一次完成 Channel/ProducerHandle/AsyncLogger、过滤、一次 reserve、时间戳、Ring 直写和 Debug 条件诊断（Release 外部验收）；
+4. I3 一次完成 Backend 公平扫描、固定解码槽、ConsoleAppender、错误隔离和关停排空；
 5. I4 一次完成 `c20_format`、固定 cache、BackendWorker 私有 64KiB scratch、Sink 内存 batch、
    TextFileSink、demo 和端到端 benchmark。
 
@@ -150,13 +155,14 @@ try_read    -> 读 payload -> release
 ### 最终验收
 
 - 每个 Channel 保持 FIFO；不承诺跨线程严格全序。
-- `calls == filtered + attempted`、`attempted == accepted + dropped`，shutdown 后
+- `calls == filtered + rejected_pre_admission + attempted`、
+  `attempted == accepted + dropped_full + failed_after_attempt`；Debug/诊断构建及 Release 外部测试验证，shutdown 后
   `accepted == processed`。
 - Producer 热路径没有 format parser、稳态分配、锁、阻塞或共享 RMW。
 - Sink 只接收完整日志行；内存 batch 接收后先 release Frame，再执行可能阻塞的文件 I/O，
   且不得保留 Ring 或 Backend scratch view。
 - TextFileSink 正确处理短写和 `EINTR`；普通 flush 与 durable flush 分开定义。
-- benchmark 分开报告 Producer 延迟、NullSink、后台格式化、普通 `write()` 和
+- benchmark 分开报告 Producer 延迟、无输出测试消费者基线（非生产 Appender）、后台格式化、普通 `write()` 和
   `fdatasync/fsync`，并记录吞吐、P50/P99/P99.9、CPU、RSS 和丢弃量。
 - Ring 微基准只比较 QLog SPSC 与 BQLog SISO；不把 spdlog 的带锁 MPMC 队列标成 SPSC。
 - 系统级同机对比 spdlog async 与 BQLog Text：spdlog 至少包含单 Producer/单 Backend 和
@@ -171,15 +177,16 @@ MPSC、mmap 恢复、压缩、VLQ、字符串驻留、跨线程全序、多 Back
 
 ## 当前下一步
 
-D1～D6、H1～H4、I0 已完成，I1-A 保留既有实现。
-2026-09-10 用户授权 Codex 修复生产代码并测试，I1-B hash 基线与 I1-C types/encoder 已通过本轮验证。
-准确结果见 [2026-09-10 修复与验证报告](./I1_HASH_ENCODER_VALIDATION_20260910_CHS.md)。
-下一步进入 [I1CD 指南 D 章](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md#record-decoder)，实现独立 decoder，
-再补齐 decoder 测试、其余 I1-D 和性能门禁。整个 I1 尚未完成，仍不接 Ring 或 c20_format。
+2026-09-13，用户确认冻结 I2；显式 Producer 绑定、BQLog 式动态位图/category 过滤、
+Debug 条件诊断，以及运行中注册/停止 Producer 后排空的生命周期合同见
+[ADR-011](./ADR-011-v1-producer-channel.md)。
 
-总体协议见 [里程碑二实现设计指南](./MILESTONE2_RECORD_IMPLEMENTATION_GUIDE_CHS.md)；I1 的模块边界、
-错误合同、测试矩阵、工具链和性能验收以
-[I1 Record Core 企业级开发规范](./MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md) 为准。
+按 [I2 执行计划](./MILESTONE2_I2_IMPLEMENTATION_PLAN_CHS.md) 开始，详细步骤见
+[I2 动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md) 0/A/B/C：
+先实现等级/policy、过滤表和 admission clock 基础切片，再完成 Channel/绑定与 Producer 直写。
+生产实现和门禁尚未开始；指南交付不等于 I2 完成。
 
-R1 的失败原因、回退和门禁证据继续保存在
-[读侧 R1 实验记录](./NEXT_IMPLEMENTATION_GUIDE_CHS.md)，不再作为当前实现指南。
+I1 保留独立模块不变量，I3/I4 按原顺序承接；R1 仅为已回退历史实验。
+
+
+2026-09-15 当前覆盖决定：生产取消 NullAppender，空 Appender 配置默认 Console；I3 包含 Console 所需基础格式化，I4 扩展 TextFile。详见 [I2 主指南 N](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md#i2-current-next)，历史测试基线不代表生产输出类型。

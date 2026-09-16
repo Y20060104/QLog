@@ -1,5 +1,7 @@
 # V1 决策日志
 
+当前 I2 Producer 入口以 [ADR-013](./ADR-013-v1-automatic-producer-context.md) 为准；下方日期记录中的显式绑定/注册 mutex 是已被覆盖的历史。
+
 > 本目录记录新日志项目的设计。它不属于 BQLog 实现；BQLog 仅作为参考实现。
 
 ## 项目范围
@@ -241,6 +243,7 @@
 - [ADR-008：Unix Epoch 纳秒与 admission timestamp](./ADR-008-realtime-coarse-admission-timestamp.md)
 - [ADR-009：V1 参数类型、字符串与 packed tagged arguments](./ADR-009-v1-packed-tagged-arguments.md)
 - [ADR-010：V1 format hash、c20_format、解析缓存与工作量边界](./ADR-010-v1-backend-c20-format.md)
+- [ADR-011：Producer/Channel、动态过滤与条件诊断](./ADR-011-v1-producer-channel.md)
 
 ## 架构规范
 
@@ -264,3 +267,41 @@
 
 用户授权 Codex 完善生产修复与测试。完成 hash 短输入/尾窗/硬件链接、encoder 写入修复及 25 项新增测试；wire 与 measure 合同不变。
 六组构建验证均无失败，准确通过/skip 数和未完成项见 [2026-09-10 修复与验证报告](./I1_HASH_ENCODER_VALIDATION_20260910_CHS.md)。下一步 decoder；I1 未整体关闭。
+
+
+## 2026-09-13：I2 入口、过滤与统计方向
+
+用户确认过滤和诊断统计对齐 BQLog：运行时 level 位图/category 开关重置；Debug 诊断计数、常规 Release 移除对应字段与更新。数量守恒转为诊断构建及 Release 外部测试观测的验收要求，错误处理与排空语义不变。
+用户授权兼顾 V2 MPSC 选择入口；选择显式预绑定为 V1 核心，未来共享队列可保留线程私有 Producer 上下文，不预先加入动态队列派发或承诺 V2 ABI。该选择基于成本分析，不是已测得吞吐排名。
+整组过滤更新一致性、public 枚举/API、注册回收和 shutdown 细节仍需讨论；详见 [I2 第 7 节](./MILESTONE2_I2_PLAN_DRAFT_CHS.md)。不修改既有 Record/SPSC ABI，不开始生产实现。
+
+
+## 2026-09-13：I2 正式冻结与动手指南交付
+
+用户同意冻结入口/过滤/统计方向，随后确认过滤行为“BQLog 一致”、运行中注册且先 join Producer 再 shutdown，接口细节“对齐 BQLog”。
+正式合同由 ADR-011 收敛：等级 verbose/debug/info/warning/error/fatal=0…5；句柄轻量可复制但仅绑定线程使用；category 创建时固定，过滤标量独立更新；Debug 内部诊断、Release 移除且外部验收守恒。
+注册使用稳定 Channel、冷路径互斥和安全发布；时钟继续 ADR-008 的启动探测/主备采样合同。未来 V2 MPSC 不改变当前显式入口选择，也不提前实现动态队列派发。
+上述内容取代 I2 草案候选；详见 [ADR-011](./ADR-011-v1-producer-channel.md)、[正式计划](./MILESTONE2_I2_IMPLEMENTATION_PLAN_CHS.md)、[I2 动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)。
+本次仅文档交付与骨架核验；I2 生产实现和真实测试/性能门禁仍待完成。文档核验见 [交付记录](./I2_GUIDE_DOCUMENT_VALIDATION_20260913_CHS.md)。
+
+## 2026-09-13 多 Appender 补充冻结
+
+接受 [ADR-012](./ADR-012-v1-multi-appender.md)：一个 Logger 多目标、动态列表、处理时过滤、独立时区；Producer 粗位图来自全部 Appender levels 并集。文件 reset 的 I/O 失败策略留待 I4 讨论，不能默认全事务。
+
+
+### 2026-09-15 用户修订：Console 默认输出
+
+用户不需要 NullAppender，生产采用 Console/TextFile；历史 Null/Text 与 I3 Backend/NullSink 规划由此覆盖。
+空 Appender 配置按缺省目标语义规范化为 Console，不因过滤/禁用/文件失败临时回退。I3 前移基础文本格式化与 Console 真实输出；
+I2 仍只完成配置模型与 Producer/Channel。实施和最新静态进度见 [主指南 N](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md#i2-current-next)。
+
+
+## 2026-09-15：用户接受 Logger 直接写入与自动上下文
+
+同意取消业务显式 bind：AsyncLogger::try_log 先验证/过滤，再经 TLS 自动取得 ProducerContext。
+首条通过过滤可能分配，上下文就绪后稳态不分配；内部注册无 mutex/spinlock，CAS 发布，关停后统一回收。
+public ProducerHandle/BindResult 不再是主要接口；首次失败通过 LogResult context 阶段报告，不能当 Ring full。
+Logger 身份不复用，TLS 缓存不能仅以地址区分实例；生产线程与 Logger 的退出寿命必须验证。
+V1 固定 SPSC，V2 再按频率切换 SPSC/MPSC，顺序/滞回/回收另议；不将配置命令队列候选一并冻结。
+完整合同见 [ADR-013](./ADR-013-v1-automatic-producer-context.md)；逐文件步骤见 [新主指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)。
+本次只记录决定与指南，不代表生产实现或性能已经完成。

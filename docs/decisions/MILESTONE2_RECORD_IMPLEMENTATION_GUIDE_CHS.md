@@ -1,6 +1,7 @@
 # QLog 里程碑二 Record 实现指南：V1 冻结版
 
-2026-09-10 实现进度：hash/types/encoder 基线已验证；下一步 decoder，I1 整体验收仍待完成。证据见 [2026-09-10 修复与验证报告](./I1_HASH_ENCODER_VALIDATION_20260910_CHS.md)。
+> 多 Appender 最新合同：[ADR-012](./ADR-012-v1-multi-appender.md)。一个 Logger 可分发多个目标，配置 reset 支持增删/替换；处理时过滤，各 Text 目标可独立时区。旧文中的单 Sink 流程须按该合同扩展。
+> 2026-09-13 当前状态：I1 已按 WSL2 开发范围收口；I2 设计已冻结，生产骨架已开始，尚未验收。合同见 [ADR-011](./ADR-011-v1-producer-channel.md)，执行见 [I2 计划](./MILESTONE2_I2_IMPLEMENTATION_PLAN_CHS.md) 与 [I2 动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)。原生 Linux 发布复核与自动 CI 后续补齐。
 
 - 状态：D1～D6、H1～H4 已冻结；ABI 声明与测试已完成
 - 日期：2026-09-05
@@ -9,7 +10,7 @@
 - 参数基线：[ADR-009：V1 参数类型、字符串与 packed tagged arguments](./ADR-009-v1-packed-tagged-arguments.md)
 - 格式化基线：[ADR-010：V1 format hash、c20_format、解析缓存与工作量边界](./ADR-010-v1-backend-c20-format.md)
 - I1 执行规范：[I1 Record Core 企业级开发规范](./MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md)
-- 当前动手入口：[I1-C 编解码与 I1 收口动手指南（合并第 2、3 轮）](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md)
+- 当前动手入口：[I2 Producer/Channel 动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)
 - 前置交付：[里程碑一完成报告](./MILESTONE1_COMPLETION_REPORT_CHS.md)
 - 目标：把 V1 Record、hash、formatter、cache 和工作量合同转换为紧凑的实现与验收任务
 
@@ -29,7 +30,7 @@
 剩余 G0 门禁已经由 ADR-010 的 2026-09-05 修订一次性关闭：BQLog 式四路 CRC32C 派生的
 `crc32c4x64_v1`、自动索引的有界 `c20_format` 子集、固定 256-entry 解析缓存和 64KiB 完整文本行
 均已冻结。输入、字段、spec、width、precision 与输出上限共同限制最坏工作量，不另设重复的 work-unit
-计数。本轮没有创建 codec、Logger、Backend 或 Sink 生产代码；下一实现任务可以直接进入独立 Record Core。
+计数。I1 Record Core 已完成 WSL2 阶段收口；当前按 ADR-011 进入 I2，不重新实现 codec。
 
 V1 不实现 Compress Sink、二进制文件、离线解析、源码位置、UTF-16/UTF-32、用户 formatter、
 CallsiteId、tagless static record、MPSC 或跨线程严格全序。
@@ -106,7 +107,7 @@ Channel 地址一旦发布，在 Backend 退出且相关 Ring 排空前不得改
 停止新日志调用
   -> 禁止新 Channel 注册
   -> 请求 Backend 排空
-  -> accepted == processed
+  -> 队列排空（验收语义 accepted == processed，不依赖 Release 内置计数）
   -> Backend 与 Sink 退出
   -> 销毁 Channel/Ring/Logger 元数据
 ```
@@ -395,8 +396,8 @@ calls++
   -> accepted++
 ```
 
-不支持、metadata 非法和 too-large 的确切统计归属必须在实现统计模块前统一命名；无论采用何种命名，
-这些路径都不能读取时钟或调用 reserve。
+上述计数为 Debug 条件诊断；Release 由外部测试观测。metadata 非法和 too-large 属于 rejected_pre_admission，
+编译期不支持不形成运行调用；所有这些拒绝路径都不读取时钟或 reserve。精确映射见 I2 动手指南 E/F。
 
 参数数量、tag 和固定宽度值的单项大小可在编译期确定；字符串并非都能编译期计长：数组 extent 可为
 编译期常量，`std::string[_view]`/`std::u8string[_view]` 从运行期 `size()` 取长度，`qlog::cstr` 则在调用方
@@ -457,7 +458,8 @@ immutable RecordValidationPolicy
 record bytes 与 workspace，并在 Frame release 或 workspace 下次复用这两个时点中较早者失效。
 
 `RecordValidationPolicy` 只提供 O(1) 的合法 level 集合与 `fallback_timestamp_allowed`；不含 Channel 指针、
-回调或动态容器。public `LogLevel` 的实际 wire 映射和 policy 构造在 I2 冻结，I1 不得照搬其他项目的数值。
+回调或动态容器。ADR-011 已冻结 public LogLevel 为 verbose/debug/info/warning/error/fatal=0…5；policy 允许六个合法值，
+不能由动态过滤 bitmap 构造。I1 本身仍接受调用方传入的通用 policy。
 
 验证顺序：
 
@@ -734,18 +736,12 @@ I1-A 的实现归属和不变量以企业级规范第 5.1、6.1、7.4、8.1 节�
 `encoded_size` 根据 normalized `ArgumentTag` 计算。该分层是 compile-time admission、runtime
 normalization 与 wire encoding 的边界，不得为减少类型数量而合并。
 
-当前实施按 [合并动手指南](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md) 完成：A 章先收口最新 hash 草稿，
-再实现四个 codec 文件、四个 u64 level mask policy 和 16B DecodedArg。维护者负责生产代码与生产接线；
-Codex 负责后续测试/benchmark 支持、执行和报告。此次只更新文档，不把 hash/codec/I1-D 标记完成。
-
-退出条件：所有 tag、边界值、0/1/32/33 参数、字符串/null、overflow 和 corruption 用例通过
-Debug/Release/ASan/UBSan；known vectors、constexpr、SW/HW hash-only/copy-and-hash 逐位一致；
-copy canary 完整，Decoder 永不越界。
+I1 已按 WSL2 开发范围收口，详见 [I1-D 验收](./I1D_ACCEPTANCE_20260913_CHS.md)；不重复启动旧 hash/decoder 待办。
 
 ### I2：Producer 与 Channel 链路
 
 一次完成稳定地址 Channel、ProducerHandle/AsyncLogger 冷路径绑定、动态 category/level 过滤、精确计长、
-一次 reserve、admission timestamp、Ring 内直接编码、commit/abort 和 Producer 统计。
+一次 reserve、admission timestamp、Ring 内直接编码、commit/abort 和条件诊断统计；执行合同见 ADR-011 与 I2 动手指南。
 
 退出条件：同线程双 Logger 使用独立 Channel；失败不污染 Ring；filtered/invalid/too-large/full 路径符合时钟与
 计数合同；稳态无 map、锁、分配、阻塞或共享 RMW。
@@ -826,20 +822,22 @@ tail latency、吞吐、CPU、RSS 与 dropped/processed 数据齐全；QLog Text
 
 ## 16. 统计守恒
 
-目标守恒式：
+ADR-011 冻结：Debug 启用对应诊断，普通 Release 编译移除字段与更新，不提供假零统计 API。
+对有效 Handle、调用已终结且计数未溢出的验证区间：
 
 ```text
 calls == filtered + rejected_pre_admission + attempted
-attempted == accepted + dropped_full
+attempted == accepted + dropped_full + failed_after_attempt
 shutdown drain 后 accepted == processed
 processed == sink_success + sink_failure + decode_failure + format_failure
 ```
 
-`rejected_pre_admission` 至少细分 unsupported/invalid_metadata/too_many_args/too_large。若 compile-time
-拒绝不形成运行时调用，则不进入任何运行时计数。
-
-统计本身不能把共享原子 RMW 加回 Producer 稳态。每 Channel 单 Producer 计数或线程私有批量汇总优先；
-最终实现前应单独冻结观测开销。
+最后两式由 I3/I4 的终结语义验收；I2 不声称已完成 Backend。
+invalid_handle 无 Channel，由测试驱动单独观察；编译期拒绝不产生运行计数。
+measure 阶段内部错误归 pre-admission；非 full reserve 错误和 encode_abort 归 failed_after_attempt。
+Debug 停止后聚合；Release 使用调用结果、Record ID 与测试 consumer 外部核对。
+shutdown 按无 Producer 且队列排空实现，不依赖已编译移除的 accepted/processed 计数。
+诊断宏需在 public 模板/库之间一致传播，不改变 Ring/decoder 校验合同。
 
 ## 17. 性能门禁
 
@@ -875,19 +873,8 @@ BQLog Text 比较；BQLog Compress 单列。
 
 ## 18. 下一实现入口
 
-D1～D6 与 H1～H4 已全部冻结，I0 完成，I1-A 保留主规范中的已有实现/验证记录。
-2026-09-09 当前入口是 [合并第 2、3 轮动手指南](./MILESTONE2_I1CD_HANDS_ON_GUIDE_CHS.md)：
-先补齐最新 I1-B hash 草稿，再完成 I1-C；Codex 在生产交接后补齐 I1-D 验证。
-I1 最终交付仍包含：
-
-```text
-format_hash
-+ ptr/cstr wrappers and argument traits
-+ checked measure
-+ raw-pointer + explicit-length encoder/decoder
-+ known-vector/golden/round-trip/corruption/compile-fail tests
-```
-
-具体合同以 [I1 Record Core 企业级开发规范](./MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md)
-为准。I1 不接 Ring、不创建 Logger，也不实现 `c20_format`。这样保持测试边界清晰，同时避免把同一层拆成
-多轮小任务。维护者不负责编写测试；指南与文档交付不等于上述生产实现或验收已经完成。
+I1 已按 WSL2 开发范围收口，下一步按 [ADR-011](./ADR-011-v1-producer-channel.md) 和
+[I2 执行计划](./MILESTONE2_I2_IMPLEMENTATION_PLAN_CHS.md) 实现 Producer/Channel。
+逐文件、逐函数步骤见 [I2 动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)。
+维护者提供生产实现及生产接线，Codex 负责测试与验证；后续用户授权优先。
+当前只有文档交付，I2 生产实现、测试矩阵与性能基线尚未完成。
