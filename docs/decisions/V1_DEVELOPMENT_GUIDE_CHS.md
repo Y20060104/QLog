@@ -1,5 +1,7 @@
 # QLog V1 开发指南：SPSC 基础设施
 
+> 2026-09-17 format覆盖：[ADR-016](./ADR-016-v1-bqlog-worker-format.md)优先于本文旧的严格花括号、参数数目匹配、默认文本表示和解析缓存合同。Producer原样copy/hash；worker按BQLog当前UTF-8顺序扫描。当前起点与剩余实施见[剩余V1指南](./V1_REMAINING_IMPLEMENTATION_GUIDE_CHS.md)。本文未被覆盖的wire/参数/长度规则继续有效，历史验收记录不改写为当前实现状态。
+
 > 历史指南：其中长期 Handle 相关内容已由 ADR-004 取代，ADR-004 中的 RAII
 > 短期 Handle 又由 ADR-005 取代。当前实现只以
 > `V1_TWO_MILESTONES_GUIDE_CHS.md`、ADR-005、ADR-007～ADR-010 与里程碑二实现设计指南为准。

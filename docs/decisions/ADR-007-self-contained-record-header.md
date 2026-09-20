@@ -1,5 +1,7 @@
 # ADR-007：32B 自包含 RecordHeader 与统一格式记录
 
+> 2026-09-17 format覆盖：[ADR-016](./ADR-016-v1-bqlog-worker-format.md)优先于本文旧的严格花括号、参数数目匹配、默认文本表示和解析缓存合同。Producer原样copy/hash；worker按BQLog当前UTF-8顺序扫描。当前起点与剩余实施见[剩余V1指南](./V1_REMAINING_IMPLEMENTATION_GUIDE_CHS.md)。本文未被覆盖的wire/参数/长度规则继续有效，历史验收记录不改写为当前实现状态。
+
 - 状态：已接受（本文冻结 D1/D2；D3 由 ADR-008 冻结；D4～D6 由 ADR-009 冻结；Backend formatter 由 ADR-010 取代原 fmt 决定）
 - 日期：2026-09-02
 - 影响范围：QLog V1 Ring Record、Channel 元数据、Producer/Backend 边界

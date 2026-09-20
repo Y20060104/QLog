@@ -1,5 +1,7 @@
 # ADR-012：V1 多 Appender、处理时过滤与独立时区
 
+> 2026-09-16 当前补充：[ADR-015](./ADR-015-v1-backend-control-and-output.md) 已确定单管理线程无锁邮箱、Backend 独占、兼容复用与文件失败状态机。本文“管理锁”和“I4 前待议故障策略”均由新 ADR 覆盖；多目标过滤/Console默认合同保留。
+
 > 2026-09-15 覆盖说明：以 [ADR-013](./ADR-013-v1-automatic-producer-context.md) 为当前 Producer 入口合同。
 > 以下涉及显式 bind/public Handle、禁止 TLS、注册 mutex、owner vector 的历史条款不再生效。
 > Appender 管理锁也不再作为下一步实施方案；无锁配置交接的线程数/队列/API 尚待 I3 商榷，未随自动入口一并确认。
@@ -112,3 +114,15 @@ I3 完成 Appender 抽象基类、真实 Console、Backend 和排空；Console �
 I4 接入 TextFile、文件生命周期/失败合同、多目标独立配置与格式缓存的后续优化；共用基础格式化不再重复实现。
 Console 接收完整行入缓冲与实际终端写入成功分开记录；慢 I/O 均在释放 Frame 后，测试需捕获输出字节而非使用真实终端测速。
 I2 test consumer 可以无输出地核对 Record，但它只是测试设施，不能注册成一个生产 NullAppender。
+
+
+## 2026-09-16 R3（替换修订）：平铺配置 + 枚举选择 + 运行期继承
+
+用户最终确认采用平铺 AppenderConfig：name/type/enabled/filter/text/console/file，替换前次 variant 配置组合方案。
+保留 AppenderType::Console/TextFile；不引入 AppenderCommonConfig/AppenderTargetConfig 或动态 property_value 树。配置值不使用继承、不持有运行资源。
+公共字段始终校验；type 为 Console 时仅校验并使用 console，忽略 file；type 为 TextFile 时仅校验并使用 file，忽略 console；非法 type 在准备阶段拒绝。
+未选中字段允许保留配置值，不产生资源，也不影响创建或兼容判断。类型与专用字段的有效组合由校验和解析规则保证。
+Appender 保留抽象虚基类、虚析构、公共非虚控制入口和受保护虚输出扩展点；ConsoleAppender/TextFileAppender 继承 Appender，BackendSession 以 vector<unique_ptr<Appender>> 独占持有。FileAppenderBase 仅在复用文件行为需要时引入。
+工厂在冷路径按 type 创建派生运行对象；reset 按 name 匹配，比较 type、text.batch_bytes 和对应 file.path/console.stream 决定兼容复用；未选中字段不参与比较。过滤/时区/周期等兼容更新沿用原有规则。
+空列表规范化为 name="console"、type=AppenderType::Console，其余字段使用默认值；等级合并读取 filter.levels，disabled 仍参与。
+完整类型、示例及实施步骤见 [V1收尾指南§1.1](./V1_FINISH_IMPLEMENTATION_GUIDE_CHS.md#11-appenderconfig)。生产字段补齐和调用点修正仍由维护者实施。本次仅替换文档，不构建、不测试。

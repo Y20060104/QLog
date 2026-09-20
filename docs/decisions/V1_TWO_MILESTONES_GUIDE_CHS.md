@@ -1,13 +1,19 @@
 # QLog V1 后续两里程碑实现指南
 
+> 2026-09-17 format覆盖：[ADR-016](./ADR-016-v1-bqlog-worker-format.md)优先于本文旧的严格花括号、参数数目匹配、默认文本表示和解析缓存合同。Producer原样copy/hash；worker按BQLog当前UTF-8顺序扫描。当前起点与剩余实施见[剩余V1指南](./V1_REMAINING_IMPLEMENTATION_GUIDE_CHS.md)。本文未被覆盖的wire/参数/长度规则继续有效，历史验收记录不改写为当前实现状态。
+
+> 2026-09-16 R2：用户要求文件恢复、共享/独立后台、低空间唤醒按BQLog，并明确采用worker mutex/CV。低空间/full路径允许exchange与短暂等待锁，正常低占用及Ring/Context注册协议不改；最新实施见[V1收尾指南](./V1_FINISH_IMPLEMENTATION_GUIDE_CHS.md)和[ADR-015](./ADR-015-v1-backend-control-and-output.md)。
+
+> 2026-09-16 当前执行入口：[V1 一轮收尾指南](./V1_FINISH_IMPLEMENTATION_GUIDE_CHS.md)，新决定 [ADR-015](./ADR-015-v1-backend-control-and-output.md)。两个顶层里程碑不变；剩余 I2/I3/I4 在一份指南中连续实施，测试暂后置，不能因此标记 V1 已验收。
+
 > 当前 I2 接口已由 [ADR-013](./ADR-013-v1-automatic-producer-context.md) 更新为 Logger::try_log + TLS 自动上下文；旧显式绑定/冷注册锁说明失效。后续以 [主指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md) 和 [计划](./MILESTONE2_I2_IMPLEMENTATION_PLAN_CHS.md) 为准。
 
 > 多 Appender 最新合同：[ADR-012](./ADR-012-v1-multi-appender.md)。一个 Logger 可分发多个目标，配置 reset 支持增删/替换；处理时过滤，各 Text 目标可独立时区。旧文中的单 Sink 流程须按该合同扩展。
 > 2026-09-13 当前状态：I1 已按 WSL2 开发范围收口；I2 设计已冻结，生产骨架已开始，尚未验收。合同见 [ADR-011](./ADR-011-v1-producer-channel.md)，执行见 [I2 计划](./MILESTONE2_I2_IMPLEMENTATION_PLAN_CHS.md) 与 [I2 动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)。原生 Linux 发布复核与自动 CI 后续补齐。
 
-- 状态：唯一生效的总体执行计划
+- 状态：两里程碑总体结构；剩余实施以2026-09-17新指南为准
 - 日期：2026-08-28
-- 最后修订：2026-09-05
+- 最后修订：2026-09-17
 - 适用范围：从 SPSC RingBuffer 到可演示、可公平基准的异步日志 V1
 - 分工：你实现生产代码；Codex 负责测试、构建门禁、benchmark 执行与结果分析
 
@@ -18,7 +24,7 @@
 
 - Linux x86-64，纯 C++20。
 - 每个稳定 `(生产线程, AsyncLogger)` 独占一个 SPSC Channel，一个后台线程消费多个 Channel。
-- Producer 稳态热路径不解析/格式化、不分配、不加锁、不阻塞，不执行共享原子 RMW。
+- Producer稳态不解析/格式化、不分配；低占用路径不拿worker锁，低空间/full允许ADR-015的exchange及mutex/CV通知。
 - 固定容量，满时 `drop_new`；失败不得推进任何游标。
 - 自研 `c20_format` 只在后台线程执行。
 - BQLog 是主要源码参照，spdlog、Quill 和 NanoLog 用于补充对照；不逐行移植。
@@ -101,23 +107,25 @@ try_read    -> 读 payload -> release
 
 ```text
 业务线程
-  -> ProducerHandle
+  -> AsyncLogger::try_log + TLS ProducerContext
   -> 每个（线程, AsyncLogger）SPSC Channel
-  -> 单后台线程公平扫描
-  -> Record 解码与 c20_format 到 BackendWorker 私有 64KiB scratch
+  -> 所属共享或独立worker按Session/Channel公平扫描
+  -> Record解码与BQ UTF-8 scanner到worker正文scratch；各目标组完整行（各64KiB）
   -> ConsoleAppender 完整行缓冲/输出 / TextFileSink 接收完整行到内存 batch
-  -> release Frame
+  -> release Frame + publish_reclaimed
   -> TextFileSink 执行可能阻塞的 write/fdatasync
 ```
 
-### 实现顺序
+### 历史能力分组与当前执行顺序
+
+I0～I4是保留的能力分组，不是剩余模块的先后顺序。当前先完成B0/B诊断，再C formatter→D Appender/batch→E邮箱→F worker→G/H公共API与示例，详见[剩余V1指南](./V1_REMAINING_IMPLEMENTATION_GUIDE_CHS.md)。
 
 1. I0 已完成：ADR-007～ADR-010、RecordHeader/ArgumentTag、静态断言和 ABI tests；
 2. I1 按 [企业级开发规范](./MILESTONE2_I1_RECORD_CORE_DEVELOPMENT_GUIDE_CHS.md) 一次完成 hash、
    包装器/traits、checked measure、独立的裸指针加显式长度 codec 和完整测试；
-3. I2 一次完成 Channel/ProducerHandle/AsyncLogger、过滤、一次 reserve、时间戳、Ring 直写和 Debug 条件诊断（Release 外部验收）；
+3. I2 一次完成 Channel/TLS ProducerContext/AsyncLogger、过滤、一次 reserve、时间戳、Ring 直写和 Debug 条件诊断（Release 外部验收）；
 4. I3 一次完成 Backend 公平扫描、固定解码槽、ConsoleAppender、错误隔离和关停排空；
-5. I4 一次完成 `c20_format`、固定 cache、BackendWorker 私有 64KiB scratch、Sink 内存 batch、
+5. I4 一次完成 BQ UTF-8 scanner、BackendWorker正文/完整行各64KiB scratch、Sink 内存 batch、
    TextFileSink、demo 和端到端 benchmark。
 
 ### 已冻结的 Record/Backend 设计点
@@ -134,13 +142,11 @@ try_read    -> 读 payload -> release
   调用一次 `strlen` 并缓存长度，调用方保证 NUL 终止，null wrapper 编码 `NullUtf8`；
 - [已冻结] D6 使用 `[u8 tag][payload]` packed LE 协议，`args_alignment = 1`，禁止未对齐 typed-pointer 解引用；
 - [已冻结] `crc32c4x64_v1` 使用 BQLog 式四路 CRC32C 原始折叠得到 64-bit hash，raw 0
-  规范化为 1，Header 的 0 保留为 sentinel；字面量仅可把逐位一致的 constexpr hash 作为优化，
-  运行时 format 在 reserve 成功后执行 fused copy-and-hash；
-- [已冻结] 严格自动索引 `c20_format` 子集、256-entry/4-way BackendWorker 私有解析缓存、
-  8KiB format、32 fields、32B spec、width 4096、precision 64，以及包含元数据前缀与换行的
-  64KiB 完整文本行；禁止回溯、递归和完整 format 重扫，不设置独立 work-unit 上限；
+  规范化为 1，Header 的 0 保留为 sentinel；公共数组与runtime入口均在reserve成功后fused copy-and-hash，
+  constexpr只保留I1参考算法能力；
+- [已冻结，ADR-016] Producer原样format复制；worker按BQLog当前UTF-8顺序扫描，零参数raw，宽松字段与顺序参数；无V1解析缓存。format<=8192、arg_count<=32、完整行<=65536B，安全适配见新ADR。
 - [已冻结] Text 路径先在私有 scratch 形成完整行，再交给 Sink 内存 batch；batch 接收完成后
-  release Frame，可能阻塞的 `write`/`fdatasync` 位于 release 之后。精确合同见 ADR-010。
+  release Frame并publish_reclaimed，可能阻塞的 `write`/`fdatasync` 位于发布回收之后。精确合同见ADR-016/015。
 
 设计门禁已经关闭；实现必须按照 ADR-010 的 hash 兼容性、Backend 固定分配和最坏工作量边界执行。
 
@@ -156,9 +162,9 @@ try_read    -> 读 payload -> release
 
 - 每个 Channel 保持 FIFO；不承诺跨线程严格全序。
 - `calls == filtered + rejected_pre_admission + attempted`、
-  `attempted == accepted + dropped_full + failed_after_attempt`；Debug/诊断构建及 Release 外部测试验证，shutdown 后
-  `accepted == processed`。
-- Producer 热路径没有 format parser、稳态分配、锁、阻塞或共享 RMW。
+  `attempted == accepted + dropped_full + failed_after_attempt`；Debug/诊断构建及Release外部测试验证；仅正常排空、无worker/Frame故障且计数未溢出的shutdown后要求
+  `accepted == processed`，失败路径以backend_failed/drain_incomplete报告。
+- Producer无format parser与稳态分配；低占用/压力唤醒分开验收，不把压力分支称为无锁。
 - Sink 只接收完整日志行；内存 batch 接收后先 release Frame，再执行可能阻塞的文件 I/O，
   且不得保留 Ring 或 Backend scratch view。
 - TextFileSink 正确处理短写和 `EINTR`；普通 flush 与 durable flush 分开定义。
@@ -171,22 +177,12 @@ try_read    -> 读 payload -> release
 
 ## V1 之后再考虑
 
-MPSC、mmap 恢复、压缩、VLQ、字符串驻留、跨线程全序、多 Backend、审计级持久化
+MPSC、mmap 恢复、压缩、VLQ、字符串驻留、跨线程全序、同一Logger多消费者Backend、审计级持久化
 和完整 Release 损坏隔离均不进入 V1。只有基准证明具体瓶颈后，才为其中一项建立
 独立实验。
 
 ## 当前下一步
 
-2026-09-13，用户确认冻结 I2；显式 Producer 绑定、BQLog 式动态位图/category 过滤、
-Debug 条件诊断，以及运行中注册/停止 Producer 后排空的生命周期合同见
-[ADR-011](./ADR-011-v1-producer-channel.md)。
+配置A已实现，诊断B部分写入并有接线阻塞；先按[剩余V1指南](./V1_REMAINING_IMPLEMENTATION_GUIDE_CHS.md)完成B0/B，再做worker formatter、Appender/batch、邮箱、共享/独立worker与公共API闭环。现状来自源码审计，不代表本轮构建/测试通过。
 
-按 [I2 执行计划](./MILESTONE2_I2_IMPLEMENTATION_PLAN_CHS.md) 开始，详细步骤见
-[I2 动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md) 0/A/B/C：
-先实现等级/policy、过滤表和 admission clock 基础切片，再完成 Channel/绑定与 Producer 直写。
-生产实现和门禁尚未开始；指南交付不等于 I2 完成。
-
-I1 保留独立模块不变量，I3/I4 按原顺序承接；R1 仅为已回退历史实验。
-
-
-2026-09-15 当前覆盖决定：生产取消 NullAppender，空 Appender 配置默认 Console；I3 包含 Console 所需基础格式化，I4 扩展 TextFile。详见 [I2 主指南 N](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md#i2-current-next)，历史测试基线不代表生产输出类型。
+I1保持独立wire/hash模块；ADR-013自动Context、ADR-014数组入口、ADR-015管理/恢复/唤醒和ADR-016格式共同构成当前合同。历史显式绑定、strict plan/cache与旧未完成状态不再作为执行步骤。

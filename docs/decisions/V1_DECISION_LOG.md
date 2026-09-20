@@ -1,5 +1,9 @@
 # V1 决策日志
 
+> 2026-09-19实现进度：正文 `render_message_utf8`、15种tag、有界padding和安全扩展已完成并验证，见[formatter实现与验证报告](./V1_FORMATTER_IMPLEMENTATION_REPORT_20260919_CHS.md)。未完成compose_line、worker、Appender和管理闭环；不将正文验证扩写为整个V1验收。
+
+> 2026-09-17 format覆盖：[ADR-016](./ADR-016-v1-bqlog-worker-format.md)优先于本文旧的严格花括号、参数数目匹配、默认文本表示和解析缓存合同。Producer原样copy/hash；worker按BQLog当前UTF-8顺序扫描。当前起点与剩余实施见[剩余V1指南](./V1_REMAINING_IMPLEMENTATION_GUIDE_CHS.md)。本文未被覆盖的wire/参数/长度规则继续有效，历史验收记录不改写为当前实现状态。
+
 当前 I2 Producer 入口以 [ADR-013](./ADR-013-v1-automatic-producer-context.md) 为准；下方日期记录中的显式绑定/注册 mutex 是已被覆盖的历史。
 
 > 本目录记录新日志项目的设计。它不属于 BQLog 实现；BQLog 仅作为参考实现。
@@ -8,13 +12,13 @@
 
 - 状态：已接受
 - 日期：2026-08-15
-- 最后修订：2026-09-09
+- 最后修订：2026-09-17
 - 目标：Linux C++20 实时游戏服务器和实时仿真服务。
 - V1 拓扑：每个 `(生产线程, AsyncLogger)` 绑定一个独立 SPSC Channel，并由一个后台线程作为消费者。
-- 生产者约定：在正常日志路径中，不进行格式化、稳态堆分配、加锁、阻塞或共享原子读-改-写操作。
+- 生产者约定：稳态不解析/格式化、不分配；普通低占用不拿worker锁，低空间/full按ADR-015允许exchange及短暂mutex/CV通知。
 - 背压：固定内存，通道满时采用 `drop_new`。
 - 顺序：仅保证每个线程内 FIFO；不保证严格的跨线程全序。
-- 文本格式化：推迟到后台线程，并在 V1 中使用 QLog 自研 `c20_format` 实现；BQLog 只作为功能与性能对照。
+- 文本格式化：worker按ADR-016对齐BQLog当前UTF-8顺序扫描及可定义输出行为；保留QLog有界资源和数值安全适配。
 
 ## 已接受的决策
 
@@ -23,7 +27,7 @@
 3. [已由决策 40 取代] 每个调用点在记录中由运行时分配的 `uint32_t` `CallsiteId` 表示，而不是原始指针。
 4. [已由决策 40 取代] 调用点注册是冷路径操作。ID 缓存在调用点；生产者不会为每个事件查询 map 或分配 ID。
 5. [已由决策 41 取代；`ClockPolicy` 抽象保留] 使用编译期 `ClockPolicy` 边界，正确性测试可以注入简单/伪时钟。具体 V1 时间策略见 ADR-008。
-6. 后台线程唤醒采用混合方式：有工作流入时主动轮询，空闲后进入等待。唤醒协调不得为每次热路径日志调用增加共享 RMW 操作。
+6. [已由ADR-015 R2覆盖] 后台线程唤醒采用混合方式：有工作流入时主动轮询，空闲后进入等待。唤醒协调不得为每次热路径日志调用增加共享 RMW 操作。
 7. 默认 SPSC 容量为 64 KiB。V1 最大载荷（payload）为 8 KiB。过大的记录会作为整体丢弃并计数；绝不截断。
 8. 普通和回绕载荷（payload）均连续。消费者直接从环形缓冲区存储中解码和格式化，因此 V1 生产路径不需要为环形回绕执行暂存复制。仅当后台线程读取完毕后，才能释放环形缓冲区视图。
 9. 消费者空间回收在累计 32 条记录、4 KiB、切换通道或观察到通道为空时发布，以最先发生者为准。
@@ -140,7 +144,7 @@
     Header/参数都禁止未对齐 typed-pointer 解引用。所有 format 来源继续逐 Record 深拷贝，
     CallsiteId/tagless static record 推迟为 V2 基准实验。64 位 hash、Backend 格式化、format cache 和
     Text Sink 工作量上限冻结前仍不开始 codec。
-43. V1 取消外部 `{fmt}` 依赖，Backend 文本格式化改为 QLog 自研 `c20_format`。字面量与运行时
+43. [其中公共literal hash/strict格式/缓存行为已由ADR-014/016覆盖，wire及I1边界保留] V1 取消外部 `{fmt}` 依赖，Backend 文本格式化改为 QLog 自研 `c20_format`。字面量与运行时
     string/view 使用同一个日志 API 语义、同一 Record 编码和同一 Backend parser；差异仅是长度/hash
     可从编译期 extent 还是运行期 `size()` 取得。Producer 不解析占位符，参数 tag 由 C++ 类型决定，
     固定宽度大小可编译期确定，字符串长度仍按数组 extent、`size()` 或有界 `cstr` 扫描取得。
@@ -157,7 +161,7 @@
     完整字节验证命中，per-set round-robin 淘汰；category/level 不影响语法 plan，因此不进入该 cache key。
     ABI 与 G0 至此完成，后续实现压缩为 I1 Record Core、I2 Producer/Channel、I3 Backend/NullSink、
     I4 Text/benchmark 四个密集任务，不再为单个 helper 建立一轮。
-45. ADR-010 的 2026-09-05 修订取代决策 44 的 hash、precision、工作量与 Text 提交边界：format hash
+45. [其中公共literal hash/strict格式/缓存行为已由ADR-014/016覆盖，wire及I1边界保留] ADR-010 的 2026-09-05 修订取代决策 44 的 hash、precision、工作量与 Text 提交边界：format hash
     改为 `crc32c4x64_v1`，即 BQLog 式四个 CRC32C lane 经固定旋转折叠成 64 位 raw hash；QLog 将 raw 0
     规范化为 stored 1，Header 的 0 继续只表示“未计算”。字面量可用逐位一致的 constexpr 软件参考实现，
     运行时 format 只在 reserve 成功并取得 admission timestamp 后 fused copy-and-hash；二者仍是同一 Record。
@@ -170,7 +174,7 @@
     4-way、BackendWorker 私有 parse cache。Text 路径先在 worker 私有 scratch 生成完整行，再交给 Sink
     自有内存 batch，随后 release Frame；可能阻塞的 `write/fdatasync` 必须在持帧区间之外。该顺序既保证
     Sink 不收到 formatter 半行，也不让磁盘 I/O 延迟 Ring 空间回收。
-46. I1 以独立 Record Core 作为一个密集交付，不接 Ring、Channel、Logger、时钟采样、Backend、formatter
+46. [其中公共literal hash/strict格式/缓存行为已由ADR-014/016覆盖，wire及I1边界保留] I1 以独立 Record Core 作为一个密集交付，不接 Ring、Channel、Logger、时钟采样、Backend、formatter
     或 Sink。I1 定义并拥有 `DecodedArg/DecodedRecordView/DecodeResult`，I3 只拥有固定 32 槽 workspace、
     调用 Decoder、统计并 release Frame。由于 public `LogLevel` 的 wire 数值尚未冻结，且 fallback 合法性
     来自 Channel，I1 使用只含“合法 level 集合 + fallback 是否允许”的不可变纯值
@@ -226,7 +230,7 @@
 ## 重要限制
 
 - 自包含 Record 只消除了已发布记录对 Callsite、thunk 和模块只读区的依赖。模块卸载前仍须停止调用日志 API，`AsyncLogger`、Channel、category 名称表和 Backend 必须存活到排空。
-- `format_hash` 只能定位候选项；任何基于 format 内容的命中都必须比较长度和完整 bytes。Text parse cache
+- `format_hash` 只能定位候选项；任何基于 format 内容的命中都必须比较长度和完整 bytes。未来若引入Text parse cache（当前V1无此模块），
   不把 category/level 纳入语法身份；未来 Compress 模板表可以纳入两者，其文件内模板编号不进入 Ring。
 - `time_value` 是可能回拨或跳变的墙钟 admission timestamp，只用于日志时间标记；不得据此计算耗时，也不据此声称跨线程全局时间顺序。
 - V1 不承诺审计级持久性，也不保证机器断电后日志仍然存在。
@@ -244,6 +248,8 @@
 - [ADR-009：V1 参数类型、字符串与 packed tagged arguments](./ADR-009-v1-packed-tagged-arguments.md)
 - [ADR-010：V1 format hash、c20_format、解析缓存与工作量边界](./ADR-010-v1-backend-c20-format.md)
 - [ADR-011：Producer/Channel、动态过滤与条件诊断](./ADR-011-v1-producer-channel.md)
+- [ADR-016：V1 BQLog UTF-8 worker格式](./ADR-016-v1-bqlog-worker-format.md)
+- [ADR-014：V1 BQLog 风格字面量格式入口](./ADR-014-v1-bqlog-style-literal-format.md)
 
 ## 架构规范
 
@@ -305,3 +311,62 @@ Logger 身份不复用，TLS 缓存不能仅以地址区分实例；生产线程
 V1 固定 SPSC，V2 再按频率切换 SPSC/MPSC，顺序/滞回/回收另议；不将配置命令队列候选一并冻结。
 完整合同见 [ADR-013](./ADR-013-v1-automatic-producer-context.md)；逐文件步骤见 [新主指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)。
 本次只记录决定与指南，不代表生产实现或性能已经完成。
+
+## 2026-09-16：接受 BQLog 风格字面量格式入口
+
+参考 BQLog 的 const STR& 调用方式，QLog V1 接受 const char (&format)[N] 便利重载：保留 char[N] 的数组长度，以末尾 NUL 得到有效字节数，避免 strlen，再转发到现有 FormatView Producer 入口。
+BQLog 的实际 hash 发生在 reserve 成功后的格式复制阶段；QLog 同样保持运行时 FormatHashDispatch。本决定不承诺编译期 format hash，不新增 NTTP、宏、UTF-16/UTF-32 或普通调用方可填写的非零 hash。
+数组入口不复制 Gate、Context、measure、reserve、clock、encode、commit/abort；过滤和 I2 顺序仍由基础 FormatView 入口负责。动态字符串继续显式提供 pointer + length 或 string_view。
+完整合同、BQLog 源码锚点、性能取舍和验收要求见 ADR-014。
+
+## 2026-09-16：V1 高性能收尾决定（其中worker/故障策略已由下方R2覆盖）
+
+按用户授权确定 [ADR-015](./ADR-015-v1-backend-control-and-output.md)：对照 BQLog 固定提交与 spdlog v1.15.3 源码，采用单管理线程/单槽无锁邮箱、冷准备与Backend兼容复用、明确部分写入故障、每Logger后台公平轮询和停止后排空。正文每Record渲染一次，按目标时区组装完整行；普通Release不增加Producer通知/管理同步。
+
+实施统一见 [V1 一轮收尾指南](./V1_FINISH_IMPLEMENTATION_GUIDE_CHS.md)。这是成本模型与实现决定，不是跑分结论；本轮没有生产变更、构建或测试。
+
+## 2026-09-16 R2：用户修订第2/3项，尽量参考BQLog
+
+第1项管理邮箱保留。文件改为ENOSPC保缓存自动重试、其他永久写错误记录损失并开新编号文件；后台改为async共享/independent独立、66ms定时等待、半容量/full唤醒，并按用户追加要求采用mutex/CV与waiting标志。先前futex适配候选撤回。普通低占用路径不拿worker锁；压力唤醒分支允许exchange及短暂拿锁，不再声称所有Producer路径严格无锁。共享Logger只detach自己的Session，公共worker由Runtime管理。最新完整方案见[ADR-015](./ADR-015-v1-backend-control-and-output.md)和[V1收尾指南](./V1_FINISH_IMPLEMENTATION_GUIDE_CHS.md)。仅文档规划，无生产修改或测试。
+
+
+## 2026-09-16 R3（替换修订）：平铺配置 + 枚举选择 + 运行期继承
+
+用户最终确认采用平铺 AppenderConfig：name/type/enabled/filter/text/console/file，替换前次 variant 配置组合方案。
+保留 AppenderType::Console/TextFile；不引入 AppenderCommonConfig/AppenderTargetConfig 或动态 property_value 树。配置值不使用继承、不持有运行资源。
+公共字段始终校验；type 为 Console 时仅校验并使用 console，忽略 file；type 为 TextFile 时仅校验并使用 file，忽略 console；非法 type 在准备阶段拒绝。
+未选中字段允许保留配置值，不产生资源，也不影响创建或兼容判断。类型与专用字段的有效组合由校验和解析规则保证。
+Appender 保留抽象虚基类、虚析构、公共非虚控制入口和受保护虚输出扩展点；ConsoleAppender/TextFileAppender 继承 Appender，BackendSession 以 vector<unique_ptr<Appender>> 独占持有。FileAppenderBase 仅在复用文件行为需要时引入。
+工厂在冷路径按 type 创建派生运行对象；reset 按 name 匹配，比较 type、text.batch_bytes 和对应 file.path/console.stream 决定兼容复用；未选中字段不参与比较。过滤/时区/周期等兼容更新沿用原有规则。
+空列表规范化为 name="console"、type=AppenderType::Console，其余字段使用默认值；等级合并读取 filter.levels，disabled 仍参与。
+完整类型、示例及实施步骤见 [V1收尾指南§1.1](./V1_FINISH_IMPLEMENTATION_GUIDE_CHS.md#11-appenderconfig)。生产字段补齐和调用点修正仍由维护者实施。本次仅替换文档，不构建、不测试。
+
+## 2026-09-17：format优先对齐BQLog当前UTF-8 worker
+
+新增[ADR-016](./ADR-016-v1-bqlog-worker-format.md)。Producer不解析花括号，公共数组与runtime入口在reserve后原样copy/hash。worker直接扫描；零参数原样、有参数宽松顺序替换，缺参后仍处理右brace；覆盖旧strict错误/类型文本/参数数目/cache合同。保留I1 wire/CRC32C、UTF-8参数白名单、32参数与64KiB输出边界，数值不安全域作明确安全适配。
+
+剩余工作按[剩余V1指南](./V1_REMAINING_IMPLEMENTATION_GUIDE_CHS.md)：B0/B诊断接线→C formatter→D Appender/batch→E邮箱→F worker/Session/runtime→G/H管理关停和示例。当前Producer已不解析，本轮没有移除已存在的parser、修改生产或运行测试。配置历史验证不代表当前含诊断改动的工作树通过。
+
+## 2026-09-17：QLog formatter职责命名
+
+用户确认内部符号统一为 `FormatSpec`、`render_message_utf8`、`parse_format_spec`、`render_argument`、`apply_padding`，不加bq或q项目缩写前缀。BQLog参考来源及ADR-016格式语义保留。本轮只同步文档；当前源码QFormatSpec的改名留给后续实现。
+
+
+## 2026-09-19：剩余V1代码级指南与flush更正
+
+用户确认五项按推荐，随后明确“flush需要更正和BQLog对齐”。撤销尚未发布的有界flush候选；cache flush持续推进短写，write EINTR重试，write返回0保留后缀；Linux durable同步调用一次fdatasync。Console锁、durable目标范围、同路径限制、当前/历史错误分离按[ADR-017](./ADR-017-v1-output-and-completion.md)。
+
+后续实施统一按[代码级指南](./V1_REMAINING_CODE_IMPLEMENTATION_GUIDE_CHS.md)：基础类型→Appender/I/O→compose_line→冷准备/邮箱→Session→Worker/Runtime→公共API及生命周期一次接线→完整验收。本次不修改生产源码，不重写历史诊断/formatter验收结论。
+
+
+## 2026-09-20 输出层实现
+
+用户授权消除指南模糊造成的空实现；批次、固定错误报告、Appender 状态机、真实 Console/TextFile 与冷工厂已写入生产树。沿用 ADR-017，不引入 flush 预算。具体接口、下一步完整行代码和验证边界见 [新指南](./V1_APPENDER_NEXT_IMPLEMENTATION_GUIDE_20260920_CHS.md) 与 [报告](./V1_APPENDER_IMPLEMENTATION_REPORT_20260920_CHS.md)。
+
+## 2026-09-20 非 worker 交付
+
+用户保留 worker 线程；生产代码通过 WorkerProvider/WorkerAttachment 对接。未安装时明确构造失败；无隐式同步 fallback。detach_ready 与真实 detached 分开，失败接管只在确认执行者释放后进行。非 worker 实现与证据见 V1_NONWORKER_IMPLEMENTATION_REPORT_20260920_CHS.md；旧内部草案由当前实施指南和真实头文件替代。
+
+## V1 完整开发与性能收口
+
+用户授权完成 worker 与最终性能测试。生产默认 Runtime 已实现，共享/独立模式自动接线；登记保持 ADR-015 的 CAS 只增链与 Runtime 退出回收。最终 WSL2 验收见 V1_FINAL_ACCEPTANCE_20260920_CHS.md，性能只采用 performance-release 证据。原生 Linux 发布与外部 CI 运行尚未取得证据，不混同开发完成。

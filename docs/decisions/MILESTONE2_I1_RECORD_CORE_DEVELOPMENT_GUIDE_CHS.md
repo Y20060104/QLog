@@ -1,5 +1,7 @@
 # QLog 里程碑二 I1 Record Core 企业级开发规范
 
+> 2026-09-17 format覆盖：[ADR-016](./ADR-016-v1-bqlog-worker-format.md)优先于本文旧的严格花括号、参数数目匹配、默认文本表示和解析缓存合同。Producer原样copy/hash；worker按BQLog当前UTF-8顺序扫描。当前起点与剩余实施见[剩余V1指南](./V1_REMAINING_IMPLEMENTATION_GUIDE_CHS.md)。本文未被覆盖的wire/参数/长度规则继续有效，历史验收记录不改写为当前实现状态。
+
 > 当前后续入口（2026-09-13）：I1 已按 WSL2 开发范围收口，I2 设计冻结。后续执行 [I2 计划](./MILESTONE2_I2_IMPLEMENTATION_PLAN_CHS.md) 和 [I2 动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)，本文旧任务/行号仅用于 I1 实现历史。
 
 > 2026-09-13 当前状态：Record Core（I1）已按 WSL2 开发范围完成阶段收口。六配置、覆盖率、连续一小时 decoder fuzz、完整性能基线已通过；经用户确认，原生 Linux 发布前复核暂缓，不阻塞后续模块开发。详见 [验收及收口报告](./I1D_ACCEPTANCE_20260913_CHS.md)。下文旧日期进度为历史记录。

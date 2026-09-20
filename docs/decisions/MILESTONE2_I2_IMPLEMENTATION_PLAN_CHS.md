@@ -1,5 +1,15 @@
 # QLog I2 执行计划：自动 ProducerContext
 
+> 2026-09-17 format覆盖：[ADR-016](./ADR-016-v1-bqlog-worker-format.md)优先于本文旧的严格花括号、参数数目匹配、默认文本表示和解析缓存合同。Producer原样copy/hash；worker按BQLog当前UTF-8顺序扫描。当前起点与剩余实施见[剩余V1指南](./V1_REMAINING_IMPLEMENTATION_GUIDE_CHS.md)。本文未被覆盖的wire/参数/长度规则继续有效，历史验收记录不改写为当前实现状态。
+
+> 2026-09-16 R2：用户要求文件恢复、共享/独立后台、低空间唤醒按BQLog，并明确采用worker mutex/CV。低空间/full路径允许exchange与短暂等待锁，正常低占用及Ring/Context注册协议不改；最新实施见[V1收尾指南](./V1_FINISH_IMPLEMENTATION_GUIDE_CHS.md)和[ADR-015](./ADR-015-v1-backend-control-and-output.md)。
+
+> 2026-09-16 推进方式更新：剩余 I2/I3/I4 合并到 [V1 一轮收尾指南](./V1_FINISH_IMPLEMENTATION_GUIDE_CHS.md)；最新管理/文件/后台决定见 [ADR-015](./ADR-015-v1-backend-control-and-output.md)。不再等待三项设计确认；完成实现后集中验收，本轮不运行测试。
+
+> 当前下一批：按 [ADR-014 数组格式入口实现指南](./MILESTONE2_I2_LITERAL_HANDS_ON_GUIDE_CHS.md) 修改两个现有头文件，随后验证实际模板实例化和数组边界。既有 runtime 验证不能替代本批验收；诊断接口仍需细化，I2 完整验收之后再推进 Backend/Console。下文旧阶段快照以本入口为准。
+
+> 2026-09-16 最新静态交接：[runtime 实现后修正与下一步商榷](./MILESTONE2_I2_POST_RUNTIME_REVIEW_CHS.md)。接入层及公共结果已补齐；当前模板语法、mapper 分支、模板头接入与 CMake 尚需修正。先商榷推进顺序，本轮未测试；旧进度以新交接文档为准。
+
 日期：2026-09-15；状态：ADR-013 已接受，生产仍在基础接线阶段，未验收。
 当前入口：[动手指南](./MILESTONE2_I2_HANDS_ON_GUIDE_CHS.md)；决策：[ADR-013](./ADR-013-v1-automatic-producer-context.md)。
 I1 以 [I1-D WSL2 验收](./I1D_ACCEPTANCE_20260913_CHS.md) 为准，不重复启动 Record Core 开发。
@@ -51,3 +61,5 @@ V2：频率测量、滞回、SPSC/MPSC 转换、同生产者跨队列 FIFO 和�
 按 [runtime 下一步指南](./MILESTONE2_I2_RUNTIME_NEXT_GUIDE_CHS.md) §1 修完，再依次恢复公共 LogResult、完成四个 mapper、runtime try_log、根 qlog target 接线。
 这一批只要求 runtime 两整数的真实 Producer→Ring→decoder 验证，literal、Debug 诊断与完整 I2 验收继续保留；输出 Backend 为 I3。
 现有合同足以开展此批，无需重复确认；Appender 动态配置、文件 reset 与 V2 切换留待对应阶段商榷。
+
+literal 方向已按 ADR-014 冻结：BQLog 风格 char[N] 长度入口，运行时 hash；不把普通数组重载误称为编译期 hash。

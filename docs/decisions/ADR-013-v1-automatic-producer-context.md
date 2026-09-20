@@ -1,5 +1,9 @@
 # ADR-013：Logger 直接写入、TLS 自动 ProducerContext 与 V2 路由边界
 
+> 2026-09-16 R2：用户要求文件恢复、共享/独立后台、低空间唤醒按BQLog，并明确采用worker mutex/CV。低空间/full路径允许exchange与短暂等待锁，正常低占用及Ring/Context注册协议不改；最新实施见[V1收尾指南](./V1_FINISH_IMPLEMENTATION_GUIDE_CHS.md)和[ADR-015](./ADR-015-v1-backend-control-and-output.md)。
+
+> 2026-09-16 后续决定：[ADR-015](./ADR-015-v1-backend-control-and-output.md) 已补齐原第7节未定的管理交接与Backend生命周期。Producer自动TLS/无锁发布合同不变，单管理线程只约束管理接口，不要求业务绑定。
+
 - 日期：2026-09-15；状态：用户明确同意，已接受。
 - 权威源码：/home/qq344/QLog；本次只修改文档，I2 尚未验收。
 - 覆盖 ADR-011 的“必须显式绑定、public ProducerHandle、热路径不访问 TLS、冷注册 mutex”部分。
@@ -78,6 +82,8 @@ log_buffer.cpp 的 alloc_write_chunk（频率选择）、miso_linked_list.h 的 
 QLog 自动入口增加 TLS 路由成本，换取业务无需预绑定及 V2 接口稳定；单 Logger 快缓存、双 Logger 切换、首次接入分别测量。
 固定 SPSC 省共享写竞争但多占 Ring 内存；冷 CAS 注册不直接提升已接入后的逐条吞吐。
 无测试数字不宣称优于 BQLog。对比需统一丢弃策略、输出内容、诊断开关和 accepted 数量。
+
+格式字面量入口见 ADR-014：V1 借鉴 BQLog 的 const STR&/char[N] 长度保留，避免 strlen；hash 仍在 reserve 成功后的复制阶段运行时计算，不把该入口称为编译期 hash。
 
 ## 7. 不在此次确认范围内的方案
 

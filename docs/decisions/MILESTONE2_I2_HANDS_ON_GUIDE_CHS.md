@@ -1,14 +1,26 @@
 # QLog I2 动手指南：Logger 直接写入与自动 ProducerContext
 
-更新：2026-09-15；基准 35570da 加本轮未提交源码。实际目录 /home/qq344/QLog。
+> 2026-09-17 format覆盖：[ADR-016](./ADR-016-v1-bqlog-worker-format.md)优先于本文旧的严格花括号、参数数目匹配、默认文本表示和解析缓存合同。Producer原样copy/hash；worker按BQLog当前UTF-8顺序扫描。当前起点与剩余实施见[剩余V1指南](./V1_REMAINING_IMPLEMENTATION_GUIDE_CHS.md)。本文未被覆盖的wire/参数/长度规则继续有效，历史验收记录不改写为当前实现状态。
+
+> 2026-09-16 R3 配置替换修订：AppenderConfig 采用平铺 name/type/enabled/filter/text/console/file，按 AppenderType 仅校验并使用选中的专用字段；Appender 运行行为继续使用继承。完整定义和示例见 [V1收尾指南§1.1](./V1_FINISH_IMPLEMENTATION_GUIDE_CHS.md#11-appenderconfig)。前次配置组合方案已替换，此次仅修订文档。
+
+> 2026-09-16 R2：用户要求文件恢复、共享/独立后台、低空间唤醒按BQLog，并明确采用worker mutex/CV。低空间/full路径允许exchange与短暂等待锁，正常低占用及Ring/Context注册协议不改；最新实施见[V1收尾指南](./V1_FINISH_IMPLEMENTATION_GUIDE_CHS.md)和[ADR-015](./ADR-015-v1-backend-control-and-output.md)。
+
+> 2026-09-16 最新实施入口：[V1 一轮收尾指南](./V1_FINISH_IMPLEMENTATION_GUIDE_CHS.md)。数组入口已写入；接下来按 ADR-015 一次完成诊断、Backend、formatter、Console/TextFile、reset 与 shutdown。下面各轮待办为历史快照，不代表当前剩余项。本轮不测试，生产实现仍由维护者完成。
+
+> 2026-09-16 当前实施入口：[数组格式入口逐文件实现指南](./MILESTONE2_I2_LITERAL_HANDS_ON_GUIDE_CHS.md)。按 ADR-014 增加数组重载，复用现有 runtime 主流程。下面的接入层待办为历史快照；包含顺序与 runtime 主流程已修正，不要重复照旧清单修改。已有 runtime 验证不等于数组入口或整个 I2 验收完成。
+
+> 历史静态交接：[runtime 实现后修正与下一步商榷](./MILESTONE2_I2_POST_RUNTIME_REVIEW_CHS.md)。其中接入修正已完成，保留作为实现参考；当前下一步见上方数组入口指南。
+
+更新：2026-09-16；基准 35570da 加本轮未提交源码。实际目录 /home/qq344/QLog。
 状态：本指南为后续实施指导；已有源文件不等于 I2 已编译/运行验收。本轮只更新文档。
-规范顺序：用户确认 → [ADR-013](./ADR-013-v1-automatic-producer-context.md) → ADR-012 未被覆盖部分 → ADR-011 未被覆盖部分。
+规范顺序：用户确认 → [ADR-014](./ADR-014-v1-bqlog-style-literal-format.md) → [ADR-013](./ADR-013-v1-automatic-producer-context.md) → ADR-012 未被覆盖部分 → ADR-011 未被覆盖部分。
 I1 wire、参数准入、Header-last、Release decoder 检查不变；所有区间接口沿用 pointer + 显式长度，不新增 span。
 
 本文直接取代旧显式绑定操作步骤；旧例子仅见 [历史归档](./MILESTONE2_I2_EXPLICIT_BINDING_ARCHIVE_CHS.md)。
 维护者实现生产，Codex 在交接后编写/运行验证；用户后续明确授权优先。
 
-**本轮继续入口：[下一步：修完接入层并完成 runtime Producer](./MILESTONE2_I2_RUNTIME_NEXT_GUIDE_CHS.md)。该文 §1 是最新源码修正清单，§2～§5 给出公共结果头、完整错误映射表、runtime try_log 参考和构建接线。本文 §11/§12 保留接入层参考；旧快照待办由当前 §0 与新指南覆盖。**
+**当前继续入口：[数组格式入口逐文件实现指南](./MILESTONE2_I2_LITERAL_HANDS_ON_GUIDE_CHS.md)。旧 runtime 指南及本文 §11/§12 保留接入层实现参考。**
 
 <a id="i2-current-next"></a>
 
@@ -29,12 +41,12 @@ I1 wire、参数准入、Header-last、Release decoder 检查不变；所有区�
 
 ## 1. 第一批：先修现有 Impl，不改变配置模型
 
-位置 src/async_logger.cpp 的 AsyncLogger::Impl 构造函数。下面是增加身份前的基础初始化参考，不是当前完整 Impl；最新身份/依赖/析构补齐见 §12.6：
+位置 src/async_logger.cpp 的 AsyncLogger::Impl 构造函数。下面是增加身份前的基础初始化参考，不是当前完整 Impl；最新身份/依赖/析构补齐见 §12.6。配置函数现按[收尾指南§1.4](./V1_FINISH_IMPLEMENTATION_GUIDE_CHS.md#config-module)从detail头声明、在src/logger_config.cpp实现；本cpp包含 `qlog/detail/logger_config.hpp`，不再保留匿名命名空间的旧配置helper：
 
 ```cpp
 explicit Impl(LoggerConfig prepared_config)
     : config(std::move(prepared_config)),
-      filter(merge_appender_levels(config.appenders.data(), config.appenders.size()),
+      filter(detail::merge_appender_levels(config.appenders.data(), config.appenders.size()),
              config.category_enabled.data(), config.category_enabled.size()),
       clock(detail::probe_admission_clock()),
       policy(detail::make_producer_policy(clock.has_fallback())),
@@ -291,7 +303,7 @@ LoggerConfig& operator=(LoggerConfig&) = delete;
 ```
 
 不需要再补特殊成员，保留纯字段 struct，让编译器生成默认构造、复制和移动。
-当前 normalize_logger_config 中的 LoggerConfig result=input 需要复制，Impl 的按值参数和 std::move 需要可用的转移/复制；
+配置准备中的 LoggerConfig result=input 需要复制（旧normalize_logger_config现按收尾指南§1.4并入prepare_logger_config），Impl 的按值参数和 std::move 需要可用的转移/复制；
 用户声明构造函数还会抑制隐式默认构造。不要为了避开错误把 normalize 改为借用调用者输入。
 AsyncLogger 自己的 deleted 复制/移动声明保留。Config 的 vector/string 可分配；它不包含真实 Ring。
 

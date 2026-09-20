@@ -1,5 +1,15 @@
 # I2 下一步：修完接入层，完成 runtime Producer 写入
 
+> 2026-09-17 format覆盖：[ADR-016](./ADR-016-v1-bqlog-worker-format.md)优先于本文旧的严格花括号、参数数目匹配、默认文本表示和解析缓存合同。Producer原样copy/hash；worker按BQLog当前UTF-8顺序扫描。当前起点与剩余实施见[剩余V1指南](./V1_REMAINING_IMPLEMENTATION_GUIDE_CHS.md)。本文未被覆盖的wire/参数/长度规则继续有效，历史验收记录不改写为当前实现状态。
+
+> 当前后续工作统一进入 [V1 一轮收尾指南](./V1_FINISH_IMPLEMENTATION_GUIDE_CHS.md)。runtime/数组入口已写入；本页只保留原实现参考。
+
+> 当前后续实施入口：[数组格式入口实现指南](./MILESTONE2_I2_LITERAL_HANDS_ON_GUIDE_CHS.md)。runtime 主流程与公共头接入已经补齐；本文保留其实现参考，旧修正清单不是当前待办。数组入口按 ADR-014 实施，诊断接口另行细化。
+
+> 2026-09-16 literal 决策已冻结：见 ADR-014。实现 const char (&)[N] 便利重载，长度由 N 得到，hash 仍在 reserve 后运行时计算；不增加 NTTP/macro compile-time hash。
+
+> 2026-09-16 最新静态交接：[runtime 实现后修正与下一步商榷](./MILESTONE2_I2_POST_RUNTIME_REVIEW_CHS.md)。接入层及公共结果已补齐；当前模板语法、mapper 分支、模板头接入与 CMake 尚需修正。先商榷推进顺序，本轮未测试；旧进度以新交接文档为准。
+
 日期：2026-09-15。基于本轮实读 /home/qq344/QLog；生产未验收。本文是实施指南，不是已经修改生产的记录。
 生效合同为 ADR-013 与主指南；身份直接使用 std::uint64_t，不引入别名、锁、显式绑定或新队列策略。
 本批目标：业务调用 AsyncLogger::try_log，经过过滤和 TLS 接入，把 runtime 格式与两个整数编码进当前线程的 SPSC。
