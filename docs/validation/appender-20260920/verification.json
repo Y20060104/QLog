@@ -1,0 +1,46 @@
+{
+  "scope": "WSL2 Linux, single-owner output; no worker/runtime integration",
+  "new_appender_tests": 29,
+  "configurations": {
+    "formatter-gcc-debug": {
+      "total": 171,
+      "failed": 0,
+      "skipped": 0,
+      "passed": 171,
+      "log": "final-formatter-gcc-debug-ctest.log"
+    },
+    "formatter-release": {
+      "total": 171,
+      "failed": 0,
+      "skipped": 1,
+      "passed": 170,
+      "log": "final-formatter-release-ctest.log"
+    },
+    "formatter-san": {
+      "total": 171,
+      "failed": 0,
+      "skipped": 0,
+      "passed": 171,
+      "log": "final-formatter-san-ctest.log"
+    }
+  },
+  "production_and_test_sha256": {
+    "include/qlog/detail/appender.hpp": "fd1890d9fd0d5b07123f924ec775b8da80b80a19284fdf77601ac946ab17d31a",
+    "src/appender.cpp": "a58114b967dae4913a3cf6949b484c24de875e3d91b0c5b921efdc70374fe6d4",
+    "include/qlog/detail/io_report.hpp": "49c43c4530645f4c280ccaa0b7b066cb5f245bdeb9a9f7aa632b76e1f69700b0",
+    "src/io_report.cpp": "e485a42b22124503b176062a5f11bc65f2e2796aa3d89bd0209dca38a9ceb004",
+    "src/output_batch.cpp": "0669a817ec68b743e80a9b7e55a30aca9e740b6c61c9d915663562fff2ffdaaa",
+    "include/qlog/detail/io_result.hpp": "d9abd8e8f31f0f0e613633c9e43c6d16780a0ceb298b70073b00a986c2659720",
+    "include/qlog/detail/text_formatter.hpp": "04a1ec2eee51eaf1b76a17687e9421b6658522009ce495af27825212e90fe9e0",
+    "include/qlog/detail/console_appender.hpp": "1dc8b4b056b4be426c3913895c508a0d1770a014f2b29f48ab295c205f2bf7fd",
+    "src/console_appender.cpp": "162ca895116fcfa6df6ee8d11cd30e91a6f9f192a49dc060a2ad8eb47d486f54",
+    "include/qlog/detail/text_file_appender.hpp": "89cd958d6e1d3875173553614d5e34893b7e332594a3318fc5823942217ffd51",
+    "src/text_file_appender.cpp": "ec722547a8ed5f3d40a5c1b95ff4091db712f5bea478474b31b17da7c644c870",
+    "include/qlog/detail/appender_factory.hpp": "31285427e57524db2987b4a93c695e20d8b25f4be2fd79e2b79ef67e069dabdd",
+    "src/appender_factory.cpp": "58118620f544f1f251562da69dffd74aa8f6d9645c352ff08c3a9bda2967cded",
+    "tests/appender_test.cpp": "7a2ac18a0b55eed4deb722ddb6b9b4f6f04331684cb9d0dd25081f3b0c52ea7b",
+    "tests/appender_posix_test.cpp": "f03a8f318f4b8e213a66002c7932526175a4bf8897e9a7fc4ce401311d6b9b8b",
+    "CMakeLists.txt": "7c251cbf117dea5fba475a1218fb68db90880014918a562a17e0d3140554d010",
+    "tests/CMakeLists.txt": "8ea019097819b3817f5a6e85620dcef3fb98e1d15fc65cb8d011f19f580e3ec1"
+  }
+}

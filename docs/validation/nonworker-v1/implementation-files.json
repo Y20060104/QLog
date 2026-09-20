@@ -1,0 +1,698 @@
+[
+  {
+    "path": "include/qlog/appender_config.hpp",
+    "sha256": "b66e73b98a62fff8a797f91db99c919aa56706a1dfaa673b277a2bbc6aa7b9ca"
+  },
+  {
+    "path": "include/qlog/arguments.hpp",
+    "sha256": "41478fc548490104edf38118ee35e0185cf9c75dba911a0894416dbbc5bd2f54"
+  },
+  {
+    "path": "include/qlog/async_logger.hpp",
+    "sha256": "74b5176dbe68789193e7e366e5fafc6f7188a4d9ee4b0d89643866f7b7b7b8b9"
+  },
+  {
+    "path": "include/qlog/async_logger_impl.hpp",
+    "sha256": "da8760fd195d803fb4597f645c944d7dda7543b2e1787a0a25c0df1ad8ab6d8e"
+  },
+  {
+    "path": "include/qlog/backend_config.hpp",
+    "sha256": "a260a705cca1230aa3fc83ba18227fd5925c908b80570d9a1117c6f14c21da19"
+  },
+  {
+    "path": "include/qlog/detail/admission_clock.hpp",
+    "sha256": "ff2fd382f929024e086cd3a3b6b6e17e498f10e578c982a0a93dc71cc82f0b63"
+  },
+  {
+    "path": "include/qlog/detail/appender.hpp",
+    "sha256": "0c14d8ab8fd0fef34da03ca4d327643256c451c6b39715088d0dd54387083faa"
+  },
+  {
+    "path": "include/qlog/detail/appender_factory.hpp",
+    "sha256": "95400760b0ee7269bf27aad98db53a12b960f32ded959e7dcbb453dce41cef6a"
+  },
+  {
+    "path": "include/qlog/detail/appender_prepare.hpp",
+    "sha256": "60e3eca0c97265787b18dfded114280482ad81d48d358751dcb1a54e66db711b"
+  },
+  {
+    "path": "include/qlog/detail/argument_tag.hpp",
+    "sha256": "e87fa71cade925020d77314b1f5cf930ce4bcc8c065b76f7ff72831d2eac6472"
+  },
+  {
+    "path": "include/qlog/detail/argument_traits.hpp",
+    "sha256": "38e36dceb08eea112d9259ae6d1fa83a0ccb3c485e41aa2a297734af80ed7d25"
+  },
+  {
+    "path": "include/qlog/detail/backend_session.hpp",
+    "sha256": "754300fdbd5be36d2bda846924deef25c01a1b225d885f291c3365dd4741b280"
+  },
+  {
+    "path": "include/qlog/detail/call_gate.hpp",
+    "sha256": "8d7d4f9edbbf4d863a9d8ee24406b94ebfe58637adb224fec93668a85d461819"
+  },
+  {
+    "path": "include/qlog/detail/channel.hpp",
+    "sha256": "ce160b9f6ffe835b757fe273585268165a0cfd0933613ad9851a752fc4f7451f"
+  },
+  {
+    "path": "include/qlog/detail/checked_size.hpp",
+    "sha256": "cdaed845703d5f7b11853a2012943a6057dd44c9cea03082d6cabcd2a0fdf9fb"
+  },
+  {
+    "path": "include/qlog/detail/console_appender.hpp",
+    "sha256": "b3ff04352b007f302fdb30a50c108ab4264beca7dbe86b8ba619529cfd54f23b"
+  },
+  {
+    "path": "include/qlog/detail/context_result.hpp",
+    "sha256": "daca6abc48aef4d0b3de20427cdac803653981e406ac295404c24a36033bb51f"
+  },
+  {
+    "path": "include/qlog/detail/control_mailbox.hpp",
+    "sha256": "e09a03501151810ca251a2ca915959c05c6afcee6ad76128a968c0eb70fd2948"
+  },
+  {
+    "path": "include/qlog/detail/filter_config_access.hpp",
+    "sha256": "98d4ac6519f50b079320e3dc8ba5cabac918867e2d59e98c8fb5f5966f290457"
+  },
+  {
+    "path": "include/qlog/detail/filter_state.hpp",
+    "sha256": "06791b51c6c84bc78ac572f3e34ccd738eb2803363288a8d23f6d6bdf90e493c"
+  },
+  {
+    "path": "include/qlog/detail/format_hash.hpp",
+    "sha256": "a120a160b5e80807772f4b78c9772e0a49d2993ef1fbfc2c4ea547cc0c174afe"
+  },
+  {
+    "path": "include/qlog/detail/format_hash_reference.hpp",
+    "sha256": "12683b8e3b62866ebaab2bd02dcb83da894353c651ec9cda58bc378a5e3c7542"
+  },
+  {
+    "path": "include/qlog/detail/format_spec.hpp",
+    "sha256": "68f8e786876116f4664b3284ac875cfa224f7d2d794c9a7085bcd7b08834ebc8"
+  },
+  {
+    "path": "include/qlog/detail/io_report.hpp",
+    "sha256": "881ba93545e5ac4086a2e153225b5418c0457e6cdbe9e584f45e12aceaa48e26"
+  },
+  {
+    "path": "include/qlog/detail/io_result.hpp",
+    "sha256": "d9abd8e8f31f0f0e613633c9e43c6d16780a0ceb298b70073b00a986c2659720"
+  },
+  {
+    "path": "include/qlog/detail/management_controller.hpp",
+    "sha256": "ca26c6f52dd8bd2c6bc1709977984ec90eaabe5d283f8a2f6ea144adbc0bc97d"
+  },
+  {
+    "path": "include/qlog/detail/output_batch.hpp",
+    "sha256": "e0ef067c406c8ae547d63302227fd1d4bc98bf2fd5484eee16e5ee2be4206c93"
+  },
+  {
+    "path": "include/qlog/detail/producer_context.hpp",
+    "sha256": "9b0fbd17cfb6c88c470f52359264a591c60992c3ed70755933bccbb106d4aa2d"
+  },
+  {
+    "path": "include/qlog/detail/producer_diagnostics.hpp",
+    "sha256": "4dd9e18a476acaafc05eb7b20fb052482a12f51b1aadaa2667763ee01dbe524d"
+  },
+  {
+    "path": "include/qlog/detail/producer_identity.hpp",
+    "sha256": "6ec3f9bb7a8aa54e539e3cba1dd7ca751bdc47133287bb238f7e61c5a4631d04"
+  },
+  {
+    "path": "include/qlog/detail/producer_policy.hpp",
+    "sha256": "12d1cf9f602c129a926ae777ffa95639965ca7fb2366df788320fd1cba0a67e9"
+  },
+  {
+    "path": "include/qlog/detail/producer_result_map.hpp",
+    "sha256": "c0031a31cd8581ee7a15aa3436c616531a9c8e7b1b768f2a5665e460af2df648"
+  },
+  {
+    "path": "include/qlog/detail/record_decoder.hpp",
+    "sha256": "806ce6a2290b867dbe6875dd4ecb82d403cf8397b9fd3c5ee8b4be5fd5116995"
+  },
+  {
+    "path": "include/qlog/detail/record_encoder.hpp",
+    "sha256": "188610b7b90f0af358cd457b1c3347d567d7f844b9931c51cab41780a40bea18"
+  },
+  {
+    "path": "include/qlog/detail/record_header.hpp",
+    "sha256": "8bf70a69d6b4528f52be9614ea5214b33d982c90e464ae07d8d58b7df16c89ad"
+  },
+  {
+    "path": "include/qlog/detail/record_limits.hpp",
+    "sha256": "db3d2d7176a4ef49afd4d48a8c1facbe43f3905bfbfd2f1fd4a28dd1a28c2a7c"
+  },
+  {
+    "path": "include/qlog/detail/record_measure.hpp",
+    "sha256": "f281bf2969f543e2d791d146c9b117ba6029b0501d0a5cc7de2b3fb5003b3186"
+  },
+  {
+    "path": "include/qlog/detail/record_types.hpp",
+    "sha256": "8d5c4022e37c7e70142493dde3cbf74376a146ea07542269a861c6473ae6862f"
+  },
+  {
+    "path": "include/qlog/detail/ring_geometry.hpp",
+    "sha256": "09a95995a6cfd61ec821a17f9756bd6ecd38356021e174cbb2ff7e11965d13ca"
+  },
+  {
+    "path": "include/qlog/detail/spsc_ring_buffer.hpp",
+    "sha256": "6671bff910bae46191d143767faab7669da4d08105b039754008617d459cc93f"
+  },
+  {
+    "path": "include/qlog/detail/text_file_appender.hpp",
+    "sha256": "b39e6fb6560ff35dad670c1f2b7d8a8091611fe149979bf03660f5eb7f61a2fa"
+  },
+  {
+    "path": "include/qlog/detail/text_formatter.hpp",
+    "sha256": "a20a0420fc157b500a586aa96a1a974967916afd44f6fa9d98d972c2dd846010"
+  },
+  {
+    "path": "include/qlog/detail/worker_provider.hpp",
+    "sha256": "ee6257a592e27a718a7922cb7476b6e3c0e7b87ce5e211d17d12ab7269bca12f"
+  },
+  {
+    "path": "include/qlog/log_format.hpp",
+    "sha256": "838b3fa357445daed233d6ed149a95bf5909c97a9e0a93d189fee22e05bf05f9"
+  },
+  {
+    "path": "include/qlog/log_level.hpp",
+    "sha256": "2c6f5845098aa7cf1ad5a5b92cc08dbccd1058920a00c888390753ed976fbb4a"
+  },
+  {
+    "path": "include/qlog/log_result.hpp",
+    "sha256": "18801723d75c321186f4d40337c6d52bca388fdc7b9e69c33abf2d4c7f922028"
+  },
+  {
+    "path": "include/qlog/logger_config.hpp",
+    "sha256": "a1a9c583cdfc30979a31231d7c15e28a0568aabd1ec9ba28b57628346ce959a2"
+  },
+  {
+    "path": "include/qlog/management_result.hpp",
+    "sha256": "92fcf5a3a5d55fc5981a506a62a8a334aa2c8368a9b216445ebc15e4128766ef"
+  },
+  {
+    "path": "include/qlog/producer_handle.hpp",
+    "sha256": "bf816d9dead6717de6196b75f17e7261e1edfeba204310548161be471e768eed"
+  },
+  {
+    "path": "include/qlog/version.hpp",
+    "sha256": "2ed4fa04ee7def8ebdaeadfb1e45cc27ef22f0b0285835a0def4bab321623f0c"
+  },
+  {
+    "path": "src/admission_clock.cpp",
+    "sha256": "760a039526580a959d0db78c31a26342e9b4182847674d0c34409f7e1f4defab"
+  },
+  {
+    "path": "src/appender.cpp",
+    "sha256": "bdf3c0f0ddca727e98b14ab253fc1d29ad5fa357fef0f79daea6aa08d18c570f"
+  },
+  {
+    "path": "src/appender_factory.cpp",
+    "sha256": "22edbb0f590ae08f941542642ce6867ca0717b62c0512ef7ee62e129b867a3a3"
+  },
+  {
+    "path": "src/appender_prepare.cpp",
+    "sha256": "2e83e80203b906fd8c0dc5ed951bc9c01c2df887b4ecac03c92f2a4fc25638f0"
+  },
+  {
+    "path": "src/async_logger.cpp",
+    "sha256": "0327b7490f1521b5a8f3babe5c7f01f782783f8d5ebd49f165244d8b05d3ede1"
+  },
+  {
+    "path": "src/backend_session.cpp",
+    "sha256": "dd18bc848e7de3c76aa4338fc36a6846a359cd3b88e39b11869dc2a9a643e51b"
+  },
+  {
+    "path": "src/build_config.hpp",
+    "sha256": "84ecb301311afbdf1e4f042e91aa3700c20f3ba55ed4452b9cf890a0bb64ff38"
+  },
+  {
+    "path": "src/console_appender.cpp",
+    "sha256": "5871cfe10f12dcef120abf1f0b419845ebc41fc026173b4ad252eb10f2e35a6d"
+  },
+  {
+    "path": "src/filter_state.cpp",
+    "sha256": "4f81dcf0b203be8fc661fcb633937b394c6cf637b8a3a43fbc7a59b9a423f697"
+  },
+  {
+    "path": "src/format_hash.cpp",
+    "sha256": "31905e08e49207a00acb6a5e88b4fa96bdad2bbe65d50eea5f93bb950768d476"
+  },
+  {
+    "path": "src/format_hash_core.hpp",
+    "sha256": "56922da2d47cffc868aa55cccd60787fc05e51d5dda53b5ab725d6033970b174"
+  },
+  {
+    "path": "src/format_hash_software.cpp",
+    "sha256": "11da0e4f0d8380726bca6cf4304ec810f884092a1c332ad81281a8ce64f90b44"
+  },
+  {
+    "path": "src/format_hash_x86_crc32c.cpp",
+    "sha256": "5206c40fcb0717a78b90a94416968486296861b965056426b57e72e1e6aa21d2"
+  },
+  {
+    "path": "src/io_report.cpp",
+    "sha256": "1aee511a6c39342305d11c55f5e6f3e53f1a7ff299b14c89354ff4643f70a066"
+  },
+  {
+    "path": "src/logger_config.cpp",
+    "sha256": "12eaa1dbcc1fe73147df9aa1c5705ad88bff143aa702c6947a418d399f6ba838"
+  },
+  {
+    "path": "src/management_controller.cpp",
+    "sha256": "b78f7803e7b0b179f7763508bb3f3453cdc756317276394630cca5ba0d61dca8"
+  },
+  {
+    "path": "src/output_batch.cpp",
+    "sha256": "334e6f69e05820ac038803df151e5135d74a508a7e532e1d53fc7070c5e706f8"
+  },
+  {
+    "path": "src/producer_context.cpp",
+    "sha256": "daa28f2198055fda763ccc8b6165a7037281894cb882006de9197dea8c7dad91"
+  },
+  {
+    "path": "src/record_decoder.cpp",
+    "sha256": "c40f5289c027187c5e387409155414b25374690deb180777d205f7f9e3e42d1c"
+  },
+  {
+    "path": "src/spsc_ring_buffer.cpp",
+    "sha256": "d312ef98efd90747acef6facee30afb1caaac66cd0c49a41129e45d0b851623d"
+  },
+  {
+    "path": "src/text_file_appender.cpp",
+    "sha256": "7c5603392d18b1ec8e9bc3b54e06c261a31b35b592ec3de69a2c5d28a1a8e810"
+  },
+  {
+    "path": "src/text_formatter.cpp",
+    "sha256": "e265afb0504945641beab3c233fa689763a2e4eb7b64e229f83fd6435ef0ae54"
+  },
+  {
+    "path": "src/version.cpp",
+    "sha256": "ed8582a915e35ba881192f3d92e2d8a15ee45a1bf9a3bb99c7c36ee968591172"
+  },
+  {
+    "path": "src/worker_provider.cpp",
+    "sha256": "3ed766233748a34527b0d6dde0056e3056c714d741b019700f6991e9089df86b"
+  },
+  {
+    "path": "tests/CMakeLists.txt",
+    "sha256": "c885a4175a291f24597b8674fe4083543039ad1a68957a6b163133b049146263"
+  },
+  {
+    "path": "tests/appender_posix_test.cpp",
+    "sha256": "acacdb9a2b6bde1e19b503d6e90e1394df1077b65fefdcf5211057f5d7e7cf80"
+  },
+  {
+    "path": "tests/appender_test.cpp",
+    "sha256": "023fa6ea4c3bf742e972cd317965ea720aef9abe3425aa43ee7e1bf16495ff63"
+  },
+  {
+    "path": "tests/argument_model_test.cpp",
+    "sha256": "7f04f915fb93be5ed597f1405c24ab8e8e7e70f9b06b629b0843861286c75afd"
+  },
+  {
+    "path": "tests/argument_tag_self_contained.cpp",
+    "sha256": "7514f79c62d82a8ab106621625009d4fd958794cd224fd7499674e116b1f4830"
+  },
+  {
+    "path": "tests/argument_tag_test.cpp",
+    "sha256": "022de30616a549b0b605a4a864f27107ef780f9f59f65cc378cf57943025f167"
+  },
+  {
+    "path": "tests/argument_traits_self_contained.cpp",
+    "sha256": "fa0526c3711fc8d33c992062f582cae5da97dd59b0d6c9027a3fac3fc520f6f1"
+  },
+  {
+    "path": "tests/arguments_self_contained.cpp",
+    "sha256": "71be9049e6dc72fe826bd731e836023272202b7b8c86f3a8926096540b8aed98"
+  },
+  {
+    "path": "tests/backend_allocation_test.cpp",
+    "sha256": "fc6299bb4758d13acd87553a4edf3eb349069a90eef41b7ef37538eed75ce84f"
+  },
+  {
+    "path": "tests/backend_session_test.cpp",
+    "sha256": "9b8979c9b1ad78f8bcd88f249bb3680a97c4b537d5cb015d693565c675da30af"
+  },
+  {
+    "path": "tests/compile_fail/arg_count.cpp",
+    "sha256": "211c8684a6eab13e28b9259d595f1520a0ad480b3cba9b0bfb42e79968e404ac"
+  },
+  {
+    "path": "tests/compile_fail/bare_const_char.cpp",
+    "sha256": "3533e82aebecc9a1750ed4f93c65e6e7a6383284163f00f1102a6e22a399a48e"
+  },
+  {
+    "path": "tests/compile_fail/bare_mutable_char.cpp",
+    "sha256": "eb6eba83c79d5f2da826961e9a18d3a871e8b7ddda458d523de3ebff4083e6aa"
+  },
+  {
+    "path": "tests/compile_fail/byte.cpp",
+    "sha256": "d65d460beb89ab52f910414e50cec1057bcdd2f76997bae532cf5ec34c6735e9"
+  },
+  {
+    "path": "tests/compile_fail/char16.cpp",
+    "sha256": "4f939928defaecfa3de3228abef8bd6ca005e11e21fb8c0b3828927675fcf346"
+  },
+  {
+    "path": "tests/compile_fail/char32.cpp",
+    "sha256": "70a7b95595b704eacd235ac24d6f3a8b676860c61e4575c813338517c2f57d53"
+  },
+  {
+    "path": "tests/compile_fail/char8.cpp",
+    "sha256": "d36c52c8bdbe96bf4bc9259cf4fdb65f081b7e8946e6c3be92080677f0b50773"
+  },
+  {
+    "path": "tests/compile_fail/chrono.cpp",
+    "sha256": "8e9de868a08fc8c4df78bfe72d1270674cccfcb04d64799fbfab090d8f14f9c8"
+  },
+  {
+    "path": "tests/compile_fail/container.cpp",
+    "sha256": "0d02e0973881f4058fc4a9a80500878aea41182fb2e9bdb0797edef8604dd2e7"
+  },
+  {
+    "path": "tests/compile_fail/enum_bool.cpp",
+    "sha256": "a5e94144d90527256cb43811f6325a12deed5e99283023325eadf9f34bf5d071"
+  },
+  {
+    "path": "tests/compile_fail/format_as.cpp",
+    "sha256": "86905ffcd09d2ad7d7c8f26a40f07c58f04a9123fc8b5ae6af9671dc9ebd144e"
+  },
+  {
+    "path": "tests/compile_fail/function_pointer.cpp",
+    "sha256": "3b9387ff88bbd73075daf35e0541e2a048be136474a46e518cab422cf0130625"
+  },
+  {
+    "path": "tests/compile_fail/implicit.cpp",
+    "sha256": "3b31d93cf2047b018579696aff77bcc782fdb023c79aa1ebeb07c5a96da2f9d7"
+  },
+  {
+    "path": "tests/compile_fail/int128.cpp",
+    "sha256": "d4fd2d81bb91454ddfb3f17daad756efae38ff3808118cab519106d1f02e4425"
+  },
+  {
+    "path": "tests/compile_fail/long_double.cpp",
+    "sha256": "d65eb9b7e822480f75529df5173926d6c98d3eb7aa8c7d5a6a7c35912d791da2"
+  },
+  {
+    "path": "tests/compile_fail/member_pointer.cpp",
+    "sha256": "31bfd21c1ff8a5ae5fb3aa2a125c2d5e38219716e1d9c880d55091d1444c6417"
+  },
+  {
+    "path": "tests/compile_fail/object_pointer.cpp",
+    "sha256": "ba9fd257ab7c5d0f663cbcc0771ae0b0f68c94e1d4dd9e44ba5a5a53fb34491f"
+  },
+  {
+    "path": "tests/compile_fail/u16_string.cpp",
+    "sha256": "cee4ca340f2e83f174142865418c03c47c1ffd7c8fc97f32611262cdc7946496"
+  },
+  {
+    "path": "tests/compile_fail/u32_string.cpp",
+    "sha256": "a608dbd07050d17d18396be7c35e8fc3b83e0f149bb540a5fc2d01f499f301a6"
+  },
+  {
+    "path": "tests/compile_fail/uint128.cpp",
+    "sha256": "6baf4795294c3445099b08e85c09f68609a1859b093e4c3c8ff0ce7a36082f0a"
+  },
+  {
+    "path": "tests/compile_fail/volatile.cpp",
+    "sha256": "5e954858aaafd9337c90645c4b5080bcd363ab9fb7af2aec6d723bd353605206"
+  },
+  {
+    "path": "tests/compile_fail/wchar.cpp",
+    "sha256": "98c5fdf4c5a5dd515476d5c3253d54729c1f9063b28b4eff8384ee4aada733b9"
+  },
+  {
+    "path": "tests/compile_fail/wide_string.cpp",
+    "sha256": "af9a5ed30c603e6937fdc46e2b5f5b341e1042c0acca42f3075dbf7b23a80c89"
+  },
+  {
+    "path": "tests/compile_pass/arg_count.cpp",
+    "sha256": "e4a4f5b3c8a67946f829d1198c1ebc3deff292356d52d816eff3ab48e24199f8"
+  },
+  {
+    "path": "tests/compile_pass/bare_const_char.cpp",
+    "sha256": "a4121162099b6038df9de448ffcdfa4c8687f3c990365bfab500d87fba874fd5"
+  },
+  {
+    "path": "tests/compile_pass/bare_mutable_char.cpp",
+    "sha256": "ca5eaaf5aaa311a0f6925e589f1f7656683e2b2d35cdcd1fd45d1ccab0a83778"
+  },
+  {
+    "path": "tests/compile_pass/byte.cpp",
+    "sha256": "eac58c636f1d59ff3d39fe9e8a4288c7686abb128267fe1a0d895437f4229bbf"
+  },
+  {
+    "path": "tests/compile_pass/char16.cpp",
+    "sha256": "685be39a163ce68d73d3f69eb3318a7c3b3ca2608e6f3847ee506d3cfad19bc1"
+  },
+  {
+    "path": "tests/compile_pass/char32.cpp",
+    "sha256": "afc9af3be442049dc5eb9a456608fe2e9dd09a5cbcea376fc5053c07cf51af62"
+  },
+  {
+    "path": "tests/compile_pass/char8.cpp",
+    "sha256": "0dc8b995aa28ae840fdba010955f45b02ce4136d88f1123ff40de14fe9ee962f"
+  },
+  {
+    "path": "tests/compile_pass/chrono.cpp",
+    "sha256": "78c1d45c09d3cd48d4f18e3048b9c211633312e8999f29effe64fb77324fb2d5"
+  },
+  {
+    "path": "tests/compile_pass/container.cpp",
+    "sha256": "84375ab98529e5e1fd64a09d50ff3f1ba88e23e2b0a300f8161de271a3d87475"
+  },
+  {
+    "path": "tests/compile_pass/enum_bool.cpp",
+    "sha256": "42c86833c1532626482cfb296cf2c91e6feedb600fe31996d725d21799bfca91"
+  },
+  {
+    "path": "tests/compile_pass/format_as.cpp",
+    "sha256": "784da319d64ae8275f84a052e5b1c0d6f6795a8023bb155e81cf0a56f5f32e47"
+  },
+  {
+    "path": "tests/compile_pass/function_pointer.cpp",
+    "sha256": "4db600c39d25eda443f2784f935ce579f107f4466ffaff125864ee705ef41a93"
+  },
+  {
+    "path": "tests/compile_pass/implicit.cpp",
+    "sha256": "0732dad52bdab24263e14f50c65f33ec64e1206eff8a878e8e14708dc4d5abb0"
+  },
+  {
+    "path": "tests/compile_pass/int128.cpp",
+    "sha256": "182850d5af4fe25cd6f87448624a641822adb04ebf60f96cd6c4fdf39abf4e5b"
+  },
+  {
+    "path": "tests/compile_pass/long_double.cpp",
+    "sha256": "deb3bd6ce11395f9a1fe8f7a02900ee918740fa7139ca0e7c787f2899342e4fe"
+  },
+  {
+    "path": "tests/compile_pass/member_pointer.cpp",
+    "sha256": "8e848c9fa54dd1970b9d9fcff03c8599aebc8a754d42314e30c9a8acf358914b"
+  },
+  {
+    "path": "tests/compile_pass/object_pointer.cpp",
+    "sha256": "753e324571462d3a8c566ae1e3134df87e8bb41fc1672b3b7ec115085cd5b16a"
+  },
+  {
+    "path": "tests/compile_pass/u16_string.cpp",
+    "sha256": "5fbce264a5bf547f3925ff68bd73e8b9287aa577ebdf3ead3ef01784fecaafc1"
+  },
+  {
+    "path": "tests/compile_pass/u32_string.cpp",
+    "sha256": "170b725379bd2c8c5f3a581097678af9ebc1ddc274575798ee985d6526102550"
+  },
+  {
+    "path": "tests/compile_pass/uint128.cpp",
+    "sha256": "bbc3d6cfe5d3c3115f54e46f9e17da5922f17e3730fa31b589c70a28b31604bc"
+  },
+  {
+    "path": "tests/compile_pass/volatile.cpp",
+    "sha256": "6de84cce48259fd48832a505192e4d0763b51381406d45baa6585661efc5aedc"
+  },
+  {
+    "path": "tests/compile_pass/wchar.cpp",
+    "sha256": "7e2751aad7991aec1217625942f232f0172d383a1490422913b682a82926f55c"
+  },
+  {
+    "path": "tests/compile_pass/wide_string.cpp",
+    "sha256": "69c0f27405f600ae72b08d3c8c7b0aaa0ac12274abe92bcbb353b1b4875a7868"
+  },
+  {
+    "path": "tests/compose_line_test.cpp",
+    "sha256": "316c3b737d1f3df439578250ac07c861c9dd1e78f43be687f62e02cd84a86b04"
+  },
+  {
+    "path": "tests/format_hash_reference_self_contained.cpp",
+    "sha256": "97f6a8ba679f06f22e4afbb5b2ca093b5727582e0356ca81fe37bca167c6ed5d"
+  },
+  {
+    "path": "tests/format_hash_self_contained.cpp",
+    "sha256": "88397a5fb265aa661e3ff11fe190b1b0bd86cd7744d4bac3334aeb25adcc0789"
+  },
+  {
+    "path": "tests/format_hash_test.cpp",
+    "sha256": "693bd8cf7c30c52a4a395faae94ab415e120bbfd7ba333e61aa63ee2da985a3a"
+  },
+  {
+    "path": "tests/format_hash_test_access.hpp",
+    "sha256": "0170f4ec53234c5b301df653666e88206ba114057bb7405290080ab3113b6b45"
+  },
+  {
+    "path": "tests/fuzz/cstr_length_cache.cpp",
+    "sha256": "8d8151d00fb3dd1d4b1890392ab51faf3f3f05f47f76becbd910243961ec1321"
+  },
+  {
+    "path": "tests/fuzz/format_hash_equivalence.cpp",
+    "sha256": "5a562a867d6327e279d33c84d718cc081e767ad558ec20226e717418b79db443"
+  },
+  {
+    "path": "tests/fuzz/record_decode.cpp",
+    "sha256": "0ec4da893a0c3eb2b86a74fca9b4e5abef6bf80a7947fd0fdc13d7926e19bcc5"
+  },
+  {
+    "path": "tests/fuzz/record_roundtrip.cpp",
+    "sha256": "5b02d04e7b6c8f77849d6d349d28a04faf33e8e55a386fbe931f0d2f4b7f5c8a"
+  },
+  {
+    "path": "tests/geometry_test.cpp",
+    "sha256": "b8286a53bc2ed2c07ec6ef1a8e0bf63cfc450b1bf83539ac1831188804db54f4"
+  },
+  {
+    "path": "tests/i1d_boundaries.cpp",
+    "sha256": "1c14fee85eb06752676f329a55de5a06ae91074c9e7d36767ee87a9271fb7c91"
+  },
+  {
+    "path": "tests/i1d_error_names.cpp",
+    "sha256": "33edd6f75e47f5c832f265ce001464d357fbbda289590b1b1cee3eaa3b8d742c"
+  },
+  {
+    "path": "tests/i2_runtime_public_probe.cpp",
+    "sha256": "07385509c5aba4ff53f9e510ad0c7d93692657f88bb0db12373cb74be08b136c"
+  },
+  {
+    "path": "tests/logger_config_test.cpp",
+    "sha256": "24c29e74535ff95a5e42b6f7a6ec30c9fb3bf46ea5a9bb803ce74bb49a547f9c"
+  },
+  {
+    "path": "tests/manual_worker_fixture.hpp",
+    "sha256": "398b59a3387e8cead1f31516115952caddf2072a577c8d5774359f90ec432a8d"
+  },
+  {
+    "path": "tests/probes/cpuid_leaf0_probe.cpp",
+    "sha256": "589d3a525b0ea18b8fb8d199ad7b57fcee36e98f478443afea6de72c14e31bfb"
+  },
+  {
+    "path": "tests/producer_diagnostics_consumer.cpp",
+    "sha256": "cda94720a765f645a52b58784f44fada1e43808f0846b11e7e6fe31b9e909de8"
+  },
+  {
+    "path": "tests/producer_diagnostics_test.cpp",
+    "sha256": "c6812fd11816b3734c1ee1d517fb1e700038b86eb6a6e2e6f233691f30ba39d2"
+  },
+  {
+    "path": "tests/record_allocation_test.cpp",
+    "sha256": "52ecc44b42a2f278f9ecee1de1720a7a5f20e323a7289df507cefaa32c08dddd"
+  },
+  {
+    "path": "tests/record_decoder_boundary_test.cpp",
+    "sha256": "fb4e467eeb91a99ec1f75d5df2d2247db32cdc30c1013e6b7aaab8498c97392b"
+  },
+  {
+    "path": "tests/record_decoder_self_contained.cpp",
+    "sha256": "f3c78c47d75e84b2b6bc9a35d948615f06ff7239dc6161d51aa04fe9ce6924bd"
+  },
+  {
+    "path": "tests/record_decoder_test.cpp",
+    "sha256": "b976b1cf3891b07ac4f1fd1afb110150d2d6301d78591855a8bc1706ec1f8e68"
+  },
+  {
+    "path": "tests/record_encoder_self_contained.cpp",
+    "sha256": "99a88a62708b843e32c38490a8e91913c22daf86ce74f94fca8aa20058bde210"
+  },
+  {
+    "path": "tests/record_encoder_test.cpp",
+    "sha256": "b3b632d34bdf5c4211cec6fff0867b3eadc4b11ae1e59de434d6dd206dddec66"
+  },
+  {
+    "path": "tests/record_header_layout_test.cpp",
+    "sha256": "240303bc78d0deff661244ccc1fc48e461b1c700be797458970e1951a36be5fa"
+  },
+  {
+    "path": "tests/record_header_self_contained.cpp",
+    "sha256": "af2318a28a10319a603deaa0ac07062acaf09249bcfd930744abdd4d39a3951c"
+  },
+  {
+    "path": "tests/record_measure_self_contained.cpp",
+    "sha256": "7ae4aee0ee73c8381455219fdf3efc5948d301dad3047b6250d9fd61d46a5aaf"
+  },
+  {
+    "path": "tests/record_property_test.cpp",
+    "sha256": "6936838f9dd5445c2baaca70c2b2fb8997af33e1399ca8c8e06b63343428ab5f"
+  },
+  {
+    "path": "tests/record_types_self_contained.cpp",
+    "sha256": "06afda6e9a1f64ad39eafb9090cc3c60c9dc8ae88ba9ec4eb30433559b9e2c0e"
+  },
+  {
+    "path": "tests/record_types_test.cpp",
+    "sha256": "30ba54116d8db0e289d49addb68ef4982a9b175e77281a1b067d00420264a104"
+  },
+  {
+    "path": "tests/smoke_test.cpp",
+    "sha256": "5e8390e57df3b82128f1d95091cbaa4c18b65581672df051a0e8fd0564d09a1f"
+  },
+  {
+    "path": "tests/spsc_ring_buffer_header_self_contained.cpp",
+    "sha256": "1784994ddd26c192b1a5d0e59bcaa6eae65a2cd01d20da7db96e411fd4cfb14f"
+  },
+  {
+    "path": "tests/spsc_ring_buffer_layout_test.cpp",
+    "sha256": "560e2299cef9366a02ae152d327033d631b8bc5463bde6c8b9cac2c9ca30ebf2"
+  },
+  {
+    "path": "tests/spsc_ring_buffer_operation_test.cpp",
+    "sha256": "93aceca5bd4f80d0c59a1b2df55cd517aa2475e62851483b8e186352f803a83f"
+  },
+  {
+    "path": "tests/spsc_ring_buffer_payload_test.cpp",
+    "sha256": "eba20d29befe29ee17782d34849004e33989949829aa43b8d1e8b237e8e294ee"
+  },
+  {
+    "path": "tests/spsc_ring_buffer_storage_test.cpp",
+    "sha256": "44c555cf6f9ff3d8000071ac142107d618dcf8bfb20661bf79eb6d6b80e7a6de"
+  },
+  {
+    "path": "tests/spsc_ring_buffer_test.cpp",
+    "sha256": "acb1fb23f6c8b486ad27afa70122458cbc615baf28feb5f284643d71b034c453"
+  },
+  {
+    "path": "tests/spsc_ring_buffer_test_access.hpp",
+    "sha256": "649b14f0e61de480812bf44fa26f1be26bc3c39aaf446f16bfc0e95850ca7989"
+  },
+  {
+    "path": "tests/spsc_ring_buffer_wrap_concurrency_test.cpp",
+    "sha256": "e9ceb767247b43f17c955a2ed866f43296d3a60123e7bcc0824f31ebe7c6f126"
+  },
+  {
+    "path": "tests/support/i1d_properties.hpp",
+    "sha256": "de63024e7d03a95094ab68615188df50d34d2a50f0ebebc935d50ea0b18a9da7"
+  },
+  {
+    "path": "tests/text_formatter_allocation_test.cpp",
+    "sha256": "30ab17a66eb048934a182435921901a1ca17da1acebe13f012a7dacdd504690c"
+  },
+  {
+    "path": "tests/text_formatter_bq_differential.cpp",
+    "sha256": "5ca1a673fe66fe2acfd270e4923f23d88e190647287bf54e660321e493d485de"
+  },
+  {
+    "path": "tests/text_formatter_test.cpp",
+    "sha256": "4a2768cbd938519349c72b27e2c6418e32c89ae3ef421cc86d14133f3987c0f0"
+  },
+  {
+    "path": "tests/worker_boundary_test.cpp",
+    "sha256": "ba11d5b2b35f47a05394c5b67d72f6780d51955e15d4995540c2584f5dfb89f9"
+  }
+]

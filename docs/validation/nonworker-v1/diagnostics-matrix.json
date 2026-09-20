@@ -1,0 +1,38 @@
+[
+  {
+    "config": "Debug",
+    "mode": "AUTO",
+    "enabled": true,
+    "passed": true
+  },
+  {
+    "config": "Debug",
+    "mode": "ON",
+    "enabled": true,
+    "passed": true
+  },
+  {
+    "config": "Debug",
+    "mode": "OFF",
+    "enabled": false,
+    "passed": true
+  },
+  {
+    "config": "Release",
+    "mode": "AUTO",
+    "enabled": false,
+    "passed": true
+  },
+  {
+    "config": "Release",
+    "mode": "ON",
+    "enabled": true,
+    "passed": true
+  },
+  {
+    "config": "Release",
+    "mode": "OFF",
+    "enabled": false,
+    "passed": true
+  }
+]
