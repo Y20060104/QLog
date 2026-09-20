@@ -1,0 +1,27 @@
+name: QLog V1 Linux
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  regression:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        config: [Debug, Release]
+        diagnostics: [AUTO, ON, OFF]
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S . -B build/ci -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DQLOG_ENABLE_DIAGNOSTICS=${{ matrix.diagnostics }} -DQLOG_BUILD_EXAMPLES=ON
+      - run: cmake --build build/ci -j 2
+      - run: ctest --test-dir build/ci --output-on-failure -j 2
+      - run: build/ci/qlog_v1_logging_demo /tmp/qlog-v1-demo.log independent
+  sanitizers:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address, thread]
+    steps:
+      - uses: actions/checkout@v4
+      - run: cmake -S . -B build/ci -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.sanitizer }} -fno-omit-frame-pointer"
+      - run: cmake --build build/ci -j 2
+      - run: ctest --test-dir build/ci -L 'worker|backend|appender' --output-on-failure
