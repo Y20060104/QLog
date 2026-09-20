@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -20,11 +21,40 @@ struct FilterConfig {
     std::vector<std::uint8_t> category_enabled;
 };
 
+enum class ConsoleStream : std::uint8_t {
+    stdout_stream,
+    stderr_stream,
+};
+
+struct TimeZoneConfig {
+    std::int16_t offset_minutes{0};
+};
+
+struct ConsoleConfig {
+    ConsoleStream stream{ConsoleStream::stdout_stream};
+};
+
+struct TextFileConfig {
+    std::string path;
+    std::uint32_t retry_interval_us{100000U};
+};
+
+struct TextOutputConfig {
+    TimeZoneConfig time_zone;
+    std::size_t batch_bytes{256 * 1024U};
+    std::uint32_t flush_interval_us{100000U};
+};
+
 struct AppenderConfig {
     std::string name;
     AppenderType type{AppenderType::Console};
     bool enabled{true};
+
     FilterConfig filter;
+    TextOutputConfig text;
+
+    ConsoleConfig console;
+    TextFileConfig file;
 };
 
 }  // namespace qlog

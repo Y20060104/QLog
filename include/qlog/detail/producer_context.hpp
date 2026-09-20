@@ -10,6 +10,9 @@ namespace qlog::detail {
 class ProducerContext final {
    public:
     ProducerContext* published_next{nullptr};
+    // Consumer-only; never modify published_next after its release publication.
+    ProducerContext* consumer_next{nullptr};
+    bool consumer_faulted{false};
     Channel channel_;
     ProducerContext(ChannelCold cold, SpscRingBufferConfig config)
         : channel_(std::move(cold), config) {}

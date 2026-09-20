@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
-#include<utility>
 
 #include "qlog/detail/admission_clock.hpp"
 #include "qlog/detail/filter_state.hpp"
@@ -31,7 +31,6 @@ struct ChannelCold final {
     std::size_t payload_quota;
     ChannelDependencies dependencies;
 };
-
 
 class Channel final {
    public:

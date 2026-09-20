@@ -1,5 +1,7 @@
 #include "qlog/detail/producer_context.hpp"
 
+#include <unistd.h>
+
 #include <atomic>
 #include <cassert>
 #include <cstdint>
@@ -30,17 +32,23 @@ struct ThreadRegistry {
 
 thread_local ThreadRegistry thread_registry;
 
+std::unique_ptr<ProducerContext> make_context(const ContextRegistryView& view,
+                                              std::uint64_t token) {
+    const auto tid = static_cast<std::uint64_t>(::gettid());
+    ChannelCold cold{
+        view.logger_id,   token, tid, std::string{}, view.ring_config.max_payload_bytes,
+        view.dependencies};
+    return std::make_unique<ProducerContext>(std::move(cold), view.ring_config);
+}
 std::optional<std::uint64_t> take_id(std::atomic<std::uint64_t>& next) noexcept {
     std::uint64_t expected = next.load(std::memory_order_relaxed);
     if (expected == std::numeric_limits<std::uint64_t>::max()) {
         return std::nullopt;
     }
 
-      while (expected != std::numeric_limits<std::uint64_t>::max()) {
-        if (next.compare_exchange_weak(
-                expected, expected + 1U,
-                std::memory_order_relaxed,
-                std::memory_order_relaxed)) {
+    while (expected != std::numeric_limits<std::uint64_t>::max()) {
+        if (next.compare_exchange_weak(expected, expected + 1U, std::memory_order_relaxed,
+                                       std::memory_order_relaxed)) {
             return expected;
         }
     }
@@ -84,14 +92,6 @@ bool ensure_thread_token(ThreadRegistry& registry) noexcept {
     return true;
 }
 
-std::unique_ptr<ProducerContext> make_context(const ContextRegistryView& view, std::uint64_t token) {
-    ChannelCold cold{view.logger_id,   token, 0, std::string{}, view.ring_config.max_payload_bytes,
-                     view.dependencies};
-
-    return  std::make_unique<ProducerContext>(
-    std::move(cold), view.ring_config);
-}
-
 ProducerContext* publish_context(std::unique_ptr<ProducerContext>& node,
                                  std::atomic<ProducerContext*>& head) noexcept {
     auto* raw = node.get();
@@ -111,11 +111,11 @@ void install_tls_slot(ThreadRegistry& registry, std::size_t index, std::uint64_t
     assert(context != nullptr);
 
     registry.entries[index] = Entry{logger_id, context};
-    registry.last_logger_id= logger_id;
+    registry.last_logger_id = logger_id;
     registry.last_context = context;
 }
 
-void rollback_tls_slot(ThreadRegistry& registry, std::size_t index) noexcept {
+void rollback_tls_slot(ThreadRegistry& registry, [[maybe_unused]] std::size_t index) noexcept {
     assert(registry.entries.size() == index + 1U);
     assert(registry.entries[index].context == nullptr);
     registry.entries.pop_back();
@@ -143,14 +143,14 @@ ContextResult acquire_thread_context(const ContextRegistryView& view) noexcept {
         return ContextResult::failure(ContextError::registration_closed);
     }
     std::optional<std::size_t> slot;
-    
+
     try {
         slot = prepare_tls_slot(registry);
         if (!slot) {
             return ContextResult::failure(ContextError::tls_capacity_exhausted);
         }
         if (!ensure_thread_token(registry)) {
-            rollback_tls_slot(registry,*slot);
+            rollback_tls_slot(registry, *slot);
             return ContextResult::failure(ContextError::producer_token_exhausted);
         }
 
@@ -159,7 +159,6 @@ ContextResult acquire_thread_context(const ContextRegistryView& view) noexcept {
         install_tls_slot(registry, *slot, view.logger_id, published);
         return ContextResult::success(*published);
     } catch (const std::bad_alloc&) {
-        
         if (slot) {
             rollback_tls_slot(registry, *slot);
         }

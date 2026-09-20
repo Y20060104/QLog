@@ -159,6 +159,11 @@ class SpscRingBuffer final {
     void release(const ReadHandle& read_handle) noexcept;
     void abandon(const ReadHandle& read_handle) noexcept;
     void publish_reclaimed() noexcept;
+    // Producer-only pressure hint. Cached read cursor may overestimate occupancy.
+    [[nodiscard]] bool writer_at_least_half_full() const noexcept {
+        return writer_state_.current_write_cursor_ - writer_state_.cached_read_cursor_ >=
+               cold_state_.config_.capacity_bytes / 2U;
+    }
 
    private:
     static constexpr std::size_t kStorageAlignment = 64;
