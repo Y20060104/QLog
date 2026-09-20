@@ -165,3 +165,95 @@ set_property(DIRECTORY APPEND PROPERTY TEST_INCLUDE_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/record_core_labels.cmake")
 
 include(i1d.cmake)
+
+# Constructor/reset value preparation share the production implementation.
+add_executable(qlog_logger_config_test logger_config_test.cpp)
+target_link_libraries(qlog_logger_config_test PRIVATE QLog::qlog)
+qlog_enable_warnings(qlog_logger_config_test)
+add_test(NAME qlog.logger_config COMMAND qlog_logger_config_test)
+set_tests_properties(qlog.logger_config PROPERTIES
+    WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    LABELS "config"
+)
+
+# Worker-side UTF-8 body formatter compatibility and bounded-output tests.
+add_executable(qlog_text_formatter_test text_formatter_test.cpp)
+target_link_libraries(qlog_text_formatter_test PRIVATE QLog::qlog GTest::gtest_main)
+qlog_enable_warnings(qlog_text_formatter_test)
+gtest_discover_tests(qlog_text_formatter_test
+    TEST_PREFIX "qlog." PROPERTIES LABELS formatter)
+
+# QLog V1 targets Linux; this probe also intercepts POSIX aligned allocation.
+if(UNIX)
+    add_executable(qlog_text_formatter_allocation_test text_formatter_allocation_test.cpp)
+    target_link_libraries(qlog_text_formatter_allocation_test PRIVATE QLog::qlog)
+    qlog_enable_warnings(qlog_text_formatter_allocation_test)
+    add_test(NAME qlog.text_formatter_allocation COMMAND qlog_text_formatter_allocation_test)
+    set_tests_properties(qlog.text_formatter_allocation PROPERTIES LABELS "formatter;allocation")
+endif()
+
+# Isolated producer diagnostics: no backend consumer is started by this fixture.
+find_package(Threads REQUIRED)
+add_executable(qlog_producer_diagnostics_test
+    producer_diagnostics_test.cpp producer_diagnostics_consumer.cpp)
+target_link_libraries(qlog_producer_diagnostics_test PRIVATE QLog::qlog Threads::Threads)
+target_compile_definitions(qlog_producer_diagnostics_test PRIVATE
+    QLOG_TEST_EXPECT_DIAGNOSTICS=${QLOG_DIAGNOSTICS_VALUE})
+qlog_enable_warnings(qlog_producer_diagnostics_test)
+add_test(NAME qlog.producer_diagnostics COMMAND qlog_producer_diagnostics_test)
+set_tests_properties(qlog.producer_diagnostics PROPERTIES LABELS "diagnostics" TIMEOUT 30)
+
+# Separately link the real qlog archive through the public API.
+add_executable(qlog_producer_public_probe i2_runtime_public_probe.cpp)
+target_link_libraries(qlog_producer_public_probe PRIVATE QLog::qlog Threads::Threads)
+qlog_enable_warnings(qlog_producer_public_probe)
+add_test(NAME qlog.producer_public_probe COMMAND qlog_producer_public_probe)
+set_tests_properties(qlog.producer_public_probe PROPERTIES LABELS "diagnostics" TIMEOUT 30)
+
+# Single-owner Appender state machine; scripted I/O, no worker threads.
+add_executable(qlog_appender_test appender_test.cpp)
+target_link_libraries(qlog_appender_test PRIVATE QLog::qlog GTest::gtest_main)
+qlog_enable_warnings(qlog_appender_test)
+gtest_discover_tests(qlog_appender_test TEST_PREFIX "qlog." PROPERTIES LABELS appender)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    add_executable(qlog_appender_posix_test appender_posix_test.cpp)
+    target_link_libraries(qlog_appender_posix_test PRIVATE QLog::qlog GTest::gtest_main Threads::Threads)
+    target_link_options(qlog_appender_posix_test PRIVATE
+        -Wl,--wrap=open -Wl,--wrap=write -Wl,--wrap=fdatasync -Wl,--wrap=fstat -Wl,--wrap=close)
+    qlog_enable_warnings(qlog_appender_posix_test)
+    gtest_discover_tests(qlog_appender_posix_test TEST_PREFIX "qlog." PROPERTIES LABELS "appender")
+endif()
+
+add_executable(qlog_compose_line_test compose_line_test.cpp)
+target_link_libraries(qlog_compose_line_test PRIVATE QLog::qlog GTest::gtest_main Threads::Threads)
+qlog_enable_warnings(qlog_compose_line_test)
+gtest_discover_tests(qlog_compose_line_test TEST_PREFIX "qlog." PROPERTIES LABELS formatter)
+
+add_executable(qlog_backend_session_test backend_session_test.cpp)
+target_link_libraries(qlog_backend_session_test PRIVATE QLog::qlog GTest::gtest_main Threads::Threads)
+target_link_options(qlog_backend_session_test PRIVATE -Wl,--wrap=write)
+qlog_enable_warnings(qlog_backend_session_test)
+gtest_discover_tests(qlog_backend_session_test TEST_PREFIX "qlog." PROPERTIES LABELS backend)
+
+add_executable(qlog_worker_boundary_test worker_boundary_test.cpp)
+target_link_libraries(qlog_worker_boundary_test PRIVATE QLog::qlog)
+add_test(NAME qlog.worker_boundary COMMAND qlog_worker_boundary_test)
+set_tests_properties(qlog.worker_boundary PROPERTIES LABELS backend)
+add_executable(qlog_backend_allocation_test backend_allocation_test.cpp)
+target_link_libraries(qlog_backend_allocation_test PRIVATE QLog::qlog)
+qlog_enable_warnings(qlog_backend_allocation_test)
+add_test(NAME qlog.backend_allocation COMMAND qlog_backend_allocation_test)
+set_tests_properties(qlog.backend_allocation PROPERTIES LABELS "backend;allocation")
+
+add_executable(qlog_worker_runtime_test worker_runtime_test.cpp)
+target_link_libraries(qlog_worker_runtime_test PRIVATE QLog::qlog GTest::gtest_main)
+target_link_options(qlog_worker_runtime_test PRIVATE -Wl,--wrap=write -Wl,--wrap=pthread_sigmask)
+qlog_enable_warnings(qlog_worker_runtime_test)
+gtest_discover_tests(qlog_worker_runtime_test TEST_PREFIX "qlog." PROPERTIES LABELS "worker" TIMEOUT 30)
+
+add_executable(qlog_worker_allocation_test worker_allocation_test.cpp)
+target_link_libraries(qlog_worker_allocation_test PRIVATE QLog::qlog)
+qlog_enable_warnings(qlog_worker_allocation_test)
+add_test(NAME qlog.worker_allocation COMMAND qlog_worker_allocation_test)
+set_tests_properties(qlog.worker_allocation PROPERTIES LABELS "worker;allocation" TIMEOUT 30)
