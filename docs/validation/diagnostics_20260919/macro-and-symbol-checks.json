@@ -1,0 +1,50 @@
+[
+  {
+    "config": "Debug",
+    "mode": "AUTO",
+    "expected": 1,
+    "library_bridge": true,
+    "consumer_bridge_reference": true,
+    "preprocessed_bridge": true
+  },
+  {
+    "config": "Debug",
+    "mode": "ON",
+    "expected": 1,
+    "library_bridge": true,
+    "consumer_bridge_reference": true,
+    "preprocessed_bridge": true
+  },
+  {
+    "config": "Debug",
+    "mode": "OFF",
+    "expected": 0,
+    "library_bridge": false,
+    "consumer_bridge_reference": false,
+    "preprocessed_bridge": false
+  },
+  {
+    "config": "Release",
+    "mode": "AUTO",
+    "expected": 0,
+    "library_bridge": false,
+    "consumer_bridge_reference": false,
+    "preprocessed_bridge": false
+  },
+  {
+    "config": "Release",
+    "mode": "ON",
+    "expected": 1,
+    "library_bridge": true,
+    "consumer_bridge_reference": true,
+    "preprocessed_bridge": true
+  },
+  {
+    "config": "Release",
+    "mode": "OFF",
+    "expected": 0,
+    "library_bridge": false,
+    "consumer_bridge_reference": false,
+    "preprocessed_bridge": false
+  }
+]

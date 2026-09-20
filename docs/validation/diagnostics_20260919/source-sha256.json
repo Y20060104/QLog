@@ -1,0 +1,12 @@
+{
+  "include/qlog/async_logger.hpp": "ec216b46463d92a7bd63e20255f54b1e82d93d61921673ee2b0bc97ca22188cd",
+  "src/async_logger.cpp": "9b2be845e622c9e64533706577ffd2144a1552789e64124cfe8185ad5637f97f",
+  "include/qlog/async_logger_impl.hpp": "18c282e1737ad346bdb170c6496d01ba1e393172a616ba22a891b0fb1a297288",
+  "include/qlog/detail/producer_diagnostics.hpp": "4dd9e18a476acaafc05eb7b20fb052482a12f51b1aadaa2667763ee01dbe524d",
+  "tests/producer_diagnostics_test.cpp": "4fbb4c2dfe75a7c40728ec65f6b47874e747bdbb81d0c73a933a15e05575cb6a",
+  "tests/producer_diagnostics_consumer.cpp": "cda94720a765f645a52b58784f44fada1e43808f0846b11e7e6fe31b9e909de8",
+  "tests/i2_runtime_public_probe.cpp": "9f822e13c3ca2f025d1b6058fe93a2c437a47b8928227f0fa49f06af51dd2a34",
+  "tests/CMakeLists.txt": "44fabb1e17a80670442be21d4e885e334f522f476eb7b96586915a59523d6d85",
+  "CMakeLists.txt": "4f5e1bf565a76a1e66609481200c9297968525d13aac596c62d765d8b09572b4",
+  "tools/verify_diagnostics_matrix.py": "8c43572185d0a318250e5bb793199c9c5816a8ddbf0455630fb8813c51c532c0"
+}

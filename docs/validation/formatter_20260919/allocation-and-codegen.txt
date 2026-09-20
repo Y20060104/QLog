@@ -1,0 +1,3 @@
+20000 formatter calls: zero C++ allocations (including first call and fixed fallback)
+GCC 13.3 -O3 formatter object integer div/idiv instructions: 0
+GCC 13.3 and Clang 18: -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror compilation passed.

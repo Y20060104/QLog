@@ -1,0 +1,5 @@
+-- Configuring incomplete, errors occurred!
+CMake Error at CMakeLists.txt:31 (message):
+  QLOG_ENABLE_DIAGNOSTICS must be AUTO, ON or OFF
+
+

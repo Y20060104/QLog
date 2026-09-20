@@ -1,0 +1,1 @@
+PASS: diagnostics=1; 8 return sites, synthetic error mappings, cross-TU consumers, 8-thread conservation
