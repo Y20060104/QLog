@@ -1,0 +1,17 @@
+{
+  "observed_utc": "2026-09-20T07:52:34.1846976Z",
+  "os": {
+    "Caption": "Microsoft Windows 11 家庭版 中文版",
+    "Version": "10.0.26200",
+    "BuildNumber": "26200",
+    "TotalVisibleMemorySize": 16624476
+  },
+  "cpu": {
+    "Name": "Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz",
+    "NumberOfCores": 6,
+    "NumberOfLogicalProcessors": 12,
+    "MaxClockSpeed": 2592
+  },
+  "power_scheme": "电源方案 GUID: 64a64f24-65b9-4b56-befd-5ec1eaced9b3  (Power saver)\r\n",
+  "note": "Observed during the run; power policy was not modified."
+}

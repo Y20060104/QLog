@@ -1,0 +1,6 @@
+Official origin: https://github.com/Tencent/BqLog.git
+Branch: main
+Remote ls-remote: 60ef4d3ea52635dc54e87e79dfb3a71fb5b1ecc9
+Pull: Already up to date.
+WSL direct HTTPS timed out; Windows Git OpenSSL successfully fetched/pulled the same WSL repository. User independently confirmed git pull Already up to date.
+Benchmark uses git archive HEAD, excluding all local dirty modifications.

@@ -1,0 +1,75 @@
+[
+  {
+    "name": "analysis",
+    "command": [
+      "python3",
+      "tools/analyze_production_benchmark.py"
+    ]
+  },
+  {
+    "name": "measurement-selftest-build",
+    "command": [
+      "g++",
+      "-std=c++20",
+      "-O2",
+      "-DNDEBUG",
+      "-DQLOG_ENABLE_DIAGNOSTICS=0",
+      "-pthread",
+      "-I/home/qq344/QLog/build/native-production/qlog-source/include",
+      "/home/qq344/QLog/benchmarks/production/harness_self_test.cpp",
+      "/home/qq344/QLog/build/native-production/qlog-build/libqlog.a",
+      "-o",
+      "/home/qq344/QLog/build/native-production/measurement-self-test"
+    ]
+  },
+  {
+    "name": "measurement-selftest",
+    "command": [
+      "/home/qq344/QLog/build/native-production/measurement-self-test"
+    ]
+  },
+  {
+    "name": "source-packaging",
+    "command": [
+      "python3",
+      "tools/package_production_benchmark.py",
+      "--sources-only"
+    ]
+  },
+  {
+    "name": "reproduction-build",
+    "command": [
+      "python3",
+      "tools/reproduce_production_benchmark.py",
+      "/home/qq344/QLog/build/native-reproduction-check-d296256ec9"
+    ]
+  },
+  {
+    "name": "reproduction-smoke-qlog",
+    "command": [
+      "/home/qq344/QLog/build/native-reproduction-check-d296256ec9/build/native-production/qlog-native",
+      "/home/qq344/QLog/build/native-reproduction-check-d296256ec9/smoke-qlog",
+      "shared",
+      "4",
+      "2",
+      "mixed",
+      "1",
+      "1",
+      "0"
+    ]
+  },
+  {
+    "name": "reproduction-smoke-bqlog",
+    "command": [
+      "/home/qq344/QLog/build/native-reproduction-check-d296256ec9/build/native-production/bqlog-native",
+      "/home/qq344/QLog/build/native-reproduction-check-d296256ec9/smoke-bqlog",
+      "shared",
+      "4",
+      "2",
+      "mixed",
+      "1",
+      "1",
+      "0"
+    ]
+  }
+]

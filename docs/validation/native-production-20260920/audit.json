@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "trials": 102,
+  "checks": [
+    "plan/protocol/source hashes",
+    "all expected trials and no failure files",
+    "delivery counters and producer digests",
+    "all histogram bin counts and quantiles",
+    "latency sampling counts",
+    "monotone one-second progress",
+    "timing and throughput arithmetic",
+    "output file byte accounting"
+  ]
+}

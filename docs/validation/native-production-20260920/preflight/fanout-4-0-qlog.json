@@ -1,0 +1,352 @@
+{
+  "plan_sha256": "dec1db9a4d164bfa9022e1e4a91d0a6a72d3b38e7f6b56330bf9d0527c73daf8",
+  "scenario": {
+    "id": "fanout-4",
+    "mode": "shared",
+    "producers": 4,
+    "targets": 2,
+    "payload": "mixed",
+    "rate": 0,
+    "primary": true
+  },
+  "rep": 0,
+  "library": "qlog",
+  "command": [
+    "/home/qq344/QLog/build/native-production/qlog-native",
+    "/home/qq344/QLog/build/native-production-data-i_h29lxt/fanout-4-0-qlog",
+    "shared",
+    "4",
+    "2",
+    "mixed",
+    "1",
+    "1",
+    "0"
+  ],
+  "state_before": {
+    "utc": "2026-09-20T07:36:48Z",
+    "loadavg": [
+      1.759765625,
+      0.7265625,
+      0.5068359375
+    ],
+    "meminfo": "MemTotal:        8053960 kB\nMemFree:         5255316 kB\nMemAvailable:    5646092 kB\nBuffers:            5580 kB\nCached:           479772 kB\nSwapCached:            0 kB\nActive:           336728 kB\nInactive:        2015592 kB\nActive(anon):       2796 kB\nInactive(anon):  1867760 kB\nActive(file):     333932 kB\nInactive(file):   147832 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:       2097152 kB\nSwapFree:        2096372 kB\nDirty:               360 kB\nWriteback:            40 kB\nAnonPages:       1867008 kB\nMapped:           255620 kB\nShmem:              3588 kB\nKReclaimable:      97692 kB\nSlab:             173624 kB\nSReclaimable:      97692 kB\nSUnreclaim:        75932 kB\nKernelStack:        8176 kB\nPageTables:        25800 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     6124132 kB\nCommitted_AS:    3796640 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       33172 kB\nVmallocChunk:          0 kB\nPercpu:             6592 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:       84992 kB\nDirectMap2M:     6127616 kB\nDirectMap1G:    11534336 kB\n",
+    "pressure/cpu": "some avg10=0.00 avg60=0.00 avg300=0.00 total=45314537\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+    "pressure/io": "some avg10=1.87 avg60=0.76 avg300=0.20 total=24114692\nfull avg10=1.87 avg60=0.76 avg300=0.20 total=23699811\n",
+    "pressure/memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=69339\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=69287\n"
+  },
+  "state_after": {
+    "utc": "2026-09-20T07:36:52Z",
+    "loadavg": [
+      1.69873046875,
+      0.7314453125,
+      0.509765625
+    ],
+    "meminfo": "MemTotal:        8053960 kB\nMemFree:         4849864 kB\nMemAvailable:    5635820 kB\nBuffers:            5616 kB\nCached:           869984 kB\nSwapCached:            0 kB\nActive:           726892 kB\nInactive:        2015992 kB\nActive(anon):       2796 kB\nInactive(anon):  1868100 kB\nActive(file):     724096 kB\nInactive(file):   147892 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:       2097152 kB\nSwapFree:        2096372 kB\nDirty:               424 kB\nWriteback:             0 kB\nAnonPages:       1867312 kB\nMapped:           255868 kB\nShmem:              3588 kB\nKReclaimable:     107608 kB\nSlab:             183520 kB\nSReclaimable:     107608 kB\nSUnreclaim:        75912 kB\nKernelStack:        8080 kB\nPageTables:        25912 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     6124132 kB\nCommitted_AS:    3796640 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       33172 kB\nVmallocChunk:          0 kB\nPercpu:             6592 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:       84992 kB\nDirectMap2M:     6127616 kB\nDirectMap1G:    11534336 kB\n",
+    "pressure/cpu": "some avg10=0.00 avg60=0.00 avg300=0.00 total=45326906\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+    "pressure/io": "some avg10=5.92 avg60=1.70 avg300=0.42 total=24475831\nfull avg10=5.92 avg60=1.70 avg300=0.42 total=24060678\n",
+    "pressure/memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=69339\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=69287\n"
+  },
+  "whole_process_and_validation_seconds": 4.117257410998718,
+  "result": {
+    "library": "qlog",
+    "mode": "shared",
+    "workload": "mixed",
+    "producers": 4,
+    "targets": 2,
+    "warmup_seconds": 1,
+    "measure_seconds": 1,
+    "offered_rate": 0,
+    "offered": 34264320,
+    "attempted": 34264320,
+    "accepted": 708601,
+    "rejected": 33555719,
+    "not_attempted_by_deadline": 0,
+    "errors": 0,
+    "producer_seconds": 1.00017,
+    "end_to_end_seconds": 1.0033,
+    "goodput": 706270,
+    "output_bytes": 191119908,
+    "cold_start_us": 1305.78,
+    "drain_ms": 3.13313,
+    "cpu_seconds": 5.06635,
+    "baseline_max_rss_kib": 21288,
+    "max_rss_kib": 21288,
+    "harness_stats_bytes": 393984,
+    "voluntary_context_switches": 22,
+    "involuntary_context_switches": 4,
+    "accepted_latency": {
+      "samples": 726,
+      "p50_ns_upper": 197,
+      "p95_ns_upper": 299,
+      "p99_ns_upper": 791,
+      "p999_ns_upper": 50687,
+      "max_ns": 50245,
+      "bins": [
+        [
+          98,
+          45
+        ],
+        [
+          99,
+          58
+        ],
+        [
+          162,
+          397
+        ],
+        [
+          163,
+          21
+        ],
+        [
+          201,
+          80
+        ],
+        [
+          202,
+          92
+        ],
+        [
+          226,
+          15
+        ],
+        [
+          251,
+          3
+        ],
+        [
+          265,
+          2
+        ],
+        [
+          278,
+          3
+        ],
+        [
+          290,
+          3
+        ],
+        [
+          323,
+          3
+        ],
+        [
+          373,
+          1
+        ],
+        [
+          379,
+          1
+        ],
+        [
+          430,
+          1
+        ],
+        [
+          674,
+          1
+        ]
+      ]
+    },
+    "rejected_latency": {
+      "samples": 32836,
+      "p50_ns_upper": 99,
+      "p95_ns_upper": 197,
+      "p99_ns_upper": 299,
+      "p999_ns_upper": 495,
+      "max_ns": 19014,
+      "bins": [
+        [
+          0,
+          150
+        ],
+        [
+          98,
+          9957
+        ],
+        [
+          99,
+          10701
+        ],
+        [
+          162,
+          10923
+        ],
+        [
+          163,
+          446
+        ],
+        [
+          201,
+          238
+        ],
+        [
+          202,
+          345
+        ],
+        [
+          226,
+          40
+        ],
+        [
+          251,
+          8
+        ],
+        [
+          265,
+          5
+        ],
+        [
+          278,
+          3
+        ],
+        [
+          290,
+          2
+        ],
+        [
+          302,
+          4
+        ],
+        [
+          315,
+          1
+        ],
+        [
+          323,
+          1
+        ],
+        [
+          329,
+          1
+        ],
+        [
+          360,
+          1
+        ],
+        [
+          366,
+          1
+        ],
+        [
+          373,
+          3
+        ],
+        [
+          396,
+          1
+        ],
+        [
+          470,
+          1
+        ],
+        [
+          542,
+          1
+        ],
+        [
+          584,
+          2
+        ],
+        [
+          586,
+          1
+        ]
+      ]
+    },
+    "scheduled_latency": {
+      "samples": 0,
+      "p50_ns_upper": 0,
+      "p95_ns_upper": 0,
+      "p99_ns_upper": 0,
+      "p999_ns_upper": 0,
+      "max_ns": 0,
+      "bins": []
+    },
+    "windows": [
+      {
+        "seconds": 1.00005,
+        "accepted": 708601,
+        "attempted": 34264320,
+        "file_bytes": 190401978
+      }
+    ],
+    "producer_digests": [
+      [
+        {
+          "count": 203515,
+          "ordered": "13792550559293645890",
+          "sum": "15227884962077048925"
+        },
+        {
+          "count": 155911,
+          "ordered": "5921121454683032768",
+          "sum": "4306537621491433964"
+        }
+      ],
+      [
+        {
+          "count": 196216,
+          "ordered": "12572201137841229205",
+          "sum": "12727848636228027506"
+        },
+        {
+          "count": 186441,
+          "ordered": "5619710580271885716",
+          "sum": "6810201404985677953"
+        }
+      ],
+      [
+        {
+          "count": 170152,
+          "ordered": "2723865981824059731",
+          "sum": "6571939479872762677"
+        },
+        {
+          "count": 186427,
+          "ordered": "10773899032408392361",
+          "sum": "14615582271035745057"
+        }
+      ],
+      [
+        {
+          "count": 203529,
+          "ordered": "6831249716234030861",
+          "sum": "2910435716762957119"
+        },
+        {
+          "count": 179822,
+          "ordered": "13866120527258467341",
+          "sum": "780660800153235372"
+        }
+      ]
+    ],
+    "verified": true,
+    "verification": "all lines parsed, exact body and monotone IDs, accepted count plus two 64-bit fingerprints per producer/phase/target"
+  },
+  "output_files": [
+    {
+      "path": "config.txt",
+      "bytes": 80,
+      "sha256": "cce4d4a29e4d2953a2a6e2bec227bdbf56bfb03945badf566f597353f6d594f0",
+      "first_2048_utf8": "QLog defaults; name=production; category=default; File targets=2; independent=0\n",
+      "last_2048_utf8": "QLog defaults; name=production; category=default; File targets=2; independent=0\n"
+    },
+    {
+      "path": "target0/output.log",
+      "bytes": 199872120,
+      "sha256": "98858ed09c3260e9fbabbf823c1c3ad53a6a00038d7b1df35a332fda00fb42f8",
+      "first_2048_utf8": "[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=0 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=1 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=2 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=3 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=4 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=5 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=6 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=7 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=8 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=9 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=10 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=11 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=12 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=13 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=14 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=15 value=3.141 ",
+      "last_2048_utf8": " text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510939 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510940 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510941 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510942 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510943 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510944 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510945 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510946 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510947 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510948 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510949 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510950 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510951 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510952 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510953 value=3.141 text=abcdefghijklmnop\n"
+    },
+    {
+      "path": "target1/output.log",
+      "bytes": 199872120,
+      "sha256": "98858ed09c3260e9fbabbf823c1c3ad53a6a00038d7b1df35a332fda00fb42f8",
+      "first_2048_utf8": "[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=0 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=1 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=2 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=3 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=4 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=5 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=6 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=7 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=8 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=9 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=10 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=11 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=12 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=13 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=14 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:48.630364557+00:00] [INFO] [production/default] [tid=81377] PROD w=0 p=0 n=15 value=3.141 ",
+      "last_2048_utf8": " text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510939 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510940 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510941 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510942 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510943 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510944 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510945 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510946 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510947 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510948 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510949 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510950 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510951 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510952 value=3.141 text=abcdefghijklmnop\n[2026-09-20T07:36:50.632291490+00:00] [INFO] [production/default] [tid=81377] PROD w=1 p=0 n=8510953 value=3.141 text=abcdefghijklmnop\n"
+    }
+  ],
+  "raw_text_retained": false,
+  "preflight": true
+}

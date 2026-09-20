@@ -1,0 +1,212 @@
+{
+  "plan_sha256": "dec1db9a4d164bfa9022e1e4a91d0a6a72d3b38e7f6b56330bf9d0527c73daf8",
+  "scenario": {
+    "id": "small-1",
+    "mode": "shared",
+    "producers": 1,
+    "targets": 1,
+    "payload": "small",
+    "rate": 0,
+    "primary": true
+  },
+  "rep": 0,
+  "library": "bqlog",
+  "command": [
+    "/home/qq344/QLog/build/native-production/bqlog-native",
+    "/home/qq344/QLog/build/native-production-data-i_h29lxt/small-1-0-bqlog",
+    "shared",
+    "1",
+    "1",
+    "small",
+    "1",
+    "1",
+    "0"
+  ],
+  "state_before": {
+    "utc": "2026-09-20T07:36:17Z",
+    "loadavg": [
+      0.26318359375,
+      0.3779296875,
+      0.390625
+    ],
+    "meminfo": "MemTotal:        8053960 kB\nMemFree:         5231536 kB\nMemAvailable:    5620624 kB\nBuffers:            5096 kB\nCached:           478588 kB\nSwapCached:            0 kB\nActive:           335144 kB\nInactive:        2035000 kB\nActive(anon):       2804 kB\nInactive(anon):  1887244 kB\nActive(file):     332340 kB\nInactive(file):   147756 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:       2097152 kB\nSwapFree:        2096372 kB\nDirty:               216 kB\nWriteback:             0 kB\nAnonPages:       1886464 kB\nMapped:           255788 kB\nShmem:              3588 kB\nKReclaimable:      97656 kB\nSlab:             173548 kB\nSReclaimable:      97656 kB\nSUnreclaim:        75892 kB\nKernelStack:        8112 kB\nPageTables:        25856 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     6124132 kB\nCommitted_AS:    3816176 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       33252 kB\nVmallocChunk:          0 kB\nPercpu:             6592 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:       84992 kB\nDirectMap2M:     6127616 kB\nDirectMap1G:    11534336 kB\n",
+    "pressure/cpu": "some avg10=0.00 avg60=0.00 avg300=0.00 total=45229475\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+    "pressure/io": "some avg10=0.18 avg60=0.03 avg300=0.02 total=23157179\nfull avg10=0.18 avg60=0.03 avg300=0.02 total=22742983\n",
+    "pressure/memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=69339\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=69287\n"
+  },
+  "state_after": {
+    "utc": "2026-09-20T07:36:21Z",
+    "loadavg": [
+      0.322265625,
+      0.388671875,
+      0.39404296875
+    ],
+    "meminfo": "MemTotal:        8053960 kB\nMemFree:         4784580 kB\nMemAvailable:    5635048 kB\nBuffers:            5148 kB\nCached:           934188 kB\nSwapCached:            0 kB\nActive:           788880 kB\nInactive:        2018688 kB\nActive(anon):       2796 kB\nInactive(anon):  1869088 kB\nActive(file):     786084 kB\nInactive(file):   149600 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:       2097152 kB\nSwapFree:        2096372 kB\nDirty:              2536 kB\nWriteback:             0 kB\nAnonPages:       1868312 kB\nMapped:           255684 kB\nShmem:              3588 kB\nKReclaimable:     109236 kB\nSlab:             185248 kB\nSReclaimable:     109236 kB\nSUnreclaim:        76012 kB\nKernelStack:        8080 kB\nPageTables:        25716 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     6124132 kB\nCommitted_AS:    3798780 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       33220 kB\nVmallocChunk:          0 kB\nPercpu:             6592 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:       84992 kB\nDirectMap2M:     6127616 kB\nDirectMap1G:    11534336 kB\n",
+    "pressure/cpu": "some avg10=0.00 avg60=0.00 avg300=0.00 total=45240543\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+    "pressure/io": "some avg10=1.02 avg60=0.19 avg300=0.06 total=23272737\nfull avg10=1.02 avg60=0.19 avg300=0.06 total=22858407\n",
+    "pressure/memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=69339\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=69287\n"
+  },
+  "whole_process_and_validation_seconds": 4.453460320000886,
+  "result": {
+    "library": "bqlog",
+    "mode": "shared",
+    "workload": "small",
+    "producers": 1,
+    "targets": 1,
+    "warmup_seconds": 1,
+    "measure_seconds": 1,
+    "offered_rate": 0,
+    "offered": 2509056,
+    "attempted": 2509056,
+    "accepted": 2509056,
+    "rejected": 0,
+    "not_attempted_by_deadline": 0,
+    "errors": 0,
+    "producer_seconds": 1.00019,
+    "end_to_end_seconds": 1.00028,
+    "goodput": 2508360.0,
+    "output_bytes": 237249210,
+    "cold_start_us": 671.872,
+    "drain_ms": 0.089478,
+    "cpu_seconds": 2.02476,
+    "baseline_max_rss_kib": 21084,
+    "max_rss_kib": 21084,
+    "harness_stats_bytes": 98496,
+    "voluntary_context_switches": 5,
+    "involuntary_context_switches": 5,
+    "accepted_latency": {
+      "samples": 2458,
+      "p50_ns_upper": 197,
+      "p95_ns_upper": 199,
+      "p99_ns_upper": 299,
+      "p999_ns_upper": 106495,
+      "max_ns": 153531,
+      "bins": [
+        [
+          98,
+          522
+        ],
+        [
+          99,
+          622
+        ],
+        [
+          162,
+          1117
+        ],
+        [
+          163,
+          115
+        ],
+        [
+          201,
+          32
+        ],
+        [
+          202,
+          36
+        ],
+        [
+          226,
+          3
+        ],
+        [
+          251,
+          3
+        ],
+        [
+          624,
+          1
+        ],
+        [
+          635,
+          1
+        ],
+        [
+          660,
+          1
+        ],
+        [
+          686,
+          1
+        ],
+        [
+          736,
+          1
+        ],
+        [
+          743,
+          1
+        ],
+        [
+          744,
+          1
+        ],
+        [
+          778,
+          1
+        ]
+      ]
+    },
+    "rejected_latency": {
+      "samples": 0,
+      "p50_ns_upper": 0,
+      "p95_ns_upper": 0,
+      "p99_ns_upper": 0,
+      "p999_ns_upper": 0,
+      "max_ns": 0,
+      "bins": []
+    },
+    "scheduled_latency": {
+      "samples": 0,
+      "p50_ns_upper": 0,
+      "p95_ns_upper": 0,
+      "p99_ns_upper": 0,
+      "p999_ns_upper": 0,
+      "max_ns": 0,
+      "bins": []
+    },
+    "windows": [
+      {
+        "seconds": 1.00012,
+        "accepted": 2509056,
+        "attempted": 2509056,
+        "file_bytes": 237212486
+      }
+    ],
+    "producer_digests": [
+      [
+        {
+          "count": 2400000,
+          "ordered": "2061508267967749507",
+          "sum": "15605944617208527255"
+        },
+        {
+          "count": 2509056,
+          "ordered": "18043884296772318595",
+          "sum": "14899549882416962975"
+        }
+      ]
+    ],
+    "verified": true,
+    "verification": "all lines parsed, exact body and monotone IDs, accepted count plus two 64-bit fingerprints per producer/phase/target"
+  },
+  "output_files": [
+    {
+      "path": "config.txt",
+      "bytes": 194,
+      "sha256": "eae1f502de84d396f0e5f3834d3f128cc54ef51f21ca7d2cd1d57dc917535454",
+      "first_2048_utf8": "appenders_config.file0.type=text_file\nappenders_config.file0.levels=[info]\nappenders_config.file0.file_name=/home/qq344/QLog/build/native-production-data-i_h29lxt/small-1-0-bqlog/target0/output\n",
+      "last_2048_utf8": "appenders_config.file0.type=text_file\nappenders_config.file0.levels=[info]\nappenders_config.file0.file_name=/home/qq344/QLog/build/native-production-data-i_h29lxt/small-1-0-bqlog/target0/output\n"
+    },
+    {
+      "path": "target0/output_20260920_1.log",
+      "bytes": 464138100,
+      "sha256": "ead8002352c54550d84123da7e66c34a86bfcdf169e84baf2eddc0f5edacee36",
+      "first_2048_utf8": " 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=0 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=1 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=2 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=3 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=4 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=5 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=6 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=7 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=8 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=9 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=10 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=11 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=12 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=13 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=14 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=15 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=16 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=17 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=18 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=19 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=20 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=21 code=200\n 2026-09-20 15:36:17.437[tid-140335439148736 bqlog-native]\t[I]\tPROD w=0 p=0 n=",
+      "last_2048_utf8": "36 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509034 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509035 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509036 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509037 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509038 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509039 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509040 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509041 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509042 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509043 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509044 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509045 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509046 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509047 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509048 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509049 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509050 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509051 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509052 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509053 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509054 code=200\n 2026-09-20 15:36:19.439[tid-140335439148736 bqlog-native]\t[I]\tPROD w=1 p=0 n=2509055 code=200\n"
+    }
+  ],
+  "raw_text_retained": false,
+  "preflight": true
+}

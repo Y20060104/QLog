@@ -1,0 +1,128 @@
+{
+  "plan_sha256": "dec1db9a4d164bfa9022e1e4a91d0a6a72d3b38e7f6b56330bf9d0527c73daf8",
+  "plan": {
+    "schema": 1,
+    "scope": "native-default buffered text logging on declared WSL2 host",
+    "warmup_seconds": 3,
+    "measure_seconds": 10,
+    "repetitions": 5,
+    "seed": 20260920,
+    "primary_metric": "verified accepted records / time from measured start to producer stop and buffered drain completion",
+    "overall_index": "equal-weight geometric mean of paired QLog/BQLog goodput ratios over the 8 fixed saturation scenarios; CI block bootstrap over 5 repetitions; not a universal production/SLA score",
+    "defaults": "keep native ring/cache sizes, full policy, adaptive queue, formatter, prefix, timestamp, worker scheduling, and rolling defaults; only select text output paths, info level, and explicit independent mode where specified",
+    "sampling": "1 in 1021 attempts; 4096-bin log histogram with <=1/64 relative bin width above 64 ns; quantiles report bin upper bounds",
+    "validation": "all output lines parsed; exact body, strict per-producer order, counts and two 64-bit fingerprints per producer/phase/target; not a collision-free cryptographic proof",
+    "exclusions": "no per-trial outlier removal; nonzero exit or integrity failure aborts suite; preflight excluded; no durable or raw-device bandwidth claim",
+    "scenarios": [
+      {
+        "id": "small-1",
+        "mode": "shared",
+        "producers": 1,
+        "targets": 1,
+        "payload": "small",
+        "rate": 0,
+        "primary": true
+      },
+      {
+        "id": "small-8",
+        "mode": "shared",
+        "producers": 8,
+        "targets": 1,
+        "payload": "small",
+        "rate": 0,
+        "primary": true
+      },
+      {
+        "id": "mixed-1",
+        "mode": "shared",
+        "producers": 1,
+        "targets": 1,
+        "payload": "mixed",
+        "rate": 0,
+        "primary": true
+      },
+      {
+        "id": "mixed-4",
+        "mode": "shared",
+        "producers": 4,
+        "targets": 1,
+        "payload": "mixed",
+        "rate": 0,
+        "primary": true
+      },
+      {
+        "id": "mixed-8",
+        "mode": "shared",
+        "producers": 8,
+        "targets": 1,
+        "payload": "mixed",
+        "rate": 0,
+        "primary": true
+      },
+      {
+        "id": "large-4",
+        "mode": "shared",
+        "producers": 4,
+        "targets": 1,
+        "payload": "large",
+        "rate": 0,
+        "primary": true
+      },
+      {
+        "id": "independent-4",
+        "mode": "independent",
+        "producers": 4,
+        "targets": 1,
+        "payload": "mixed",
+        "rate": 0,
+        "primary": true
+      },
+      {
+        "id": "fanout-4",
+        "mode": "shared",
+        "producers": 4,
+        "targets": 2,
+        "payload": "mixed",
+        "rate": 0,
+        "primary": true
+      },
+      {
+        "id": "offered-200k",
+        "mode": "shared",
+        "producers": 4,
+        "targets": 1,
+        "payload": "mixed",
+        "rate": 200000,
+        "primary": false
+      },
+      {
+        "id": "offered-1m",
+        "mode": "shared",
+        "producers": 4,
+        "targets": 1,
+        "payload": "mixed",
+        "rate": 1000000,
+        "primary": false
+      }
+    ],
+    "soak": {
+      "id": "soak-mixed-4",
+      "mode": "shared",
+      "producers": 4,
+      "targets": 1,
+      "payload": "mixed",
+      "rate": 0,
+      "primary": false,
+      "measure_seconds": 60,
+      "repetitions": 1
+    }
+  },
+  "source_ids": {
+    "qlog": "f80988d96185f2ff158d3805f46c4c8b4b2c17908faf7fe16885cf64f45c5f58",
+    "bqlog": "f711e18aa571e10001aff120030c41a0f74d334519ef952ca41437f00db4c52d"
+  },
+  "binaries": {
+    "qlog": "bded58064caeaeb70833cc5d749603a54842102443ddb4acdac77a60ddccb404",
+    "bqlog": "a27d163af92dfd4db073172ada4c69a1c1acd3181941d9c5204f089a44b6ec50"
+  }
+}

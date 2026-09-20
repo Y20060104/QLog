@@ -1,0 +1,716 @@
+[
+  {
+    "rep": 0,
+    "scenario": "small-1",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "small-1",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "offered-200k",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "offered-200k",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "large-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "large-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "small-8",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "small-8",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "fanout-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "fanout-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "independent-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "independent-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "mixed-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "mixed-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "mixed-1",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "mixed-1",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "mixed-8",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "mixed-8",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "offered-1m",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "offered-1m",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "small-8",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "small-8",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "offered-200k",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "offered-200k",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "independent-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "independent-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "offered-1m",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "offered-1m",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "large-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "large-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "mixed-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "mixed-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "fanout-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "fanout-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "mixed-8",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "mixed-8",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "mixed-1",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "mixed-1",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "small-1",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 1,
+    "scenario": "small-1",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "small-1",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "small-1",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "fanout-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "fanout-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "offered-1m",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "offered-1m",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "small-8",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "small-8",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "large-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "large-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "offered-200k",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "offered-200k",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "mixed-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "mixed-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "mixed-1",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "mixed-1",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "independent-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "independent-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "mixed-8",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 2,
+    "scenario": "mixed-8",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "offered-1m",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "offered-1m",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "mixed-1",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "mixed-1",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "small-1",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "small-1",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "small-8",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "small-8",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "independent-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "independent-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "offered-200k",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "offered-200k",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "mixed-8",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "mixed-8",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "mixed-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "mixed-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "fanout-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "fanout-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "large-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 3,
+    "scenario": "large-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "mixed-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "mixed-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "mixed-8",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "mixed-8",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "small-1",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "small-1",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "offered-200k",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "offered-200k",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "independent-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "independent-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "mixed-1",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "mixed-1",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "offered-1m",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "offered-1m",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "small-8",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "small-8",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "fanout-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "fanout-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "large-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 4,
+    "scenario": "large-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 10
+  },
+  {
+    "rep": 0,
+    "scenario": "soak-mixed-4",
+    "library": "bqlog",
+    "warmup": 3,
+    "seconds": 60
+  },
+  {
+    "rep": 0,
+    "scenario": "soak-mixed-4",
+    "library": "qlog",
+    "warmup": 3,
+    "seconds": 60
+  }
+]

@@ -1,0 +1,1 @@
+{"method":"median of 9 batch means, 500000 calls per batch","body_ns_per_record":194.568,"filtered_ns_per_call":2.68134,"clock_pair_p50_ns":0,"clock_pair_p99_ns":99,"checksum":602130900}

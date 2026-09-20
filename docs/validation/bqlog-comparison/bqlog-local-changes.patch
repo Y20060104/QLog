@@ -1,0 +1,198 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 8a18149c..8d136c28 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -493,5 +493,15 @@ install(DIRECTORY "${ARTIFACTS_OUTPUT_BASE_DIR}/include"
+     DESTINATION "."
+ )
+ 
+-
+-
++if(TARGET BqLog)
++    add_executable(test_miso test_miso.cpp)
++    
++    # 使用 INTERFACE 模式重新定义链接，避开 BqLog 自动带入的 Windows 库
++    target_link_libraries(test_miso PRIVATE BqLog pthread dl)
++    
++    # 强制链接器忽略它自动传进来的 dbghelp（这是一种暴力解法）
++    set_target_properties(test_miso PROPERTIES LINK_FLAGS "-Wl,--as-needed")
++    
++    target_include_directories(test_miso PRIVATE . ../include)
++    target_compile_definitions(test_miso PRIVATE BQ_LOG_STATIC_LIB=1)
++endif()
+\ No newline at end of file
+diff --git a/src/bq_log/types/buffer/miso_ring_buffer.cpp b/src/bq_log/types/buffer/miso_ring_buffer.cpp
+index 4f987851..12036c64 100644
+--- a/src/bq_log/types/buffer/miso_ring_buffer.cpp
++++ b/src/bq_log/types/buffer/miso_ring_buffer.cpp
+@@ -178,16 +178,11 @@ namespace bq {
+                             BQ_UNLIKELY_IF((need_block_count << 1) > aligned_blocks_count_)
+                             {
+                                 // not enough space
+-#if defined(BQ_LOG_BUFFER_DEBUG)
+-                                ++result_code_statistics_[(int32_t)enum_buffer_result_code::err_alloc_size_invalid];
+-#endif
+                                 handle.result = enum_buffer_result_code::err_alloc_size_invalid;
+                                 return handle;
+                             }
+                             // not enough space
+-#if defined(BQ_LOG_BUFFER_DEBUG)
+-                            ++result_code_statistics_[(int32_t)enum_buffer_result_code::err_not_enough_space];
+-#endif
++
+                             handle.result = enum_buffer_result_code::err_not_enough_space;
+                             return handle;
+                         }
+@@ -200,9 +195,6 @@ namespace bq {
+             if ((current_write_cursor & (aligned_blocks_count_ - 1)) + need_block_count > aligned_blocks_count_) {
+                 // data must be guaranteed to be contiguous in memory
+                 handle.result = enum_buffer_result_code::err_data_not_contiguous;
+-#if defined(BQ_LOG_BUFFER_DEBUG)
+-                ++result_code_statistics_[(int32_t)enum_buffer_result_code::err_data_not_contiguous];
+-#endif
+                 BUFFER_ATOMIC_CAST_IGNORE_ALIGNMENT(new_block.chunk_head.status, block_status).store_release(bq::miso_ring_buffer::block_status::invalid);
+                 continue;
+             }
+@@ -226,24 +218,11 @@ namespace bq {
+         }
+         block* block_ptr = (block*)(handle.data_addr - data_block_offset);
+         BUFFER_ATOMIC_CAST_IGNORE_ALIGNMENT(block_ptr->chunk_head.status, block_status).store_release(bq::miso_ring_buffer::block_status::used);
+-#if defined(BQ_LOG_BUFFER_DEBUG)
+-        total_write_bytes_ += block_ptr->chunk_head.get_block_num() * sizeof(block);
+-#endif
+     }
+ 
+     log_buffer_read_handle miso_ring_buffer::read_chunk()
+     {
+-#if defined(BQ_LOG_BUFFER_DEBUG)
+-        assert(!is_read_chunk_waiting_for_return_ && "You cant read a chunk before you returning last chunk back");
+-        if (is_thread_check_enable()) {
+-            if (0 == read_thread_id_) {
+-                read_thread_id_ = bq::platform::thread::get_current_thread_id();
+-            }
+-            bq::platform::thread::thread_id current_thread_id = bq::platform::thread::get_current_thread_id();
+-            assert(current_thread_id == read_thread_id_ && "only single thread reading is supported for miso_ring_buffer!");
+-        }
+-        is_read_chunk_waiting_for_return_ = true;
+-#endif
++
+         log_buffer_read_handle handle;
+         while (true) {
+             block& block_ref = cursor_to_block(head_->read_cursor_cache_);
+@@ -251,10 +230,7 @@ namespace bq {
+             auto block_count = block_ref.chunk_head.get_block_num();
+             switch (status) {
+             case block_status::invalid:
+-#if defined(BQ_LOG_BUFFER_DEBUG)
+-                assert((head_->read_cursor_cache_ & (aligned_blocks_count_ - 1)) + block_count > aligned_blocks_count_);
+-                assert(block_count <= aligned_blocks_count_);
+-#endif
++
+                 block_ref.chunk_head.status = block_status::unused;
+                 head_->read_cursor_cache_ += block_count;
+                 continue;
+@@ -263,9 +239,6 @@ namespace bq {
+                 handle.result = enum_buffer_result_code::err_empty_log_buffer;
+                 break;
+             case block_status::used:
+-#if defined(BQ_LOG_BUFFER_DEBUG)
+-                assert((head_->read_cursor_cache_ & (aligned_blocks_count_ - 1)) + block_count <= aligned_blocks_count_);
+-#endif
+                 handle.result = enum_buffer_result_code::success;
+                 handle.data_addr = block_ref.chunk_head.data;
+                 handle.data_size = block_ref.chunk_head.data_size;
+@@ -277,22 +250,11 @@ namespace bq {
+             break;
+         }
+ 
+-#if defined(BQ_LOG_BUFFER_DEBUG)
+-        ++result_code_statistics_[(int32_t)handle.result];
+-#endif
+         return handle;
+     }
+ 
+     log_buffer_read_handle miso_ring_buffer::read_an_empty_chunk()
+     {
+-#if defined(BQ_LOG_BUFFER_DEBUG)
+-        assert(!is_read_chunk_waiting_for_return_ && "You cant read a chunk before you returning last chunk back");
+-        if (is_thread_check_enable()) {
+-            bq::platform::thread::thread_id current_thread_id = bq::platform::thread::get_current_thread_id();
+-            assert((current_thread_id == read_thread_id_ || 0 == read_thread_id_) && "only single thread reading is supported for miso_ring_buffer!");
+-        }
+-        is_read_chunk_waiting_for_return_ = true;
+-#endif
+         log_buffer_read_handle handle;
+         handle.result = enum_buffer_result_code::err_empty_log_buffer;
+         return handle;
+@@ -300,33 +262,12 @@ namespace bq {
+ 
+     void miso_ring_buffer::discard_read_chunk(log_buffer_read_handle& handle)
+     {
+-#if defined(BQ_LOG_BUFFER_DEBUG)
+-        assert(is_read_chunk_waiting_for_return_ && "You cant discard a chunk has not been read yet");
+-        is_read_chunk_waiting_for_return_ = false;
+-        if (is_thread_check_enable()) {
+-            bq::platform::thread::thread_id current_thread_id = bq::platform::thread::get_current_thread_id();
+-            assert((current_thread_id == read_thread_id_ || 0 == read_thread_id_) && "only single thread reading is supported for miso_ring_buffer!");
+-        }
+-#endif
+         handle.result = enum_buffer_result_code::err_empty_log_buffer;
+     }
+ 
+     void miso_ring_buffer::return_read_chunk(const log_buffer_read_handle& handle)
+     {
+-#if defined(BQ_LOG_BUFFER_DEBUG)
+-        assert(is_read_chunk_waiting_for_return_ && "You cant return a chunk has not been read yet");
+-        is_read_chunk_waiting_for_return_ = false;
+-#endif
+-#if defined(BQ_LOG_BUFFER_DEBUG)
+-        if (is_thread_check_enable()) {
+-            bq::platform::thread::thread_id current_thread_id = bq::platform::thread::get_current_thread_id();
+-            assert((current_thread_id == read_thread_id_ || 0 == read_thread_id_) && "only single thread reading is supported for miso_ring_buffer!");
+-        }
+-        if (handle.result == enum_buffer_result_code::success) {
+-            assert((handle.data_addr <= (uint8_t*)(aligned_blocks_ + aligned_blocks_count_)) && (handle.data_addr >= (uint8_t*)aligned_blocks_)
+-                && "please don't return a read handle not belongs to this miso_ring_buffer");
+-        }
+-#endif
++
+         bool need_flush = false;
+         uint32_t start_cursor = head_->read_cursor_start_cache_;
+         if (handle.result == enum_buffer_result_code::err_empty_log_buffer) {
+@@ -343,9 +284,6 @@ namespace bq {
+             for (uint32_t i = 0; i < block_count; ++i) {
+                 cursor_to_block(start_cursor + i).chunk_head.status = block_status::unused;
+             }
+-#if defined(BQ_LOG_BUFFER_DEBUG)
+-            total_read_bytes_ += block_count * sizeof(block);
+-#endif
+             head_->read_cursor_start_cache_ = head_->read_cursor_cache_;
+             cursors_.read_cursor_.store_release(head_->read_cursor_cache_);
+         }
+diff --git a/src/bq_log/types/buffer/miso_ring_buffer.h b/src/bq_log/types/buffer/miso_ring_buffer.h
+index 66651e66..204a20a7 100644
+--- a/src/bq_log/types/buffer/miso_ring_buffer.h
++++ b/src/bq_log/types/buffer/miso_ring_buffer.h
+@@ -93,7 +93,7 @@ namespace bq {
+ 
+         // frequently modified by read thread, so don't access it in write thread too often.
+         BQ_PACK_BEGIN
+-        struct alignas(BQ_CACHE_LINE_SIZE) head {
++        struct alignas(4) head {
+             // it is a snapshot of last read cursor when recovering from memory map file .
+             uint32_t read_cursor_cache_;
+             uint32_t read_cursor_start_cache_;
+diff --git a/test/cpp/CMakeLists.txt b/test/cpp/CMakeLists.txt
+index c1defe7c..91cc6db7 100644
+--- a/test/cpp/CMakeLists.txt
++++ b/test/cpp/CMakeLists.txt
+@@ -109,6 +109,9 @@ COLLECT_SRC_FILES(INC_LIST "${PUB_INC_DIR}")
+ COLLECT_SRC_FILES(THIRD_PARTY_LIST "${THIRD_PARTY_DIR}")
+ COLLECT_SRC_FILES(TEST_LIST "${TEST_DIR}")
+ 
++# Exclude build_perf and other unwanted directories from SRC_LIST
++list(FILTER SRC_LIST EXCLUDE REGEX "build_perf")
++
+ add_compile_definitions(BQ_UNIT_TEST)
+ if(DEFINED ENV{GITHUB_ACTIONS} AND "$ENV{GITHUB_ACTIONS}" STREQUAL "true")
+     message(STATUS "Detected: running inside GitHub Actions")

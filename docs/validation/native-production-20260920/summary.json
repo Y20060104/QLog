@@ -1,0 +1,1040 @@
+{
+  "overall": {
+    "ratio": 0.855431016677714,
+    "ci95": [
+      0.7932719385914963,
+      0.9208604651085517
+    ],
+    "paired_ratios": [
+      0.8968332381626608,
+      0.8724577123464682,
+      0.9714057758106924,
+      0.7623690910925417,
+      0.7905019073079642
+    ],
+    "bootstrap_resamples": 3125
+  },
+  "scenarios": {
+    "small-1": {
+      "primary": true,
+      "paired_goodput": {
+        "ratio": 0.8109876537762635,
+        "ci95": [
+          0.7423763962063461,
+          0.9457839906298418
+        ],
+        "paired_ratios": [
+          0.7647840740198029,
+          1.097132066564381,
+          0.7685559215296336,
+          0.7456029077503766,
+          0.729609370738263
+        ],
+        "bootstrap_resamples": 3125
+      },
+      "qlog": {
+        "goodput": 1461380.0,
+        "accepted": 14614713,
+        "attempted": 190891264,
+        "rejected": 176177549,
+        "offered": 190891264,
+        "not_attempted": 0,
+        "unaccepted_percent": 92.45930420945746,
+        "cpu_seconds": 20.2587,
+        "cpu_us_per_accepted": 1.3794544749575481,
+        "accepted_p99_ns_upper": 299,
+        "accepted_p999_ns_upper": 607,
+        "accepted_max_ns": 24404,
+        "rejected_p99_ns_upper": 199,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.3125,
+        "drain_ms": 0.69298,
+        "cold_start_us": 1818.74,
+        "output_mib_per_second": 155.28791048950026,
+        "bytes_per_accepted": 111.39550833246386,
+        "end_to_end_seconds": 10.0008,
+        "unaccepted_percent_min_max": [
+          92.26781801975653,
+          92.71781968019027
+        ],
+        "total_offered": 959703808,
+        "total_accepted": 72516588,
+        "total_rejected": 887187220,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 92.44385742814517,
+        "accepted_max_observed_ns": 42525,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          1394400.0,
+          1484020.0
+        ]
+      },
+      "bqlog": {
+        "goodput": 1930920.0,
+        "accepted": 19309824,
+        "attempted": 19309824,
+        "rejected": 0,
+        "offered": 19309824,
+        "not_attempted": 0,
+        "unaccepted_percent": 0.0,
+        "cpu_seconds": 20.0574,
+        "cpu_us_per_accepted": 1.0373877136582526,
+        "accepted_p99_ns_upper": 311,
+        "accepted_p999_ns_upper": 145407,
+        "accepted_max_ns": 264964,
+        "rejected_p99_ns_upper": 0,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.4296875,
+        "drain_ms": 0.092191,
+        "cold_start_us": 2724.74,
+        "output_mib_per_second": 175.7218090723514,
+        "bytes_per_accepted": 95.42458771245144,
+        "end_to_end_seconds": 10.0005,
+        "unaccepted_percent_min_max": [
+          0.0,
+          0.0
+        ],
+        "total_offered": 90653952,
+        "total_accepted": 90653952,
+        "total_rejected": 0,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 0.0,
+        "accepted_max_observed_ns": 398736,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          1270950.0,
+          2016490.0
+        ]
+      }
+    },
+    "small-8": {
+      "primary": true,
+      "paired_goodput": {
+        "ratio": 0.8107270068944501,
+        "ci95": [
+          0.6720320533262228,
+          0.9424084630848979
+        ],
+        "paired_ratios": [
+          0.9055087403991251,
+          0.8945443143812709,
+          0.7430213303487863,
+          0.5780601710377139,
+          1.0067099644766586
+        ],
+        "bootstrap_resamples": 3125
+      },
+      "qlog": {
+        "goodput": 1068120.0,
+        "accepted": 10685556,
+        "attempted": 382492416,
+        "rejected": 371806860,
+        "offered": 382492416,
+        "not_attempted": 0,
+        "unaccepted_percent": 97.20633519698336,
+        "cpu_seconds": 80.8327,
+        "cpu_us_per_accepted": 7.5646695408268885,
+        "accepted_p99_ns_upper": 695,
+        "accepted_p999_ns_upper": 2015,
+        "accepted_max_ns": 51215,
+        "rejected_p99_ns_upper": 499,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.44140625,
+        "drain_ms": 3.80503,
+        "cold_start_us": 3700.47,
+        "output_mib_per_second": 112.80894290204421,
+        "bytes_per_accepted": 110.75483936080282,
+        "end_to_end_seconds": 10.0041,
+        "unaccepted_percent_min_max": [
+          96.99873210758852,
+          98.15246025459167
+        ],
+        "total_offered": 1941922816,
+        "total_accepted": 51246800,
+        "total_rejected": 1890676016,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 97.36102796785926,
+        "accepted_max_observed_ns": 4020122,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          769901,
+          1135240.0
+        ]
+      },
+      "bqlog": {
+        "goodput": 1179580.0,
+        "accepted": 11800832,
+        "attempted": 11800832,
+        "rejected": 0,
+        "offered": 11800832,
+        "not_attempted": 0,
+        "unaccepted_percent": 0.0,
+        "cpu_seconds": 80.876,
+        "cpu_us_per_accepted": 6.81988354719396,
+        "accepted_p99_ns_upper": 395,
+        "accepted_p999_ns_upper": 2457599,
+        "accepted_max_ns": 7086493,
+        "rejected_p99_ns_upper": 0,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.44140625,
+        "drain_ms": 0.447769,
+        "cold_start_us": 2573.09,
+        "output_mib_per_second": 106.02112996928898,
+        "bytes_per_accepted": 94.24675819467645,
+        "end_to_end_seconds": 10.0027,
+        "unaccepted_percent_min_max": [
+          0.0,
+          0.0
+        ],
+        "total_offered": 63041024,
+        "total_accepted": 63041024,
+        "total_rejected": 0,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 0.0,
+        "accepted_max_observed_ns": 7927344,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          1114760.0,
+          1527870.0
+        ]
+      }
+    },
+    "mixed-1": {
+      "primary": true,
+      "paired_goodput": {
+        "ratio": 0.7571028107512369,
+        "ci95": [
+          0.610393531361665,
+          0.8602357187516071
+        ],
+        "paired_ratios": [
+          0.8864159232927137,
+          0.813112491373361,
+          0.8355290368512052,
+          0.8318098849631401,
+          0.49659287737483104
+        ],
+        "bootstrap_resamples": 3125
+      },
+      "qlog": {
+        "goodput": 1178200.0,
+        "accepted": 11782593,
+        "attempted": 168551680,
+        "rejected": 156606843,
+        "offered": 168551680,
+        "not_attempted": 0,
+        "unaccepted_percent": 92.94028307333089,
+        "cpu_seconds": 20.1637,
+        "cpu_us_per_accepted": 1.7071107402673427,
+        "accepted_p99_ns_upper": 391,
+        "accepted_p999_ns_upper": 1199,
+        "accepted_max_ns": 23867,
+        "rejected_p99_ns_upper": 199,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.44921875,
+        "drain_ms": 0.587741,
+        "cold_start_us": 3425.2,
+        "output_mib_per_second": 153.17394368547562,
+        "bytes_per_accepted": 136.321904609622,
+        "end_to_end_seconds": 10.0007,
+        "unaccepted_percent_min_max": [
+          92.84228280497592,
+          96.18412547077385
+        ],
+        "total_offered": 867875072,
+        "total_accepted": 55167896,
+        "total_rejected": 812707176,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 93.64333672208527,
+        "accepted_max_observed_ns": 77869,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          731089,
+          1232280.0
+        ]
+      },
+      "bqlog": {
+        "goodput": 1449000.0,
+        "accepted": 14490880,
+        "attempted": 14490880,
+        "rejected": 0,
+        "offered": 14490880,
+        "not_attempted": 0,
+        "unaccepted_percent": 0.0,
+        "cpu_seconds": 20.1527,
+        "cpu_us_per_accepted": 1.3884670126533942,
+        "accepted_p99_ns_upper": 395,
+        "accepted_p999_ns_upper": 182271,
+        "accepted_max_ns": 365986,
+        "rejected_p99_ns_upper": 0,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.44921875,
+        "drain_ms": 0.120528,
+        "cold_start_us": 2248.82,
+        "output_mib_per_second": 166.14731208321103,
+        "bytes_per_accepted": 120.23323428252804,
+        "end_to_end_seconds": 10.0003,
+        "unaccepted_percent_min_max": [
+          0.0,
+          0.0
+        ],
+        "total_offered": 71572480,
+        "total_accepted": 71572480,
+        "total_rejected": 0,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 0.0,
+        "accepted_max_observed_ns": 386910,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          1347460.0,
+          1474850.0
+        ]
+      }
+    },
+    "mixed-4": {
+      "primary": true,
+      "paired_goodput": {
+        "ratio": 0.7573297049904179,
+        "ci95": [
+          0.7336693113005757,
+          0.781753132135436
+        ],
+        "paired_ratios": [
+          0.7859161341978429,
+          0.7374747732492055,
+          0.7181917447533493,
+          0.7898317083868783,
+          0.7577511618241584
+        ],
+        "bootstrap_resamples": 3125
+      },
+      "qlog": {
+        "goodput": 1001210.0,
+        "accepted": 10013665,
+        "attempted": 331548416,
+        "rejected": 321534751,
+        "offered": 331548416,
+        "not_attempted": 0,
+        "unaccepted_percent": 97.01015170202528,
+        "cpu_seconds": 50.2698,
+        "cpu_us_per_accepted": 5.048942964966642,
+        "accepted_p99_ns_upper": 499,
+        "accepted_p999_ns_upper": 2111,
+        "accepted_max_ns": 40450,
+        "rejected_p99_ns_upper": 299,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.44140625,
+        "drain_ms": 1.47378,
+        "cold_start_us": 3769.76,
+        "output_mib_per_second": 129.73259542679105,
+        "bytes_per_accepted": 135.86029617182223,
+        "end_to_end_seconds": 10.0016,
+        "unaccepted_percent_min_max": [
+          96.83213536046303,
+          97.43377182240032
+        ],
+        "total_offered": 1676368640,
+        "total_accepted": 49135424,
+        "total_rejected": 1627233216,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 97.06893681809748,
+        "accepted_max_observed_ns": 245830,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          927401,
+          1026410.0
+        ]
+      },
+      "bqlog": {
+        "goodput": 1293270.0,
+        "accepted": 12934912,
+        "attempted": 12934912,
+        "rejected": 0,
+        "offered": 12934912,
+        "not_attempted": 0,
+        "unaccepted_percent": 0.0,
+        "cpu_seconds": 50.5869,
+        "cpu_us_per_accepted": 3.88662412110529,
+        "accepted_p99_ns_upper": 395,
+        "accepted_p999_ns_upper": 233471,
+        "accepted_max_ns": 1427232,
+        "rejected_p99_ns_upper": 0,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.44921875,
+        "drain_ms": 0.313583,
+        "cold_start_us": 2493.55,
+        "output_mib_per_second": 147.60171816323452,
+        "bytes_per_accepted": 119.66420846872461,
+        "end_to_end_seconds": 10.0017,
+        "unaccepted_percent_min_max": [
+          0.0,
+          0.0
+        ],
+        "total_offered": 64825088,
+        "total_accepted": 64825088,
+        "total_rejected": 0,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 0.0,
+        "accepted_max_observed_ns": 1676678,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          1273940.0,
+          1323350.0
+        ]
+      }
+    },
+    "mixed-8": {
+      "primary": true,
+      "paired_goodput": {
+        "ratio": 0.9566945033714245,
+        "ci95": [
+          0.8260695098460702,
+          1.1079750092115699
+        ],
+        "paired_ratios": [
+          1.1618547993615034,
+          0.8055872487772243,
+          0.9768704815790763,
+          1.1252643563981874,
+          0.7789514768463727
+        ],
+        "bootstrap_resamples": 3125
+      },
+      "qlog": {
+        "goodput": 922090,
+        "accepted": 9223858,
+        "attempted": 381176320,
+        "rejected": 371805313,
+        "offered": 381176320,
+        "not_attempted": 0,
+        "unaccepted_percent": 97.60950134798831,
+        "cpu_seconds": 81.0894,
+        "cpu_us_per_accepted": 8.765124107025727,
+        "accepted_p99_ns_upper": 703,
+        "accepted_p999_ns_upper": 1983,
+        "accepted_max_ns": 4014495,
+        "rejected_p99_ns_upper": 495,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.453125,
+        "drain_ms": 2.77531,
+        "cold_start_us": 4417.42,
+        "output_mib_per_second": 119.37041657899941,
+        "bytes_per_accepted": 135.74810211041316,
+        "end_to_end_seconds": 10.0031,
+        "unaccepted_percent_min_max": [
+          97.54155583431836,
+          97.64772391691581
+        ],
+        "total_offered": 1917127168,
+        "total_accepted": 45915791,
+        "total_rejected": 1871211377,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 97.60496894695304,
+        "accepted_max_observed_ns": 4041232,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          891052,
+          936810
+        ]
+      },
+      "bqlog": {
+        "goodput": 958991,
+        "accepted": 9592832,
+        "attempted": 9592832,
+        "rejected": 0,
+        "offered": 9592832,
+        "not_attempted": 0,
+        "unaccepted_percent": 0.0,
+        "cpu_seconds": 80.9035,
+        "cpu_us_per_accepted": 8.4294189661614,
+        "accepted_p99_ns_upper": 399,
+        "accepted_p999_ns_upper": 2523135,
+        "accepted_max_ns": 7988949,
+        "rejected_p99_ns_upper": 0,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.453125,
+        "drain_ms": 0.353664,
+        "cold_start_us": 3087.55,
+        "output_mib_per_second": 108.90087008321332,
+        "bytes_per_accepted": 119.08923692427791,
+        "end_to_end_seconds": 10.0033,
+        "unaccepted_percent_min_max": [
+          0.0,
+          0.0
+        ],
+        "total_offered": 48625152,
+        "total_accepted": 48625152,
+        "total_rejected": 0,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 0.0,
+        "accepted_max_observed_ns": 137345251,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          784969,
+          1191390.0
+        ]
+      }
+    },
+    "large-4": {
+      "primary": true,
+      "paired_goodput": {
+        "ratio": 1.0186243352558795,
+        "ci95": [
+          0.6489399334404037,
+          1.7818501776604219
+        ],
+        "paired_ratios": [
+          0.966402973611624,
+          0.922348560432677,
+          2.7638974485393812,
+          0.5054246153248619,
+          0.8807214848577252
+        ],
+        "bootstrap_resamples": 3125
+      },
+      "qlog": {
+        "goodput": 531567,
+        "accepted": 5316301,
+        "attempted": 352139520,
+        "rejected": 346563407,
+        "offered": 352139520,
+        "not_attempted": 0,
+        "unaccepted_percent": 98.48757421960062,
+        "cpu_seconds": 49.5975,
+        "cpu_us_per_accepted": 9.489906609877808,
+        "accepted_p99_ns_upper": 687,
+        "accepted_p999_ns_upper": 3359,
+        "accepted_max_ns": 37024,
+        "rejected_p99_ns_upper": 299,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.44140625,
+        "drain_ms": 0.688193,
+        "cold_start_us": 3659.13,
+        "output_mib_per_second": 314.24189407253425,
+        "bytes_per_accepted": 619.8682174157815,
+        "end_to_end_seconds": 10.0012,
+        "unaccepted_percent_min_max": [
+          98.40194517826902,
+          99.58173702191267
+        ],
+        "total_offered": 1780733696,
+        "total_accepted": 22227896,
+        "total_rejected": 1758505800,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 98.75175630977671,
+        "accepted_max_observed_ns": 188776,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          156157,
+          557428
+        ]
+      },
+      "bqlog": {
+        "goodput": 498472,
+        "accepted": 4986624,
+        "attempted": 4986624,
+        "rejected": 0,
+        "offered": 4986624,
+        "not_attempted": 0,
+        "unaccepted_percent": 0.0,
+        "cpu_seconds": 49.8095,
+        "cpu_us_per_accepted": 10.348704855228707,
+        "accepted_p99_ns_upper": 1791,
+        "accepted_p999_ns_upper": 851967,
+        "accepted_max_ns": 3267586,
+        "rejected_p99_ns_upper": 0,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.44140625,
+        "drain_ms": 0.119038,
+        "cold_start_us": 2618.23,
+        "output_mib_per_second": 286.7063569127423,
+        "bytes_per_accepted": 603.1087276682581,
+        "end_to_end_seconds": 10.0038,
+        "unaccepted_percent_min_max": [
+          0.0,
+          0.0
+        ],
+        "total_offered": 21573888,
+        "total_accepted": 21573888,
+        "total_rejected": 0,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 0.0,
+        "accepted_max_observed_ns": 24821785,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          194712,
+          576807
+        ]
+      }
+    },
+    "independent-4": {
+      "primary": true,
+      "paired_goodput": {
+        "ratio": 0.7708128816485434,
+        "ci95": [
+          0.7266698615575369,
+          0.8144610004040163
+        ],
+        "paired_ratios": [
+          0.7847479018110683,
+          0.7433848635366653,
+          0.8498396671104078,
+          0.6987747215276199,
+          0.7854648557610594
+        ],
+        "bootstrap_resamples": 3125
+      },
+      "qlog": {
+        "goodput": 994872,
+        "accepted": 9950457,
+        "attempted": 339806464,
+        "rejected": 329942085,
+        "offered": 339806464,
+        "not_attempted": 0,
+        "unaccepted_percent": 97.0835945367089,
+        "cpu_seconds": 50.3878,
+        "cpu_us_per_accepted": 5.054933657820943,
+        "accepted_p99_ns_upper": 499,
+        "accepted_p999_ns_upper": 1407,
+        "accepted_max_ns": 37170,
+        "rejected_p99_ns_upper": 299,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.453125,
+        "drain_ms": 1.50451,
+        "cold_start_us": 3420.38,
+        "output_mib_per_second": 128.90917083677076,
+        "bytes_per_accepted": 135.86272874240467,
+        "end_to_end_seconds": 10.0017,
+        "unaccepted_percent_min_max": [
+          96.8691539287671,
+          97.09705963686436
+        ],
+        "total_offered": 1667516160,
+        "total_accepted": 49359045,
+        "total_rejected": 1618157115,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 97.03996601748075,
+        "accepted_max_observed_ns": 75001,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          922173,
+          1016690.0
+        ]
+      },
+      "bqlog": {
+        "goodput": 1294380.0,
+        "accepted": 12945408,
+        "attempted": 12945408,
+        "rejected": 0,
+        "offered": 12945408,
+        "not_attempted": 0,
+        "unaccepted_percent": 0.0,
+        "cpu_seconds": 50.5796,
+        "cpu_us_per_accepted": 3.913573060037969,
+        "accepted_p99_ns_upper": 395,
+        "accepted_p999_ns_upper": 239615,
+        "accepted_max_ns": 1395067,
+        "rejected_p99_ns_upper": 0,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.453125,
+        "drain_ms": 0.260236,
+        "cold_start_us": 2089.56,
+        "output_mib_per_second": 147.7053809725927,
+        "bytes_per_accepted": 119.65667825996678,
+        "end_to_end_seconds": 10.0013,
+        "unaccepted_percent_min_max": [
+          0.0,
+          0.0
+        ],
+        "total_offered": 64037888,
+        "total_accepted": 64037888,
+        "total_rejected": 0,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 0.0,
+        "accepted_max_observed_ns": 1745964,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          1194390.0,
+          1326730.0
+        ]
+      }
+    },
+    "fanout-4": {
+      "primary": true,
+      "paired_goodput": {
+        "ratio": 1.0125463708065763,
+        "ci95": [
+          0.9970022724602041,
+          1.0255943829683813
+        ],
+        "paired_ratios": [
+          0.9844826159185097,
+          1.0327023057091138,
+          1.008395340920144,
+          1.0139926868325537,
+          1.0238250596452902
+        ],
+        "bootstrap_resamples": 3125
+      },
+      "qlog": {
+        "goodput": 676904,
+        "accepted": 6770917,
+        "attempted": 351702272,
+        "rejected": 345039531,
+        "offered": 351702272,
+        "not_attempted": 0,
+        "unaccepted_percent": 98.10557351190498,
+        "cpu_seconds": 50.8344,
+        "cpu_us_per_accepted": 7.498439005264679,
+        "accepted_p99_ns_upper": 583,
+        "accepted_p999_ns_upper": 1487,
+        "accepted_max_ns": 40513,
+        "rejected_p99_ns_upper": 299,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.44140625,
+        "drain_ms": 2.63066,
+        "cold_start_us": 5881.84,
+        "output_mib_per_second": 175.42101875720402,
+        "bytes_per_accepted": 271.7389990289969,
+        "end_to_end_seconds": 10.0028,
+        "unaccepted_percent_min_max": [
+          97.96694034942502,
+          98.13931626856878
+        ],
+        "total_offered": 1767850752,
+        "total_accepted": 33975548,
+        "total_rejected": 1733875204,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 98.07814387263389,
+        "accepted_max_observed_ns": 127773,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          663508,
+          712357
+        ]
+      },
+      "bqlog": {
+        "goodput": 667563,
+        "accepted": 6677504,
+        "attempted": 6677504,
+        "rejected": 0,
+        "offered": 6677504,
+        "not_attempted": 0,
+        "unaccepted_percent": 0.0,
+        "cpu_seconds": 50.6867,
+        "cpu_us_per_accepted": 7.590665613977918,
+        "accepted_p99_ns_upper": 395,
+        "accepted_p999_ns_upper": 401407,
+        "accepted_max_ns": 2773551,
+        "rejected_p99_ns_upper": 0,
+        "scheduled_p99_ns_upper": 0,
+        "scheduled_p999_ns_upper": 0,
+        "scheduled_max_ns": 0,
+        "rss_mib": 20.43359375,
+        "drain_ms": 0.698044,
+        "cold_start_us": 4566.11,
+        "output_mib_per_second": 152.58005285375563,
+        "bytes_per_accepted": 239.06397278538466,
+        "end_to_end_seconds": 10.0029,
+        "unaccepted_percent_min_max": [
+          0.0,
+          0.0
+        ],
+        "total_offered": 33551872,
+        "total_accepted": 33551872,
+        "total_rejected": 0,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 0.0,
+        "accepted_max_observed_ns": 2921775,
+        "scheduled_max_observed_ns": 0,
+        "goodput_min_max": [
+          656284,
+          695780
+        ]
+      }
+    },
+    "offered-200k": {
+      "primary": false,
+      "paired_goodput": {
+        "ratio": 0.993482105545177,
+        "ci95": [
+          0.9869517371149424,
+          0.9986052788213291
+        ],
+        "paired_ratios": [
+          0.9977348301122584,
+          0.9824593860785128,
+          0.99997499899996,
+          0.9897388712758404,
+          0.9976098685427699
+        ],
+        "bootstrap_resamples": 3125
+      },
+      "qlog": {
+        "goodput": 199511,
+        "accepted": 1995336,
+        "attempted": 2000000,
+        "rejected": 4664,
+        "offered": 2000000,
+        "not_attempted": 0,
+        "unaccepted_percent": 0.2332,
+        "cpu_seconds": 10.0192,
+        "cpu_us_per_accepted": 5.0205749768995025,
+        "accepted_p99_ns_upper": 4735,
+        "accepted_p999_ns_upper": 121855,
+        "accepted_max_ns": 140758,
+        "rejected_p99_ns_upper": 791,
+        "scheduled_p99_ns_upper": 438271,
+        "scheduled_p999_ns_upper": 704511,
+        "scheduled_max_ns": 850515,
+        "rss_mib": 20.44140625,
+        "drain_ms": 0.401753,
+        "cold_start_us": 4330.81,
+        "output_mib_per_second": 25.453888380993913,
+        "bytes_per_accepted": 133.77778,
+        "end_to_end_seconds": 10.0007,
+        "unaccepted_percent_min_max": [
+          0.0,
+          1.75165
+        ],
+        "total_offered": 10000000,
+        "total_accepted": 9935319,
+        "total_rejected": 64681,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 0.6468099999999977,
+        "accepted_max_observed_ns": 160047,
+        "scheduled_max_observed_ns": 948518,
+        "goodput_min_max": [
+          196485,
+          199987
+        ]
+      },
+      "bqlog": {
+        "goodput": 199989,
+        "accepted": 2000000,
+        "attempted": 2000000,
+        "rejected": 0,
+        "offered": 2000000,
+        "not_attempted": 0,
+        "unaccepted_percent": 0.0,
+        "cpu_seconds": 10.0241,
+        "cpu_us_per_accepted": 5.01205,
+        "accepted_p99_ns_upper": 5055,
+        "accepted_p999_ns_upper": 106495,
+        "accepted_max_ns": 132343,
+        "rejected_p99_ns_upper": 0,
+        "scheduled_p99_ns_upper": 1867775,
+        "scheduled_p999_ns_upper": 37748735,
+        "scheduled_max_ns": 38249483,
+        "rss_mib": 20.44140625,
+        "drain_ms": 0.223575,
+        "cold_start_us": 3700.41,
+        "output_mib_per_second": 22.653704406885975,
+        "bytes_per_accepted": 118.77778,
+        "end_to_end_seconds": 10.0006,
+        "unaccepted_percent_min_max": [
+          0.0,
+          0.0
+        ],
+        "total_offered": 10000000,
+        "total_accepted": 10000000,
+        "total_rejected": 0,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 0.0,
+        "accepted_max_observed_ns": 201370,
+        "scheduled_max_observed_ns": 182950127,
+        "goodput_min_max": [
+          199978,
+          199993
+        ]
+      }
+    },
+    "offered-1m": {
+      "primary": false,
+      "paired_goodput": {
+        "ratio": 1.0569026534788994,
+        "ci95": [
+          0.9883370795012757,
+          1.2043407187767443
+        ],
+        "paired_ratios": [
+          0.986858303490085,
+          0.9879467107210573,
+          0.9941457424126662,
+          1.37147456590438,
+          0.9920848258661691
+        ],
+        "bootstrap_resamples": 3125
+      },
+      "qlog": {
+        "goodput": 987923,
+        "accepted": 9879556,
+        "attempted": 10000000,
+        "rejected": 120444,
+        "offered": 10000000,
+        "not_attempted": 0,
+        "unaccepted_percent": 1.20444,
+        "cpu_seconds": 15.8757,
+        "cpu_us_per_accepted": 1.6069244407339762,
+        "accepted_p99_ns_upper": 1199,
+        "accepted_p999_ns_upper": 1887,
+        "accepted_max_ns": 44630,
+        "rejected_p99_ns_upper": 751,
+        "scheduled_p99_ns_upper": 151551,
+        "scheduled_p999_ns_upper": 215039,
+        "scheduled_max_ns": 632127,
+        "rss_mib": 20.44140625,
+        "drain_ms": 0.348039,
+        "cold_start_us": 3783.41,
+        "output_mib_per_second": 126.77425825754281,
+        "bytes_per_accepted": 134.55668926389325,
+        "end_to_end_seconds": 10.0005,
+        "unaccepted_percent_min_max": [
+          0.58047,
+          3.12861
+        ],
+        "total_offered": 50000000,
+        "total_accepted": 49298870,
+        "total_rejected": 701130,
+        "total_not_attempted": 0,
+        "aggregate_unaccepted_percent": 1.4022599999999996,
+        "accepted_max_observed_ns": 56366,
+        "scheduled_max_observed_ns": 4142627,
+        "goodput_min_max": [
+          968667,
+          994102
+        ]
+      },
+      "bqlog": {
+        "goodput": 999956,
+        "accepted": 10000000,
+        "attempted": 10000000,
+        "rejected": 0,
+        "offered": 10000000,
+        "not_attempted": 0,
+        "unaccepted_percent": 0.0,
+        "cpu_seconds": 17.2057,
+        "cpu_us_per_accepted": 1.72057,
+        "accepted_p99_ns_upper": 1295,
+        "accepted_p999_ns_upper": 27391,
+        "accepted_max_ns": 1237284,
+        "rejected_p99_ns_upper": 0,
+        "scheduled_p99_ns_upper": 11010047,
+        "scheduled_p999_ns_upper": 33030143,
+        "scheduled_max_ns": 35118401,
+        "rss_mib": 20.44140625,
+        "drain_ms": 0.221229,
+        "cold_start_us": 2558.13,
+        "output_mib_per_second": 114.0125026407635,
+        "bytes_per_accepted": 119.555556,
+        "end_to_end_seconds": 10.0004,
+        "unaccepted_percent_min_max": [
+          0.0,
+          29.32608
+        ],
+        "total_offered": 50000000,
+        "total_accepted": 47067392,
+        "total_rejected": 0,
+        "total_not_attempted": 2932608,
+        "aggregate_unaccepted_percent": 5.865215999999995,
+        "accepted_max_observed_ns": 2199275,
+        "scheduled_max_observed_ns": 2982760332,
+        "goodput_min_max": [
+          706296,
+          999978
+        ]
+      }
+    }
+  },
+  "soak": [
+    {
+      "scenario": "soak-mixed-4",
+      "repetition": 0,
+      "library": "bqlog",
+      "goodput": 1050180.0,
+      "accepted": 63012096,
+      "attempted": 63012096,
+      "rejected": 0,
+      "offered": 63012096,
+      "not_attempted": 0,
+      "unaccepted_percent": 0.0,
+      "cpu_seconds": 293.227,
+      "cpu_us_per_accepted": 4.653503352753097,
+      "accepted_p99_ns_upper": 395,
+      "accepted_p999_ns_upper": 278527,
+      "accepted_max_ns": 983442649,
+      "rejected_p99_ns_upper": 0,
+      "scheduled_p99_ns_upper": 0,
+      "scheduled_p999_ns_upper": 0,
+      "scheduled_max_ns": 0,
+      "rss_mib": 20.5390625,
+      "drain_ms": 0.072183,
+      "cold_start_us": 2614.87,
+      "output_mib_per_second": 120.49136360824433,
+      "bytes_per_accepted": 120.30706142515875,
+      "end_to_end_seconds": 60.0011
+    },
+    {
+      "scenario": "soak-mixed-4",
+      "repetition": 0,
+      "library": "qlog",
+      "goodput": 1010490.0,
+      "accepted": 60631256,
+      "attempted": 2027364864,
+      "rejected": 1966733608,
+      "offered": 2027364864,
+      "not_attempted": 0,
+      "unaccepted_percent": 97.00935647664456,
+      "cpu_seconds": 305.105,
+      "cpu_us_per_accepted": 5.032140518415122,
+      "accepted_p99_ns_upper": 495,
+      "accepted_p999_ns_upper": 1871,
+      "accepted_max_ns": 135809,
+      "rejected_p99_ns_upper": 295,
+      "scheduled_p99_ns_upper": 0,
+      "scheduled_p999_ns_upper": 0,
+      "scheduled_max_ns": 0,
+      "rss_mib": 20.5390625,
+      "drain_ms": 1.87403,
+      "cold_start_us": 4008.61,
+      "output_mib_per_second": 131.81088767899325,
+      "bytes_per_accepted": 136.77929464301383,
+      "end_to_end_seconds": 60.002
+    }
+  ],
+  "trial_count": 102,
+  "accepted_measured_total": 1077371265,
+  "verified_lines_including_warmup_and_fanout": 1511640822,
+  "generated_output_bytes": 213732663711,
+  "statistics": "Equal-weight paired log ratios; exact empirical block bootstrap of the five repetitions (3125 resamples), percentile 95% interval; no multiplicity correction; only five repetition blocks, assumed exchangeable but independence not established; does not cover host-to-host uncertainty."
+}

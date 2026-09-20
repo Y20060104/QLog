@@ -1,0 +1,510 @@
+{
+  "plan_sha256": "dec1db9a4d164bfa9022e1e4a91d0a6a72d3b38e7f6b56330bf9d0527c73daf8",
+  "scenario": {
+    "id": "mixed-1",
+    "mode": "shared",
+    "producers": 1,
+    "targets": 1,
+    "payload": "mixed",
+    "rate": 0,
+    "primary": true
+  },
+  "rep": 4,
+  "library": "bqlog",
+  "command": [
+    "/home/qq344/QLog/build/native-production/bqlog-native",
+    "/home/qq344/QLog/build/native-production-data-1wn6xpsw/mixed-1-4-bqlog",
+    "shared",
+    "1",
+    "1",
+    "mixed",
+    "3",
+    "10",
+    "0"
+  ],
+  "state_before": {
+    "utc": "2026-09-20T08:18:35Z",
+    "loadavg": [
+      2.580078125,
+      3.19140625,
+      2.9384765625
+    ],
+    "meminfo": "MemTotal:        8053960 kB\nMemFree:         3934296 kB\nMemAvailable:    5530616 kB\nBuffers:           18008 kB\nCached:          1655892 kB\nSwapCached:            0 kB\nActive:           367868 kB\nInactive:        3267988 kB\nActive(anon):       2808 kB\nInactive(anon):  1962744 kB\nActive(file):     365060 kB\nInactive(file):  1305244 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:       2097152 kB\nSwapFree:        2096372 kB\nDirty:               132 kB\nWriteback:             0 kB\nAnonPages:       1961972 kB\nMapped:           254820 kB\nShmem:              3592 kB\nKReclaimable:     122292 kB\nSlab:             203020 kB\nSReclaimable:     122292 kB\nSUnreclaim:        80728 kB\nKernelStack:        8352 kB\nPageTables:        26484 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     6124132 kB\nCommitted_AS:    4043724 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       33536 kB\nVmallocChunk:          0 kB\nPercpu:             6592 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:       84992 kB\nDirectMap2M:     6127616 kB\nDirectMap1G:    11534336 kB\n",
+    "pressure/cpu": "some avg10=0.01 avg60=0.65 avg300=1.38 total=82680387\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+    "pressure/io": "some avg10=0.09 avg60=0.60 avg300=3.10 total=97552227\nfull avg10=0.09 avg60=0.60 avg300=3.08 total=96639967\n",
+    "pressure/memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=70109\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=70018\n"
+  },
+  "state_after": {
+    "utc": "2026-09-20T08:18:57Z",
+    "loadavg": [
+      2.2275390625,
+      3.0615234375,
+      2.90087890625
+    ],
+    "meminfo": "MemTotal:        8053960 kB\nMemFree:         1664764 kB\nMemAvailable:    5524224 kB\nBuffers:           18072 kB\nCached:          3859988 kB\nSwapCached:            0 kB\nActive:          2571780 kB\nInactive:        3269072 kB\nActive(anon):       2808 kB\nInactive(anon):  1963592 kB\nActive(file):    2568972 kB\nInactive(file):  1305480 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:       2097152 kB\nSwapFree:        2096372 kB\nDirty:               116 kB\nWriteback:             0 kB\nAnonPages:       1962932 kB\nMapped:           254824 kB\nShmem:              3592 kB\nKReclaimable:     181284 kB\nSlab:             266700 kB\nSReclaimable:     181284 kB\nSUnreclaim:        85416 kB\nKernelStack:        8400 kB\nPageTables:        26632 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     6124132 kB\nCommitted_AS:    4048884 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       33568 kB\nVmallocChunk:          0 kB\nPercpu:             6592 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:       84992 kB\nDirectMap2M:     6127616 kB\nDirectMap1G:    11534336 kB\n",
+    "pressure/cpu": "some avg10=0.02 avg60=0.47 avg300=1.28 total=82734291\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+    "pressure/io": "some avg10=2.56 avg60=1.06 avg300=3.01 total=97971296\nfull avg10=2.56 avg60=1.06 avg300=2.99 total=97058638\n",
+    "pressure/memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=70109\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=70018\n"
+  },
+  "whole_process_and_validation_seconds": 22.34634882499813,
+  "result": {
+    "library": "bqlog",
+    "mode": "shared",
+    "workload": "mixed",
+    "producers": 1,
+    "targets": 1,
+    "warmup_seconds": 3,
+    "measure_seconds": 10,
+    "offered_rate": 0,
+    "offered": 14722560,
+    "attempted": 14722560,
+    "accepted": 14722560,
+    "rejected": 0,
+    "not_attempted_by_deadline": 0,
+    "errors": 0,
+    "producer_seconds": 10.0002,
+    "end_to_end_seconds": 10.0003,
+    "goodput": 1472210.0,
+    "output_bytes": 1770318650,
+    "cold_start_us": 657.102,
+    "drain_ms": 0.074693,
+    "cpu_seconds": 20.1527,
+    "baseline_max_rss_kib": 21032,
+    "max_rss_kib": 21032,
+    "harness_stats_bytes": 98496,
+    "voluntary_context_switches": 59,
+    "involuntary_context_switches": 28,
+    "accepted_latency": {
+      "samples": 14420,
+      "p50_ns_upper": 197,
+      "p95_ns_upper": 299,
+      "p99_ns_upper": 395,
+      "p999_ns_upper": 172031,
+      "max_ns": 365986,
+      "bins": [
+        [
+          98,
+          1931
+        ],
+        [
+          99,
+          2015
+        ],
+        [
+          162,
+          8433
+        ],
+        [
+          163,
+          404
+        ],
+        [
+          201,
+          656
+        ],
+        [
+          202,
+          793
+        ],
+        [
+          226,
+          75
+        ],
+        [
+          251,
+          13
+        ],
+        [
+          265,
+          8
+        ],
+        [
+          266,
+          1
+        ],
+        [
+          278,
+          2
+        ],
+        [
+          290,
+          3
+        ],
+        [
+          329,
+          2
+        ],
+        [
+          366,
+          2
+        ],
+        [
+          373,
+          1
+        ],
+        [
+          379,
+          3
+        ],
+        [
+          384,
+          1
+        ],
+        [
+          514,
+          1
+        ],
+        [
+          574,
+          1
+        ],
+        [
+          595,
+          1
+        ],
+        [
+          598,
+          1
+        ],
+        [
+          634,
+          1
+        ],
+        [
+          637,
+          1
+        ],
+        [
+          639,
+          1
+        ],
+        [
+          648,
+          1
+        ],
+        [
+          651,
+          1
+        ],
+        [
+          657,
+          1
+        ],
+        [
+          658,
+          1
+        ],
+        [
+          660,
+          1
+        ],
+        [
+          664,
+          1
+        ],
+        [
+          666,
+          1
+        ],
+        [
+          675,
+          2
+        ],
+        [
+          676,
+          1
+        ],
+        [
+          678,
+          1
+        ],
+        [
+          679,
+          2
+        ],
+        [
+          681,
+          1
+        ],
+        [
+          683,
+          1
+        ],
+        [
+          684,
+          1
+        ],
+        [
+          685,
+          2
+        ],
+        [
+          686,
+          1
+        ],
+        [
+          687,
+          2
+        ],
+        [
+          688,
+          1
+        ],
+        [
+          689,
+          2
+        ],
+        [
+          690,
+          1
+        ],
+        [
+          692,
+          3
+        ],
+        [
+          694,
+          2
+        ],
+        [
+          704,
+          1
+        ],
+        [
+          705,
+          1
+        ],
+        [
+          709,
+          1
+        ],
+        [
+          710,
+          2
+        ],
+        [
+          711,
+          2
+        ],
+        [
+          715,
+          1
+        ],
+        [
+          717,
+          1
+        ],
+        [
+          719,
+          1
+        ],
+        [
+          729,
+          1
+        ],
+        [
+          732,
+          1
+        ],
+        [
+          733,
+          1
+        ],
+        [
+          739,
+          1
+        ],
+        [
+          740,
+          1
+        ],
+        [
+          756,
+          1
+        ],
+        [
+          759,
+          1
+        ],
+        [
+          760,
+          1
+        ],
+        [
+          765,
+          1
+        ],
+        [
+          768,
+          1
+        ],
+        [
+          772,
+          1
+        ],
+        [
+          778,
+          1
+        ],
+        [
+          783,
+          1
+        ],
+        [
+          786,
+          2
+        ],
+        [
+          787,
+          1
+        ],
+        [
+          788,
+          2
+        ],
+        [
+          790,
+          2
+        ],
+        [
+          791,
+          2
+        ],
+        [
+          792,
+          1
+        ],
+        [
+          797,
+          3
+        ],
+        [
+          802,
+          2
+        ],
+        [
+          828,
+          1
+        ],
+        [
+          857,
+          1
+        ]
+      ]
+    },
+    "rejected_latency": {
+      "samples": 0,
+      "p50_ns_upper": 0,
+      "p95_ns_upper": 0,
+      "p99_ns_upper": 0,
+      "p999_ns_upper": 0,
+      "max_ns": 0,
+      "bins": []
+    },
+    "scheduled_latency": {
+      "samples": 0,
+      "p50_ns_upper": 0,
+      "p95_ns_upper": 0,
+      "p99_ns_upper": 0,
+      "p999_ns_upper": 0,
+      "max_ns": 0,
+      "bins": []
+    },
+    "windows": [
+      {
+        "seconds": 1.00013,
+        "accepted": 1511169,
+        "attempted": 1511169,
+        "file_bytes": 180188130
+      },
+      {
+        "seconds": 2.00012,
+        "accepted": 2827009,
+        "attempted": 2827009,
+        "file_bytes": 338072646
+      },
+      {
+        "seconds": 3.0001,
+        "accepted": 4269825,
+        "attempted": 4269825,
+        "file_bytes": 511201530
+      },
+      {
+        "seconds": 4.00011,
+        "accepted": 5957121,
+        "attempted": 5957121,
+        "file_bytes": 713679930
+      },
+      {
+        "seconds": 5.00009,
+        "accepted": 7488769,
+        "attempted": 7488769,
+        "file_bytes": 897480210
+      },
+      {
+        "seconds": 6.0001,
+        "accepted": 8968961,
+        "attempted": 8968961,
+        "file_bytes": 1075106610
+      },
+      {
+        "seconds": 7.00009,
+        "accepted": 10455041,
+        "attempted": 10455041,
+        "file_bytes": 1253896095
+      },
+      {
+        "seconds": 8.0001,
+        "accepted": 11887105,
+        "attempted": 11887105,
+        "file_bytes": 1427171362
+      },
+      {
+        "seconds": 9.00012,
+        "accepted": 13345537,
+        "attempted": 13345537,
+        "file_bytes": 1603663535
+      },
+      {
+        "seconds": 10.0002,
+        "accepted": 14722560,
+        "attempted": 14722560,
+        "file_bytes": 1770292294
+      }
+    ],
+    "producer_digests": [
+      [
+        {
+          "count": 4064768,
+          "ordered": "5023053053476603779",
+          "sum": "16548751326212475215"
+        },
+        {
+          "count": 14722560,
+          "ordered": "1394221079814211459",
+          "sum": "11393436001915361774"
+        }
+      ]
+    ],
+    "verified": true,
+    "verification": "all lines parsed, exact body and monotone IDs, accepted count plus two 64-bit fingerprints per producer/phase/target"
+  },
+  "output_files": [
+    {
+      "path": "config.txt",
+      "bytes": 194,
+      "sha256": "a1f270e2d876ec9753752d9e08686885540edf1fe7a391aeb6635052e3906fb5",
+      "first_2048_utf8": "appenders_config.file0.type=text_file\nappenders_config.file0.levels=[info]\nappenders_config.file0.file_name=/home/qq344/QLog/build/native-production-data-1wn6xpsw/mixed-1-4-bqlog/target0/output\n",
+      "last_2048_utf8": "appenders_config.file0.type=text_file\nappenders_config.file0.levels=[info]\nappenders_config.file0.file_name=/home/qq344/QLog/build/native-production-data-1wn6xpsw/mixed-1-4-bqlog/target0/output\n"
+    },
+    {
+      "path": "target0/output_20260920_1.log",
+      "bytes": 2256979700,
+      "sha256": "fcc56a4c2476236889f635e0af55f0b2c395eff5d21419475400ce4768f494e0",
+      "first_2048_utf8": " 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=0 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=1 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=2 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=3 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=4 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=5 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=6 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=7 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=8 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=9 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=10 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=11 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=12 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=13 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=14 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=15 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=16 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:35.055[tid-139731094468288 bqlog-native]\t[I]\tPROD w=0 p=0 n=17 value=3.141 text=abcde",
+      "last_2048_utf8": "20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722543 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722544 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722545 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722546 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722547 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722548 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722549 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722550 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722551 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722552 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722553 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722554 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722555 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722556 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722557 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722558 value=3.141 text=abcdefghijklmnop\n 2026-09-20 16:18:48.057[tid-139731094468288 bqlog-native]\t[I]\tPROD w=1 p=0 n=14722559 value=3.141 text=abcdefghijklmnop\n"
+    }
+  ],
+  "raw_text_retained": false,
+  "preflight": false
+}

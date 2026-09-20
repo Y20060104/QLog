@@ -1,0 +1,18 @@
+[
+  {
+    "configuration": "debug",
+    "passed": true
+  },
+  {
+    "configuration": "release",
+    "passed": true
+  },
+  {
+    "configuration": "san",
+    "passed": true
+  },
+  {
+    "configuration": "TSan worker repeated 3 times",
+    "passed": true
+  }
+]

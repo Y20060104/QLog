@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "valid_preflight_records": 14,
+  "detected_corruptions": [
+    "accepted count corruption",
+    "throughput denominator corruption",
+    "producer count corruption",
+    "histogram quantile corruption",
+    "histogram sample count corruption",
+    "progress beyond final accepted count",
+    "unattempted request count corruption"
+  ]
+}

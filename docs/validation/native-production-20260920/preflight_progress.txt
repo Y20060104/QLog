@@ -1,0 +1,15 @@
+1/14 small-1-0-qlog: goodput=1406550/s, business_unaccepted=92.39%, P99=299ns, verified
+2/14 small-1-0-bqlog: goodput=2508360/s, business_unaccepted=0.00%, P99=299ns, verified
+3/14 mixed-4-0-qlog: goodput=1029510/s, business_unaccepted=96.83%, P99=695ns, verified
+4/14 mixed-4-0-bqlog: goodput=1394050/s, business_unaccepted=0.00%, P99=495ns, verified
+5/14 large-4-0-qlog: goodput=491008/s, business_unaccepted=98.45%, P99=1087ns, verified
+6/14 large-4-0-bqlog: goodput=635297/s, business_unaccepted=0.00%, P99=1183ns, verified
+7/14 independent-4-0-qlog: goodput=1075910/s, business_unaccepted=96.74%, P99=887ns, verified
+8/14 independent-4-0-bqlog: goodput=1278230/s, business_unaccepted=0.00%, P99=495ns, verified
+9/14 fanout-4-0-qlog: goodput=706270/s, business_unaccepted=97.93%, P99=791ns, verified
+10/14 fanout-4-0-bqlog: goodput=707338/s, business_unaccepted=0.00%, P99=395ns, verified
+11/14 offered-200k-0-qlog: goodput=184222/s, business_unaccepted=4.96%, P99=6015ns, verified
+12/14 offered-200k-0-bqlog: goodput=199888/s, business_unaccepted=0.00%, P99=6719ns, verified
+13/14 offered-1m-0-qlog: goodput=968729/s, business_unaccepted=2.97%, P99=1295ns, verified
+14/14 offered-1m-0-bqlog: goodput=999766/s, business_unaccepted=0.00%, P99=1391ns, verified
+Completed 14 trials

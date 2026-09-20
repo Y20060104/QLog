@@ -1,0 +1,743 @@
+{
+  "plan_sha256": "dec1db9a4d164bfa9022e1e4a91d0a6a72d3b38e7f6b56330bf9d0527c73daf8",
+  "scenario": {
+    "id": "independent-4",
+    "mode": "independent",
+    "producers": 4,
+    "targets": 1,
+    "payload": "mixed",
+    "rate": 0,
+    "primary": true
+  },
+  "rep": 2,
+  "library": "qlog",
+  "command": [
+    "/home/qq344/QLog/build/native-production/qlog-native",
+    "/home/qq344/QLog/build/native-production-data-1wn6xpsw/independent-4-2-qlog",
+    "independent",
+    "4",
+    "1",
+    "mixed",
+    "3",
+    "10",
+    "0"
+  ],
+  "state_before": {
+    "utc": "2026-09-20T08:05:54Z",
+    "loadavg": [
+      2.0078125,
+      2.6884765625,
+      2.3095703125
+    ],
+    "meminfo": "MemTotal:        8053960 kB\nMemFree:         5189676 kB\nMemAvailable:    5609820 kB\nBuffers:           12524 kB\nCached:           501256 kB\nSwapCached:            0 kB\nActive:           353060 kB\nInactive:        2056012 kB\nActive(anon):       2796 kB\nInactive(anon):  1896056 kB\nActive(file):     350264 kB\nInactive(file):   159956 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:       2097152 kB\nSwapFree:        2096372 kB\nDirty:               284 kB\nWriteback:             0 kB\nAnonPages:       1895504 kB\nMapped:           244640 kB\nShmem:              3588 kB\nKReclaimable:      99516 kB\nSlab:             177372 kB\nSReclaimable:      99516 kB\nSUnreclaim:        77856 kB\nKernelStack:        8032 kB\nPageTables:        25920 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     6124132 kB\nCommitted_AS:    3830572 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       33076 kB\nVmallocChunk:          0 kB\nPercpu:             6592 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:       84992 kB\nDirectMap2M:     6127616 kB\nDirectMap1G:    11534336 kB\n",
+    "pressure/cpu": "some avg10=0.00 avg60=0.16 avg300=0.91 total=67453533\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+    "pressure/io": "some avg10=0.37 avg60=9.38 avg300=8.68 total=76453965\nfull avg10=0.37 avg60=9.33 avg300=8.62 total=75699897\n",
+    "pressure/memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=70109\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=70018\n"
+  },
+  "state_after": {
+    "utc": "2026-09-20T08:06:15Z",
+    "loadavg": [
+      2.31591796875,
+      2.72265625,
+      2.32958984375
+    ],
+    "meminfo": "MemTotal:        8053960 kB\nMemFree:         3448940 kB\nMemAvailable:    5595440 kB\nBuffers:           12564 kB\nCached:          2190188 kB\nSwapCached:            0 kB\nActive:          2041832 kB\nInactive:        2055908 kB\nActive(anon):       2796 kB\nInactive(anon):  1895844 kB\nActive(file):    2039036 kB\nInactive(file):   160064 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:       2097152 kB\nSwapFree:        2096372 kB\nDirty:               168 kB\nWriteback:             0 kB\nAnonPages:       1895108 kB\nMapped:           244640 kB\nShmem:              3588 kB\nKReclaimable:     143676 kB\nSlab:             224612 kB\nSReclaimable:     143676 kB\nSUnreclaim:        80936 kB\nKernelStack:        8048 kB\nPageTables:        25924 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     6124132 kB\nCommitted_AS:    3830576 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       33156 kB\nVmallocChunk:          0 kB\nPercpu:             6592 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:       84992 kB\nDirectMap2M:     6127616 kB\nDirectMap1G:    11534336 kB\n",
+    "pressure/cpu": "some avg10=0.00 avg60=0.11 avg300=0.84 total=67469196\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+    "pressure/io": "some avg10=1.14 avg60=7.00 avg300=8.17 total=76644715\nfull avg10=1.14 avg60=6.96 avg300=8.11 total=75890633\n",
+    "pressure/memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=70109\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=70018\n"
+  },
+  "whole_process_and_validation_seconds": 20.315556058001675,
+  "result": {
+    "library": "qlog",
+    "mode": "independent",
+    "workload": "mixed",
+    "producers": 4,
+    "targets": 1,
+    "warmup_seconds": 3,
+    "measure_seconds": 10,
+    "offered_rate": 0,
+    "offered": 324269056,
+    "attempted": 324269056,
+    "accepted": 10152365,
+    "rejected": 314116691,
+    "not_attempted_by_deadline": 0,
+    "errors": 0,
+    "producer_seconds": 10.0001,
+    "end_to_end_seconds": 10.0019,
+    "goodput": 1015040.0,
+    "output_bytes": 1379248897,
+    "cold_start_us": 3420.38,
+    "drain_ms": 1.78264,
+    "cpu_seconds": 50.5428,
+    "baseline_max_rss_kib": 20944,
+    "max_rss_kib": 20944,
+    "harness_stats_bytes": 393984,
+    "voluntary_context_switches": 25,
+    "involuntary_context_switches": 55,
+    "accepted_latency": {
+      "samples": 10077,
+      "p50_ns_upper": 199,
+      "p95_ns_upper": 395,
+      "p99_ns_upper": 591,
+      "p999_ns_upper": 1183,
+      "max_ns": 21286,
+      "bins": [
+        [
+          98,
+          310
+        ],
+        [
+          99,
+          422
+        ],
+        [
+          100,
+          230
+        ],
+        [
+          162,
+          3820
+        ],
+        [
+          163,
+          817
+        ],
+        [
+          164,
+          1038
+        ],
+        [
+          201,
+          720
+        ],
+        [
+          202,
+          1639
+        ],
+        [
+          203,
+          459
+        ],
+        [
+          226,
+          281
+        ],
+        [
+          227,
+          80
+        ],
+        [
+          228,
+          64
+        ],
+        [
+          251,
+          56
+        ],
+        [
+          252,
+          22
+        ],
+        [
+          253,
+          11
+        ],
+        [
+          265,
+          27
+        ],
+        [
+          266,
+          19
+        ],
+        [
+          267,
+          3
+        ],
+        [
+          278,
+          13
+        ],
+        [
+          279,
+          9
+        ],
+        [
+          290,
+          9
+        ],
+        [
+          291,
+          4
+        ],
+        [
+          302,
+          7
+        ],
+        [
+          304,
+          4
+        ],
+        [
+          315,
+          1
+        ],
+        [
+          323,
+          1
+        ],
+        [
+          329,
+          3
+        ],
+        [
+          330,
+          1
+        ],
+        [
+          336,
+          1
+        ],
+        [
+          379,
+          1
+        ],
+        [
+          426,
+          1
+        ],
+        [
+          440,
+          1
+        ],
+        [
+          528,
+          1
+        ],
+        [
+          589,
+          1
+        ],
+        [
+          595,
+          1
+        ]
+      ]
+    },
+    "rejected_latency": {
+      "samples": 307524,
+      "p50_ns_upper": 100,
+      "p95_ns_upper": 201,
+      "p99_ns_upper": 299,
+      "p999_ns_upper": 495,
+      "max_ns": 90660,
+      "bins": [
+        [
+          0,
+          1336
+        ],
+        [
+          98,
+          60093
+        ],
+        [
+          99,
+          78828
+        ],
+        [
+          100,
+          43145
+        ],
+        [
+          162,
+          74683
+        ],
+        [
+          163,
+          16460
+        ],
+        [
+          164,
+          22829
+        ],
+        [
+          201,
+          2231
+        ],
+        [
+          202,
+          5089
+        ],
+        [
+          203,
+          1465
+        ],
+        [
+          226,
+          703
+        ],
+        [
+          227,
+          137
+        ],
+        [
+          228,
+          124
+        ],
+        [
+          251,
+          121
+        ],
+        [
+          252,
+          31
+        ],
+        [
+          253,
+          14
+        ],
+        [
+          265,
+          24
+        ],
+        [
+          266,
+          15
+        ],
+        [
+          278,
+          21
+        ],
+        [
+          279,
+          2
+        ],
+        [
+          290,
+          7
+        ],
+        [
+          291,
+          2
+        ],
+        [
+          302,
+          11
+        ],
+        [
+          304,
+          2
+        ],
+        [
+          315,
+          15
+        ],
+        [
+          316,
+          9
+        ],
+        [
+          323,
+          9
+        ],
+        [
+          324,
+          3
+        ],
+        [
+          336,
+          1
+        ],
+        [
+          349,
+          1
+        ],
+        [
+          354,
+          1
+        ],
+        [
+          360,
+          5
+        ],
+        [
+          362,
+          8
+        ],
+        [
+          366,
+          13
+        ],
+        [
+          368,
+          7
+        ],
+        [
+          373,
+          11
+        ],
+        [
+          374,
+          7
+        ],
+        [
+          384,
+          1
+        ],
+        [
+          424,
+          1
+        ],
+        [
+          469,
+          1
+        ],
+        [
+          473,
+          1
+        ],
+        [
+          476,
+          1
+        ],
+        [
+          485,
+          1
+        ],
+        [
+          493,
+          1
+        ],
+        [
+          494,
+          1
+        ],
+        [
+          496,
+          1
+        ],
+        [
+          504,
+          1
+        ],
+        [
+          507,
+          1
+        ],
+        [
+          518,
+          1
+        ],
+        [
+          521,
+          1
+        ],
+        [
+          523,
+          1
+        ],
+        [
+          528,
+          1
+        ],
+        [
+          530,
+          1
+        ],
+        [
+          534,
+          1
+        ],
+        [
+          539,
+          2
+        ],
+        [
+          542,
+          1
+        ],
+        [
+          543,
+          1
+        ],
+        [
+          544,
+          2
+        ],
+        [
+          545,
+          2
+        ],
+        [
+          555,
+          1
+        ],
+        [
+          556,
+          1
+        ],
+        [
+          557,
+          1
+        ],
+        [
+          558,
+          1
+        ],
+        [
+          561,
+          1
+        ],
+        [
+          563,
+          2
+        ],
+        [
+          565,
+          1
+        ],
+        [
+          568,
+          1
+        ],
+        [
+          572,
+          1
+        ],
+        [
+          575,
+          2
+        ],
+        [
+          577,
+          1
+        ],
+        [
+          578,
+          2
+        ],
+        [
+          581,
+          1
+        ],
+        [
+          582,
+          2
+        ],
+        [
+          584,
+          1
+        ],
+        [
+          586,
+          1
+        ],
+        [
+          592,
+          1
+        ],
+        [
+          593,
+          1
+        ],
+        [
+          596,
+          1
+        ],
+        [
+          597,
+          1
+        ],
+        [
+          601,
+          1
+        ],
+        [
+          603,
+          1
+        ],
+        [
+          604,
+          1
+        ],
+        [
+          605,
+          1
+        ],
+        [
+          610,
+          1
+        ],
+        [
+          613,
+          1
+        ],
+        [
+          615,
+          1
+        ],
+        [
+          659,
+          1
+        ],
+        [
+          666,
+          1
+        ],
+        [
+          669,
+          1
+        ],
+        [
+          704,
+          1
+        ],
+        [
+          728,
+          1
+        ]
+      ]
+    },
+    "scheduled_latency": {
+      "samples": 0,
+      "p50_ns_upper": 0,
+      "p95_ns_upper": 0,
+      "p99_ns_upper": 0,
+      "p999_ns_upper": 0,
+      "max_ns": 0,
+      "bins": []
+    },
+    "windows": [
+      {
+        "seconds": 1.00013,
+        "accepted": 1059049,
+        "attempted": 32152580,
+        "file_bytes": 142408529
+      },
+      {
+        "seconds": 2.00009,
+        "accepted": 2164672,
+        "attempted": 65641220,
+        "file_bytes": 292660985
+      },
+      {
+        "seconds": 3.00008,
+        "accepted": 3200008,
+        "attempted": 97266180,
+        "file_bytes": 433460880
+      },
+      {
+        "seconds": 4.00013,
+        "accepted": 4228114,
+        "attempted": 131101700,
+        "file_bytes": 573289097
+      },
+      {
+        "seconds": 5.00009,
+        "accepted": 5251780,
+        "attempted": 164892164,
+        "file_bytes": 712324889
+      },
+      {
+        "seconds": 6.00012,
+        "accepted": 6305466,
+        "attempted": 197703684,
+        "file_bytes": 855687113
+      },
+      {
+        "seconds": 7.00011,
+        "accepted": 7240772,
+        "attempted": 229564420,
+        "file_bytes": 982923545
+      },
+      {
+        "seconds": 8.00012,
+        "accepted": 8210398,
+        "attempted": 261035524,
+        "file_bytes": 1114879721
+      },
+      {
+        "seconds": 9.00009,
+        "accepted": 9252964,
+        "attempted": 293259268,
+        "file_bytes": 1256543888
+      },
+      {
+        "seconds": 10.0001,
+        "accepted": 10152365,
+        "attempted": 324269056,
+        "file_bytes": 1378829968
+      }
+    ],
+    "producer_digests": [
+      [
+        {
+          "count": 646094,
+          "ordered": "7631626482715331186",
+          "sum": "13394349117346810437"
+        },
+        {
+          "count": 2540199,
+          "ordered": "12906194784400843942",
+          "sum": "8270557218345699991"
+        }
+      ],
+      [
+        {
+          "count": 646610,
+          "ordered": "18088453595528276317",
+          "sum": "1226262241413690302"
+        },
+        {
+          "count": 2538157,
+          "ordered": "4936825178059846282",
+          "sum": "2883619627541858373"
+        }
+      ],
+      [
+        {
+          "count": 644556,
+          "ordered": "3553347527497416652",
+          "sum": "14063549656489122493"
+        },
+        {
+          "count": 2536819,
+          "ordered": "12861510853092820553",
+          "sum": "8964506659335809991"
+        }
+      ],
+      [
+        {
+          "count": 647385,
+          "ordered": "7800474567842086428",
+          "sum": "9192343136871896412"
+        },
+        {
+          "count": 2537190,
+          "ordered": "16785616725376698803",
+          "sum": "17149744211918356540"
+        }
+      ]
+    ],
+    "verified": true,
+    "verification": "all lines parsed, exact body and monotone IDs, accepted count plus two 64-bit fingerprints per producer/phase/target"
+  },
+  "output_files": [
+    {
+      "path": "config.txt",
+      "bytes": 80,
+      "sha256": "fda375f4d100f4c67453c05c3adbf41b6282cd87c62293fe6221669ecbcaff7e",
+      "first_2048_utf8": "QLog defaults; name=production; category=default; File targets=1; independent=1\n",
+      "last_2048_utf8": "QLog defaults; name=production; category=default; File targets=1; independent=1\n"
+    },
+    {
+      "path": "target0/output.log",
+      "bytes": 1729455217,
+      "sha256": "c49e508c2f3e90754b6eb116de204f792e87da41836404acd8fdeae8b83348be",
+      "first_2048_utf8": "[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=0 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=1 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=2 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=3 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=4 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=5 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=6 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=7 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=8 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=9 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=10 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=11 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=12 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=13 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=14 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:05:54.454068683+00:00] [INFO] [production/default] [tid=84249] PROD w=0 p=0 n=15 value=3.141 ",
+      "last_2048_utf8": "jklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703653 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703654 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703655 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703656 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703657 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703658 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703659 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703660 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703661 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703662 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703663 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703664 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703665 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703666 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:06:08.039071209+00:00] [INFO] [production/default] [tid=84250] PROD w=1 p=1 n=81703667 value=3.141 text=abcdefghijklmnop\n"
+    }
+  ],
+  "raw_text_retained": false,
+  "preflight": false
+}

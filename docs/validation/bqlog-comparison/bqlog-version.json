@@ -1,0 +1,9 @@
+{
+  "commit": "60ef4d3ea52635dc54e87e79dfb3a71fb5b1ecc9",
+  "remote": "https://github.com/Tencent/BqLog.git",
+  "branch": "main",
+  "upstream_verified": "caller must git pull before invoking this benchmark runner",
+  "tested_source": "git archive HEAD; local modifications excluded",
+  "original_status": " M src/CMakeLists.txt\n M src/bq_log/types/buffer/miso_ring_buffer.cpp\n M src/bq_log/types/buffer/miso_ring_buffer.h\n M test/cpp/CMakeLists.txt\n?? CMakeLists.txt\n?? build/release_check/\n?? build_perf/\n?? build_test/\n?? docs/BQLOG_BINARY_SERIALIZATION_AND_JAVA_GUIDE.md\n?? docs/BQLOG_CODING_STANDARDS.md\n?? docs/BQLOG_DESIGN_PATTERNS_FOR_JAVA_MODULES.md\n?? docs/BQLOG_FORMAT_SYSTEM_ARCHITECTURE.md\n?? docs/BQLOG_PERFORMANCE_OPTIMIZATION_AND_JAVA_INSIGHTS.md\n?? docs/BQLOG_STORAGE_COMPRESSION_AND_JAVA_GUIDE.md\n?? docs/CPP_CODING_STANDARDS_UNIVERSAL.md\n?? src/bq_log/types/buffer/ring_buffer_config.h\n?? src/build_perf/\n?? src/test_miso.cpp\n",
+  "snapshot": "/home/qq344/QLog/build/bqlog-upstream-60ef4d3ea526"
+}

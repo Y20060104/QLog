@@ -1,0 +1,480 @@
+{
+  "passed": true,
+  "destination": "/home/qq344/QLog/build/native-reproduction-check-d296256ec9",
+  "checks": [
+    {
+      "library": "qlog",
+      "result": {
+        "library": "qlog",
+        "mode": "shared",
+        "workload": "mixed",
+        "producers": 4,
+        "targets": 2,
+        "warmup_seconds": 1,
+        "measure_seconds": 1,
+        "offered_rate": 0,
+        "offered": 35585280,
+        "attempted": 35585280,
+        "accepted": 705419,
+        "rejected": 34879861,
+        "not_attempted_by_deadline": 0,
+        "errors": 0,
+        "producer_seconds": 1.0002,
+        "end_to_end_seconds": 1.00266,
+        "goodput": 703546,
+        "output_bytes": 190255526,
+        "cold_start_us": 1833.69,
+        "drain_ms": 2.46193,
+        "cpu_seconds": 5.07367,
+        "baseline_max_rss_kib": 12544,
+        "max_rss_kib": 12544,
+        "harness_stats_bytes": 393984,
+        "voluntary_context_switches": 20,
+        "involuntary_context_switches": 10,
+        "accepted_latency": {
+          "samples": 703,
+          "p50_ns_upper": 197,
+          "p95_ns_upper": 299,
+          "p99_ns_upper": 695,
+          "p999_ns_upper": 1583,
+          "max_ns": 1576,
+          "bins": [
+            [
+              98,
+              50
+            ],
+            [
+              99,
+              40
+            ],
+            [
+              162,
+              383
+            ],
+            [
+              163,
+              21
+            ],
+            [
+              201,
+              78
+            ],
+            [
+              202,
+              99
+            ],
+            [
+              226,
+              22
+            ],
+            [
+              251,
+              1
+            ],
+            [
+              265,
+              1
+            ],
+            [
+              278,
+              2
+            ],
+            [
+              290,
+              1
+            ],
+            [
+              302,
+              1
+            ],
+            [
+              329,
+              1
+            ],
+            [
+              336,
+              1
+            ],
+            [
+              342,
+              1
+            ],
+            [
+              354,
+              1
+            ]
+          ]
+        },
+        "rejected_latency": {
+          "samples": 34151,
+          "p50_ns_upper": 99,
+          "p95_ns_upper": 197,
+          "p99_ns_upper": 295,
+          "p999_ns_upper": 495,
+          "max_ns": 37534,
+          "bins": [
+            [
+              0,
+              163
+            ],
+            [
+              98,
+              10742
+            ],
+            [
+              99,
+              11385
+            ],
+            [
+              162,
+              10988
+            ],
+            [
+              163,
+              356
+            ],
+            [
+              201,
+              203
+            ],
+            [
+              202,
+              247
+            ],
+            [
+              226,
+              31
+            ],
+            [
+              251,
+              5
+            ],
+            [
+              265,
+              2
+            ],
+            [
+              278,
+              7
+            ],
+            [
+              290,
+              2
+            ],
+            [
+              302,
+              2
+            ],
+            [
+              315,
+              6
+            ],
+            [
+              323,
+              2
+            ],
+            [
+              366,
+              2
+            ],
+            [
+              372,
+              1
+            ],
+            [
+              373,
+              2
+            ],
+            [
+              487,
+              1
+            ],
+            [
+              520,
+              1
+            ],
+            [
+              584,
+              1
+            ],
+            [
+              644,
+              1
+            ],
+            [
+              649,
+              1
+            ]
+          ]
+        },
+        "scheduled_latency": {
+          "samples": 0,
+          "p50_ns_upper": 0,
+          "p95_ns_upper": 0,
+          "p99_ns_upper": 0,
+          "p999_ns_upper": 0,
+          "max_ns": 0,
+          "bins": []
+        },
+        "windows": [
+          {
+            "seconds": 1.00013,
+            "accepted": 705419,
+            "attempted": 35585280,
+            "file_bytes": 189615086
+          }
+        ],
+        "producer_digests": [
+          [
+            {
+              "count": 199804,
+              "ordered": "17815904884654194680",
+              "sum": "1439471024202187331"
+            },
+            {
+              "count": 179028,
+              "ordered": "1279994054984797573",
+              "sum": "9643571796641544620"
+            }
+          ],
+          [
+            {
+              "count": 199791,
+              "ordered": "7415084925297682782",
+              "sum": "8301456909197824612"
+            },
+            {
+              "count": 155209,
+              "ordered": "12779706742794667003",
+              "sum": "4858753476934419893"
+            }
+          ],
+          [
+            {
+              "count": 192729,
+              "ordered": "8444035601922581637",
+              "sum": "11328642680472563372"
+            },
+            {
+              "count": 185597,
+              "ordered": "12908290410677045710",
+              "sum": "11027437503404725512"
+            }
+          ],
+          [
+            {
+              "count": 167113,
+              "ordered": "390983400283830823",
+              "sum": "14642970374070536102"
+            },
+            {
+              "count": 185585,
+              "ordered": "3697514346767569925",
+              "sum": "556251352519425822"
+            }
+          ]
+        ],
+        "verified": true,
+        "verification": "all lines parsed, exact body and monotone IDs, accepted count plus two 64-bit fingerprints per producer/phase/target"
+      },
+      "command": [
+        "/home/qq344/QLog/build/native-reproduction-check-d296256ec9/build/native-production/qlog-native",
+        "/home/qq344/QLog/build/native-reproduction-check-d296256ec9/smoke-qlog",
+        "shared",
+        "4",
+        "2",
+        "mixed",
+        "1",
+        "1",
+        "0"
+      ]
+    },
+    {
+      "library": "bqlog",
+      "result": {
+        "library": "bqlog",
+        "mode": "shared",
+        "workload": "mixed",
+        "producers": 4,
+        "targets": 2,
+        "warmup_seconds": 1,
+        "measure_seconds": 1,
+        "offered_rate": 0,
+        "offered": 729088,
+        "attempted": 729088,
+        "accepted": 729088,
+        "rejected": 0,
+        "not_attempted_by_deadline": 0,
+        "errors": 0,
+        "producer_seconds": 1.00318,
+        "end_to_end_seconds": 1.0035,
+        "goodput": 726548,
+        "output_bytes": 173290848,
+        "cold_start_us": 998.858,
+        "drain_ms": 0.321263,
+        "cpu_seconds": 5.07654,
+        "baseline_max_rss_kib": 12544,
+        "max_rss_kib": 12544,
+        "harness_stats_bytes": 393984,
+        "voluntary_context_switches": 3,
+        "involuntary_context_switches": 9,
+        "accepted_latency": {
+          "samples": 716,
+          "p50_ns_upper": 197,
+          "p95_ns_upper": 299,
+          "p99_ns_upper": 495,
+          "p999_ns_upper": 655359,
+          "max_ns": 653855,
+          "bins": [
+            [
+              98,
+              31
+            ],
+            [
+              99,
+              29
+            ],
+            [
+              162,
+              461
+            ],
+            [
+              163,
+              23
+            ],
+            [
+              201,
+              81
+            ],
+            [
+              202,
+              78
+            ],
+            [
+              226,
+              5
+            ],
+            [
+              251,
+              2
+            ],
+            [
+              329,
+              1
+            ],
+            [
+              336,
+              1
+            ],
+            [
+              342,
+              1
+            ],
+            [
+              348,
+              1
+            ],
+            [
+              852,
+              1
+            ],
+            [
+              911,
+              1
+            ]
+          ]
+        },
+        "rejected_latency": {
+          "samples": 0,
+          "p50_ns_upper": 0,
+          "p95_ns_upper": 0,
+          "p99_ns_upper": 0,
+          "p999_ns_upper": 0,
+          "max_ns": 0,
+          "bins": []
+        },
+        "scheduled_latency": {
+          "samples": 0,
+          "p50_ns_upper": 0,
+          "p95_ns_upper": 0,
+          "p99_ns_upper": 0,
+          "p999_ns_upper": 0,
+          "max_ns": 0,
+          "bins": []
+        },
+        "windows": [
+          {
+            "seconds": 1.00008,
+            "accepted": 728068,
+            "attempted": 728068,
+            "file_bytes": 172799496
+          }
+        ],
+        "producer_digests": [
+          [
+            {
+              "count": 190720,
+              "ordered": "5027551858370884995",
+              "sum": "16313019284332630553"
+            },
+            {
+              "count": 727552,
+              "ordered": "17062538150258014083",
+              "sum": "12403991167471380457"
+            }
+          ],
+          [
+            {
+              "count": 190464,
+              "ordered": "7508606860035036035",
+              "sum": "15410232250613751888"
+            },
+            {
+              "count": 512,
+              "ordered": "17213998165089613699",
+              "sum": "1756789408414182432"
+            }
+          ],
+          [
+            {
+              "count": 190464,
+              "ordered": "7508606860035036035",
+              "sum": "15410232250613751888"
+            },
+            {
+              "count": 512,
+              "ordered": "17213998165089613699",
+              "sum": "1756789408414182432"
+            }
+          ],
+          [
+            {
+              "count": 190464,
+              "ordered": "7508606860035036035",
+              "sum": "15410232250613751888"
+            },
+            {
+              "count": 512,
+              "ordered": "17213998165089613699",
+              "sum": "1756789408414182432"
+            }
+          ]
+        ],
+        "verified": true,
+        "verification": "all lines parsed, exact body and monotone IDs, accepted count plus two 64-bit fingerprints per producer/phase/target"
+      },
+      "command": [
+        "/home/qq344/QLog/build/native-reproduction-check-d296256ec9/build/native-production/bqlog-native",
+        "/home/qq344/QLog/build/native-reproduction-check-d296256ec9/smoke-bqlog",
+        "shared",
+        "4",
+        "2",
+        "mixed",
+        "1",
+        "1",
+        "0"
+      ]
+    }
+  ],
+  "scope": "frozen-source extraction, complete clean builds, and two-target output-verifying smoke trial for each library; not additional performance samples"
+}

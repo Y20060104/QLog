@@ -1,0 +1,771 @@
+{
+  "plan_sha256": "dec1db9a4d164bfa9022e1e4a91d0a6a72d3b38e7f6b56330bf9d0527c73daf8",
+  "scenario": {
+    "id": "mixed-4",
+    "mode": "shared",
+    "producers": 4,
+    "targets": 1,
+    "payload": "mixed",
+    "rate": 0,
+    "primary": true
+  },
+  "rep": 2,
+  "library": "qlog",
+  "command": [
+    "/home/qq344/QLog/build/native-production/qlog-native",
+    "/home/qq344/QLog/build/native-production-data-1wn6xpsw/mixed-4-2-qlog",
+    "shared",
+    "4",
+    "1",
+    "mixed",
+    "3",
+    "10",
+    "0"
+  ],
+  "state_before": {
+    "utc": "2026-09-20T08:04:06Z",
+    "loadavg": [
+      2.32470703125,
+      2.85791015625,
+      2.30078125
+    ],
+    "meminfo": "MemTotal:        8053960 kB\nMemFree:         5190288 kB\nMemAvailable:    5609556 kB\nBuffers:           12264 kB\nCached:           500816 kB\nSwapCached:            0 kB\nActive:           352792 kB\nInactive:        2054988 kB\nActive(anon):       2788 kB\nInactive(anon):  1895500 kB\nActive(file):     350004 kB\nInactive(file):   159488 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:       2097152 kB\nSwapFree:        2096372 kB\nDirty:               292 kB\nWriteback:             0 kB\nAnonPages:       1894980 kB\nMapped:           244592 kB\nShmem:              3588 kB\nKReclaimable:      99220 kB\nSlab:             176872 kB\nSReclaimable:      99220 kB\nSUnreclaim:        77652 kB\nKernelStack:        8096 kB\nPageTables:        25928 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     6124132 kB\nCommitted_AS:    3846640 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       33188 kB\nVmallocChunk:          0 kB\nPercpu:             6592 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:       84992 kB\nDirectMap2M:     6127616 kB\nDirectMap1G:    11534336 kB\n",
+    "pressure/cpu": "some avg10=0.26 avg60=0.89 avg300=1.32 total=67275856\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+    "pressure/io": "some avg10=31.06 avg60=19.62 avg300=7.37 total=62438238\nfull avg10=30.66 avg60=19.38 avg300=7.29 total=61694625\n",
+    "pressure/memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=70109\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=70018\n"
+  },
+  "state_after": {
+    "utc": "2026-09-20T08:04:41Z",
+    "loadavg": [
+      2.5615234375,
+      2.88232421875,
+      2.33154296875
+    ],
+    "meminfo": "MemTotal:        8053960 kB\nMemFree:         3458788 kB\nMemAvailable:    5593156 kB\nBuffers:           12336 kB\nCached:          2178644 kB\nSwapCached:            0 kB\nActive:          2030460 kB\nInactive:        2055220 kB\nActive(anon):       2796 kB\nInactive(anon):  1895524 kB\nActive(file):    2027664 kB\nInactive(file):   159696 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:       2097152 kB\nSwapFree:        2096372 kB\nDirty:               240 kB\nWriteback:             0 kB\nAnonPages:       1894820 kB\nMapped:           244724 kB\nShmem:              3588 kB\nKReclaimable:     143284 kB\nSlab:             224116 kB\nSReclaimable:     143284 kB\nSUnreclaim:        80832 kB\nKernelStack:        8048 kB\nPageTables:        25912 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:     6124132 kB\nCommitted_AS:    3830060 kB\nVmallocTotal:   34359738367 kB\nVmallocUsed:       33156 kB\nVmallocChunk:          0 kB\nPercpu:             6592 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:       84992 kB\nDirectMap2M:     6127616 kB\nDirectMap1G:    11534336 kB\n",
+    "pressure/cpu": "some avg10=0.00 avg60=0.50 avg300=1.17 total=67306250\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0\n",
+    "pressure/io": "some avg10=47.02 avg60=28.57 avg300=10.71 total=75118067\nfull avg10=46.96 avg60=28.41 avg300=10.63 total=74364921\n",
+    "pressure/memory": "some avg10=0.00 avg60=0.00 avg300=0.00 total=70109\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=70018\n"
+  },
+  "whole_process_and_validation_seconds": 34.761297893997835,
+  "result": {
+    "library": "qlog",
+    "mode": "shared",
+    "workload": "mixed",
+    "producers": 4,
+    "targets": 1,
+    "warmup_seconds": 3,
+    "measure_seconds": 10,
+    "offered_rate": 0,
+    "offered": 361903360,
+    "attempted": 361903360,
+    "accepted": 9287266,
+    "rejected": 352616094,
+    "not_attempted_by_deadline": 0,
+    "errors": 0,
+    "producer_seconds": 10.0002,
+    "end_to_end_seconds": 10.0143,
+    "goodput": 927401,
+    "output_bytes": 1261648777,
+    "cold_start_us": 4704.67,
+    "drain_ms": 14.1227,
+    "cpu_seconds": 50.2329,
+    "baseline_max_rss_kib": 20932,
+    "max_rss_kib": 20932,
+    "harness_stats_bytes": 393984,
+    "voluntary_context_switches": 216,
+    "involuntary_context_switches": 42,
+    "accepted_latency": {
+      "samples": 9146,
+      "p50_ns_upper": 197,
+      "p95_ns_upper": 299,
+      "p99_ns_upper": 491,
+      "p999_ns_upper": 1087,
+      "max_ns": 18941,
+      "bins": [
+        [
+          95,
+          173
+        ],
+        [
+          96,
+          337
+        ],
+        [
+          98,
+          330
+        ],
+        [
+          99,
+          239
+        ],
+        [
+          159,
+          1657
+        ],
+        [
+          160,
+          838
+        ],
+        [
+          162,
+          2711
+        ],
+        [
+          163,
+          189
+        ],
+        [
+          199,
+          1071
+        ],
+        [
+          201,
+          710
+        ],
+        [
+          202,
+          584
+        ],
+        [
+          223,
+          84
+        ],
+        [
+          226,
+          115
+        ],
+        [
+          247,
+          13
+        ],
+        [
+          250,
+          10
+        ],
+        [
+          251,
+          16
+        ],
+        [
+          263,
+          12
+        ],
+        [
+          265,
+          10
+        ],
+        [
+          266,
+          2
+        ],
+        [
+          275,
+          11
+        ],
+        [
+          277,
+          3
+        ],
+        [
+          278,
+          6
+        ],
+        [
+          287,
+          5
+        ],
+        [
+          290,
+          4
+        ],
+        [
+          299,
+          2
+        ],
+        [
+          302,
+          1
+        ],
+        [
+          311,
+          2
+        ],
+        [
+          314,
+          1
+        ],
+        [
+          323,
+          2
+        ],
+        [
+          327,
+          1
+        ],
+        [
+          341,
+          1
+        ],
+        [
+          360,
+          1
+        ],
+        [
+          373,
+          1
+        ],
+        [
+          379,
+          2
+        ],
+        [
+          514,
+          1
+        ],
+        [
+          585,
+          1
+        ]
+      ]
+    },
+    "rejected_latency": {
+      "samples": 345315,
+      "p50_ns_upper": 99,
+      "p95_ns_upper": 197,
+      "p99_ns_upper": 295,
+      "p999_ns_upper": 395,
+      "max_ns": 85808,
+      "bins": [
+        [
+          0,
+          3559
+        ],
+        [
+          95,
+          31907
+        ],
+        [
+          96,
+          63102
+        ],
+        [
+          98,
+          69143
+        ],
+        [
+          99,
+          61203
+        ],
+        [
+          159,
+          32422
+        ],
+        [
+          160,
+          15636
+        ],
+        [
+          162,
+          58290
+        ],
+        [
+          163,
+          4212
+        ],
+        [
+          199,
+          2208
+        ],
+        [
+          201,
+          1537
+        ],
+        [
+          202,
+          1354
+        ],
+        [
+          223,
+          203
+        ],
+        [
+          226,
+          227
+        ],
+        [
+          247,
+          28
+        ],
+        [
+          250,
+          12
+        ],
+        [
+          251,
+          34
+        ],
+        [
+          263,
+          15
+        ],
+        [
+          265,
+          12
+        ],
+        [
+          266,
+          10
+        ],
+        [
+          275,
+          10
+        ],
+        [
+          277,
+          1
+        ],
+        [
+          278,
+          12
+        ],
+        [
+          287,
+          5
+        ],
+        [
+          290,
+          7
+        ],
+        [
+          299,
+          6
+        ],
+        [
+          302,
+          11
+        ],
+        [
+          311,
+          15
+        ],
+        [
+          314,
+          5
+        ],
+        [
+          315,
+          10
+        ],
+        [
+          321,
+          2
+        ],
+        [
+          323,
+          3
+        ],
+        [
+          327,
+          1
+        ],
+        [
+          329,
+          1
+        ],
+        [
+          333,
+          1
+        ],
+        [
+          354,
+          3
+        ],
+        [
+          357,
+          5
+        ],
+        [
+          360,
+          3
+        ],
+        [
+          363,
+          10
+        ],
+        [
+          366,
+          14
+        ],
+        [
+          369,
+          6
+        ],
+        [
+          372,
+          3
+        ],
+        [
+          373,
+          3
+        ],
+        [
+          379,
+          1
+        ],
+        [
+          390,
+          1
+        ],
+        [
+          436,
+          1
+        ],
+        [
+          461,
+          1
+        ],
+        [
+          463,
+          1
+        ],
+        [
+          464,
+          1
+        ],
+        [
+          470,
+          1
+        ],
+        [
+          473,
+          1
+        ],
+        [
+          476,
+          1
+        ],
+        [
+          484,
+          1
+        ],
+        [
+          493,
+          1
+        ],
+        [
+          494,
+          2
+        ],
+        [
+          497,
+          1
+        ],
+        [
+          499,
+          1
+        ],
+        [
+          500,
+          1
+        ],
+        [
+          502,
+          2
+        ],
+        [
+          512,
+          1
+        ],
+        [
+          517,
+          2
+        ],
+        [
+          520,
+          3
+        ],
+        [
+          522,
+          1
+        ],
+        [
+          527,
+          2
+        ],
+        [
+          529,
+          1
+        ],
+        [
+          536,
+          1
+        ],
+        [
+          544,
+          1
+        ],
+        [
+          550,
+          1
+        ],
+        [
+          551,
+          1
+        ],
+        [
+          554,
+          2
+        ],
+        [
+          556,
+          1
+        ],
+        [
+          557,
+          1
+        ],
+        [
+          561,
+          1
+        ],
+        [
+          563,
+          1
+        ],
+        [
+          567,
+          1
+        ],
+        [
+          572,
+          1
+        ],
+        [
+          573,
+          1
+        ],
+        [
+          574,
+          1
+        ],
+        [
+          575,
+          1
+        ],
+        [
+          576,
+          2
+        ],
+        [
+          577,
+          2
+        ],
+        [
+          578,
+          1
+        ],
+        [
+          581,
+          1
+        ],
+        [
+          587,
+          1
+        ],
+        [
+          588,
+          1
+        ],
+        [
+          589,
+          1
+        ],
+        [
+          593,
+          2
+        ],
+        [
+          595,
+          1
+        ],
+        [
+          597,
+          1
+        ],
+        [
+          599,
+          1
+        ],
+        [
+          600,
+          1
+        ],
+        [
+          642,
+          1
+        ],
+        [
+          643,
+          1
+        ],
+        [
+          650,
+          1
+        ],
+        [
+          651,
+          1
+        ],
+        [
+          680,
+          1
+        ],
+        [
+          723,
+          1
+        ]
+      ]
+    },
+    "scheduled_latency": {
+      "samples": 0,
+      "p50_ns_upper": 0,
+      "p95_ns_upper": 0,
+      "p99_ns_upper": 0,
+      "p999_ns_upper": 0,
+      "max_ns": 0,
+      "bins": []
+    },
+    "windows": [
+      {
+        "seconds": 1.00005,
+        "accepted": 1125256,
+        "attempted": 35390724,
+        "file_bytes": 151456028
+      },
+      {
+        "seconds": 2.0001,
+        "accepted": 2200287,
+        "attempted": 72066052,
+        "file_bytes": 297379401
+      },
+      {
+        "seconds": 3.00012,
+        "accepted": 3206125,
+        "attempted": 108506372,
+        "file_bytes": 434251977
+      },
+      {
+        "seconds": 4.00009,
+        "accepted": 4148016,
+        "attempted": 145100292,
+        "file_bytes": 562275033
+      },
+      {
+        "seconds": 5.00009,
+        "accepted": 5178182,
+        "attempted": 181061892,
+        "file_bytes": 702490761
+      },
+      {
+        "seconds": 6.00007,
+        "accepted": 6226084,
+        "attempted": 217681924,
+        "file_bytes": 845066361
+      },
+      {
+        "seconds": 7.00004,
+        "accepted": 7257082,
+        "attempted": 252821764,
+        "file_bytes": 985282089
+      },
+      {
+        "seconds": 8.00011,
+        "accepted": 8293864,
+        "attempted": 287483140,
+        "file_bytes": 1126174091
+      },
+      {
+        "seconds": 9.0001,
+        "accepted": 8945491,
+        "attempted": 323458564,
+        "file_bytes": 1214779641
+      },
+      {
+        "seconds": 10.0001,
+        "accepted": 9287266,
+        "attempted": 361903360,
+        "file_bytes": 1261387113
+      }
+    ],
+    "producer_digests": [
+      [
+        {
+          "count": 841503,
+          "ordered": "11420542601816282314",
+          "sum": "7614932117886425928"
+        },
+        {
+          "count": 2321944,
+          "ordered": "2287534571146632479",
+          "sum": "980432185109726209"
+        }
+      ],
+      [
+        {
+          "count": 841701,
+          "ordered": "641285624008994941",
+          "sum": "5208628824653028732"
+        },
+        {
+          "count": 2321407,
+          "ordered": "355598195071450818",
+          "sum": "4896111681739301127"
+        }
+      ],
+      [
+        {
+          "count": 841213,
+          "ordered": "8510212811480848233",
+          "sum": "4748675528141232363"
+        },
+        {
+          "count": 2321964,
+          "ordered": "17524605575226788981",
+          "sum": "1744782020425896761"
+        }
+      ],
+      [
+        {
+          "count": 842065,
+          "ordered": "12371939555439241911",
+          "sum": "623470493229429553"
+        },
+        {
+          "count": 2321951,
+          "ordered": "10424200905448269365",
+          "sum": "8798553477706280863"
+        }
+      ]
+    ],
+    "verified": true,
+    "verification": "all lines parsed, exact body and monotone IDs, accepted count plus two 64-bit fingerprints per producer/phase/target"
+  },
+  "output_files": [
+    {
+      "path": "config.txt",
+      "bytes": 80,
+      "sha256": "21536ddeb72c6d782eddf74e3438c7842a0e56f40c1e3c61a3b1db33b96bcd78",
+      "first_2048_utf8": "QLog defaults; name=production; category=default; File targets=1; independent=0\n",
+      "last_2048_utf8": "QLog defaults; name=production; category=default; File targets=1; independent=0\n"
+    },
+    {
+      "path": "target0/output.log",
+      "bytes": 1718005246,
+      "sha256": "514ec9931eeb549317183a1a1ac501c1d635114a1ded01e62618e2dc5ce1f911",
+      "first_2048_utf8": "[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=0 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=1 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=2 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=3 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=4 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=5 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=6 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=7 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=8 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=9 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=10 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=11 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=12 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=13 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=14 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:06.480770313+00:00] [INFO] [production/default] [tid=84092] PROD w=0 p=0 n=15 value=3.141 ",
+      "last_2048_utf8": "jklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647758 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647759 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647760 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647761 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647762 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647763 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647764 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647765 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647766 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647767 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647768 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647769 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647770 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647771 value=3.141 text=abcdefghijklmnop\n[2026-09-20T08:04:19.480205702+00:00] [INFO] [production/default] [tid=84092] PROD w=1 p=0 n=91647772 value=3.141 text=abcdefghijklmnop\n"
+    }
+  ],
+  "raw_text_retained": false,
+  "preflight": false
+}

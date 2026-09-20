@@ -1,0 +1,7 @@
+{
+  "trials": 36,
+  "all_verified": true,
+  "qlog_production_files_match_built_release": 75,
+  "bqlog_clean_upstream": true,
+  "original_local_changes_preserved": true
+}

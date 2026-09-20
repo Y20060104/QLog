@@ -1,0 +1,5 @@
+Frozen-source build complete. New results will not overwrite the published reference.
+Working directory: /home/qq344/QLog/build/native-reproduction-check-d296256ec9
+python3 tools/run_production_benchmark.py --preflight
+python3 tools/run_production_benchmark.py
+python3 tools/analyze_production_benchmark.py

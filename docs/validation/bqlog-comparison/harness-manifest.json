@@ -1,0 +1,14 @@
+[
+  {
+    "path": "benchmarks/bqlog_async_benchmark.cpp",
+    "sha256": "6294816aa285c0175a0c0e831c41ae0dff2a94ad1433eef4740dd61e0ab5095c"
+  },
+  {
+    "path": "benchmarks/qlog_comparison_benchmark.cpp",
+    "sha256": "403b769140850be92e656469bea8c8744fe69b7fecf9b01675c726004654d812"
+  },
+  {
+    "path": "tools/run_bqlog_comparison.py",
+    "sha256": "471ce30c6d3a5868b01726d0f1e5fb4a32c03f398b0b99f64a1bd0d154522bab"
+  }
+]

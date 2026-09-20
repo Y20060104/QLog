@@ -1,0 +1,9 @@
+{
+  "package": "/home/qq344/QLog/build/release-artifacts/qlog-bqlog-native-performance-20260920.tar.gz",
+  "bytes": 11912004,
+  "sha256": "2e8540c60488fd865cff07292c94e19f4b06b1fdf5c69b4d77c492a6474188eb",
+  "file_count": 397,
+  "uploaded": false,
+  "git_commit_created": false,
+  "extract_and_verify": "tar -xzf qlog-bqlog-native-performance-20260920.tar.gz; cd qlog-native-performance; sha256sum -c docs/validation/native-production-20260920/SHA256SUMS.txt"
+}

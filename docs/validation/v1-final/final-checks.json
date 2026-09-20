@@ -1,0 +1,18 @@
+{
+  "git_diff_check": true,
+  "document_links_and_fences": true,
+  "source_manifest_matches": true,
+  "examples": {
+    "shared": {
+      "file_lines": 11,
+      "console_lines": 10
+    },
+    "independent": {
+      "file_lines": 11,
+      "console_lines": 10
+    }
+  },
+  "performance_trials_verified": 21,
+  "native_linux_release": "pending external environment/CI execution",
+  "final_performance_folder": "performance-release"
+}

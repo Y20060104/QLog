@@ -1,0 +1,370 @@
+[
+  {
+    "path": "src/admission_clock.cpp",
+    "sha256": "760a039526580a959d0db78c31a26342e9b4182847674d0c34409f7e1f4defab"
+  },
+  {
+    "path": "src/appender.cpp",
+    "sha256": "1f520f3ee12d072d7f519c9925fc16669c45bcfe5b587d45afd3020c558f63ac"
+  },
+  {
+    "path": "src/appender_factory.cpp",
+    "sha256": "22edbb0f590ae08f941542642ce6867ca0717b62c0512ef7ee62e129b867a3a3"
+  },
+  {
+    "path": "src/appender_prepare.cpp",
+    "sha256": "2e83e80203b906fd8c0dc5ed951bc9c01c2df887b4ecac03c92f2a4fc25638f0"
+  },
+  {
+    "path": "src/async_logger.cpp",
+    "sha256": "4d3a140ac3f99c15c97dfc7834621a7a48370c37e5fc86c24800f88fafa29622"
+  },
+  {
+    "path": "src/backend_runtime.cpp",
+    "sha256": "492793fe1d326141c56acaf2bc62ed333c2b5473b16187930f0cc0ab7ed36050"
+  },
+  {
+    "path": "src/backend_session.cpp",
+    "sha256": "dd18bc848e7de3c76aa4338fc36a6846a359cd3b88e39b11869dc2a9a643e51b"
+  },
+  {
+    "path": "src/build_config.hpp",
+    "sha256": "84ecb301311afbdf1e4f042e91aa3700c20f3ba55ed4452b9cf890a0bb64ff38"
+  },
+  {
+    "path": "src/console_appender.cpp",
+    "sha256": "5871cfe10f12dcef120abf1f0b419845ebc41fc026173b4ad252eb10f2e35a6d"
+  },
+  {
+    "path": "src/filter_state.cpp",
+    "sha256": "4f81dcf0b203be8fc661fcb633937b394c6cf637b8a3a43fbc7a59b9a423f697"
+  },
+  {
+    "path": "src/format_hash.cpp",
+    "sha256": "31905e08e49207a00acb6a5e88b4fa96bdad2bbe65d50eea5f93bb950768d476"
+  },
+  {
+    "path": "src/format_hash_core.hpp",
+    "sha256": "56922da2d47cffc868aa55cccd60787fc05e51d5dda53b5ab725d6033970b174"
+  },
+  {
+    "path": "src/format_hash_software.cpp",
+    "sha256": "11da0e4f0d8380726bca6cf4304ec810f884092a1c332ad81281a8ce64f90b44"
+  },
+  {
+    "path": "src/format_hash_x86_crc32c.cpp",
+    "sha256": "5206c40fcb0717a78b90a94416968486296861b965056426b57e72e1e6aa21d2"
+  },
+  {
+    "path": "src/io_report.cpp",
+    "sha256": "1aee511a6c39342305d11c55f5e6f3e53f1a7ff299b14c89354ff4643f70a066"
+  },
+  {
+    "path": "src/logger_config.cpp",
+    "sha256": "12eaa1dbcc1fe73147df9aa1c5705ad88bff143aa702c6947a418d399f6ba838"
+  },
+  {
+    "path": "src/management_controller.cpp",
+    "sha256": "b78f7803e7b0b179f7763508bb3f3453cdc756317276394630cca5ba0d61dca8"
+  },
+  {
+    "path": "src/output_batch.cpp",
+    "sha256": "334e6f69e05820ac038803df151e5135d74a508a7e532e1d53fc7070c5e706f8"
+  },
+  {
+    "path": "src/producer_context.cpp",
+    "sha256": "daa28f2198055fda763ccc8b6165a7037281894cb882006de9197dea8c7dad91"
+  },
+  {
+    "path": "src/record_decoder.cpp",
+    "sha256": "c40f5289c027187c5e387409155414b25374690deb180777d205f7f9e3e42d1c"
+  },
+  {
+    "path": "src/spsc_ring_buffer.cpp",
+    "sha256": "d312ef98efd90747acef6facee30afb1caaac66cd0c49a41129e45d0b851623d"
+  },
+  {
+    "path": "src/text_file_appender.cpp",
+    "sha256": "7c5603392d18b1ec8e9bc3b54e06c261a31b35b592ec3de69a2c5d28a1a8e810"
+  },
+  {
+    "path": "src/text_formatter.cpp",
+    "sha256": "e265afb0504945641beab3c233fa689763a2e4eb7b64e229f83fd6435ef0ae54"
+  },
+  {
+    "path": "src/version.cpp",
+    "sha256": "ed8582a915e35ba881192f3d92e2d8a15ee45a1bf9a3bb99c7c36ee968591172"
+  },
+  {
+    "path": "src/worker_provider.cpp",
+    "sha256": "ab7d64fc54a1e45c2793238eaea4105aafd57762595c67eea8bd5f424f63e6fb"
+  },
+  {
+    "path": "include/qlog/appender_config.hpp",
+    "sha256": "b66e73b98a62fff8a797f91db99c919aa56706a1dfaa673b277a2bbc6aa7b9ca"
+  },
+  {
+    "path": "include/qlog/arguments.hpp",
+    "sha256": "41478fc548490104edf38118ee35e0185cf9c75dba911a0894416dbbc5bd2f54"
+  },
+  {
+    "path": "include/qlog/async_logger.hpp",
+    "sha256": "74b5176dbe68789193e7e366e5fafc6f7188a4d9ee4b0d89643866f7b7b7b8b9"
+  },
+  {
+    "path": "include/qlog/async_logger_impl.hpp",
+    "sha256": "da8760fd195d803fb4597f645c944d7dda7543b2e1787a0a25c0df1ad8ab6d8e"
+  },
+  {
+    "path": "include/qlog/backend_config.hpp",
+    "sha256": "a260a705cca1230aa3fc83ba18227fd5925c908b80570d9a1117c6f14c21da19"
+  },
+  {
+    "path": "include/qlog/detail/admission_clock.hpp",
+    "sha256": "ff2fd382f929024e086cd3a3b6b6e17e498f10e578c982a0a93dc71cc82f0b63"
+  },
+  {
+    "path": "include/qlog/detail/appender.hpp",
+    "sha256": "0c14d8ab8fd0fef34da03ca4d327643256c451c6b39715088d0dd54387083faa"
+  },
+  {
+    "path": "include/qlog/detail/appender_factory.hpp",
+    "sha256": "95400760b0ee7269bf27aad98db53a12b960f32ded959e7dcbb453dce41cef6a"
+  },
+  {
+    "path": "include/qlog/detail/appender_prepare.hpp",
+    "sha256": "60e3eca0c97265787b18dfded114280482ad81d48d358751dcb1a54e66db711b"
+  },
+  {
+    "path": "include/qlog/detail/argument_tag.hpp",
+    "sha256": "e87fa71cade925020d77314b1f5cf930ce4bcc8c065b76f7ff72831d2eac6472"
+  },
+  {
+    "path": "include/qlog/detail/argument_traits.hpp",
+    "sha256": "38e36dceb08eea112d9259ae6d1fa83a0ccb3c485e41aa2a297734af80ed7d25"
+  },
+  {
+    "path": "include/qlog/detail/backend_session.hpp",
+    "sha256": "754300fdbd5be36d2bda846924deef25c01a1b225d885f291c3365dd4741b280"
+  },
+  {
+    "path": "include/qlog/detail/call_gate.hpp",
+    "sha256": "8d7d4f9edbbf4d863a9d8ee24406b94ebfe58637adb224fec93668a85d461819"
+  },
+  {
+    "path": "include/qlog/detail/channel.hpp",
+    "sha256": "ce160b9f6ffe835b757fe273585268165a0cfd0933613ad9851a752fc4f7451f"
+  },
+  {
+    "path": "include/qlog/detail/checked_size.hpp",
+    "sha256": "cdaed845703d5f7b11853a2012943a6057dd44c9cea03082d6cabcd2a0fdf9fb"
+  },
+  {
+    "path": "include/qlog/detail/console_appender.hpp",
+    "sha256": "b3ff04352b007f302fdb30a50c108ab4264beca7dbe86b8ba619529cfd54f23b"
+  },
+  {
+    "path": "include/qlog/detail/context_result.hpp",
+    "sha256": "daca6abc48aef4d0b3de20427cdac803653981e406ac295404c24a36033bb51f"
+  },
+  {
+    "path": "include/qlog/detail/control_mailbox.hpp",
+    "sha256": "e09a03501151810ca251a2ca915959c05c6afcee6ad76128a968c0eb70fd2948"
+  },
+  {
+    "path": "include/qlog/detail/filter_config_access.hpp",
+    "sha256": "98d4ac6519f50b079320e3dc8ba5cabac918867e2d59e98c8fb5f5966f290457"
+  },
+  {
+    "path": "include/qlog/detail/filter_state.hpp",
+    "sha256": "06791b51c6c84bc78ac572f3e34ccd738eb2803363288a8d23f6d6bdf90e493c"
+  },
+  {
+    "path": "include/qlog/detail/format_hash.hpp",
+    "sha256": "a120a160b5e80807772f4b78c9772e0a49d2993ef1fbfc2c4ea547cc0c174afe"
+  },
+  {
+    "path": "include/qlog/detail/format_hash_reference.hpp",
+    "sha256": "12683b8e3b62866ebaab2bd02dcb83da894353c651ec9cda58bc378a5e3c7542"
+  },
+  {
+    "path": "include/qlog/detail/format_spec.hpp",
+    "sha256": "68f8e786876116f4664b3284ac875cfa224f7d2d794c9a7085bcd7b08834ebc8"
+  },
+  {
+    "path": "include/qlog/detail/io_report.hpp",
+    "sha256": "881ba93545e5ac4086a2e153225b5418c0457e6cdbe9e584f45e12aceaa48e26"
+  },
+  {
+    "path": "include/qlog/detail/io_result.hpp",
+    "sha256": "d9abd8e8f31f0f0e613633c9e43c6d16780a0ceb298b70073b00a986c2659720"
+  },
+  {
+    "path": "include/qlog/detail/management_controller.hpp",
+    "sha256": "ca26c6f52dd8bd2c6bc1709977984ec90eaabe5d283f8a2f6ea144adbc0bc97d"
+  },
+  {
+    "path": "include/qlog/detail/output_batch.hpp",
+    "sha256": "e0ef067c406c8ae547d63302227fd1d4bc98bf2fd5484eee16e5ee2be4206c93"
+  },
+  {
+    "path": "include/qlog/detail/producer_context.hpp",
+    "sha256": "9b0fbd17cfb6c88c470f52359264a591c60992c3ed70755933bccbb106d4aa2d"
+  },
+  {
+    "path": "include/qlog/detail/producer_diagnostics.hpp",
+    "sha256": "4dd9e18a476acaafc05eb7b20fb052482a12f51b1aadaa2667763ee01dbe524d"
+  },
+  {
+    "path": "include/qlog/detail/producer_identity.hpp",
+    "sha256": "6ec3f9bb7a8aa54e539e3cba1dd7ca751bdc47133287bb238f7e61c5a4631d04"
+  },
+  {
+    "path": "include/qlog/detail/producer_policy.hpp",
+    "sha256": "12d1cf9f602c129a926ae777ffa95639965ca7fb2366df788320fd1cba0a67e9"
+  },
+  {
+    "path": "include/qlog/detail/producer_result_map.hpp",
+    "sha256": "c0031a31cd8581ee7a15aa3436c616531a9c8e7b1b768f2a5665e460af2df648"
+  },
+  {
+    "path": "include/qlog/detail/record_decoder.hpp",
+    "sha256": "806ce6a2290b867dbe6875dd4ecb82d403cf8397b9fd3c5ee8b4be5fd5116995"
+  },
+  {
+    "path": "include/qlog/detail/record_encoder.hpp",
+    "sha256": "188610b7b90f0af358cd457b1c3347d567d7f844b9931c51cab41780a40bea18"
+  },
+  {
+    "path": "include/qlog/detail/record_header.hpp",
+    "sha256": "8bf70a69d6b4528f52be9614ea5214b33d982c90e464ae07d8d58b7df16c89ad"
+  },
+  {
+    "path": "include/qlog/detail/record_limits.hpp",
+    "sha256": "db3d2d7176a4ef49afd4d48a8c1facbe43f3905bfbfd2f1fd4a28dd1a28c2a7c"
+  },
+  {
+    "path": "include/qlog/detail/record_measure.hpp",
+    "sha256": "f281bf2969f543e2d791d146c9b117ba6029b0501d0a5cc7de2b3fb5003b3186"
+  },
+  {
+    "path": "include/qlog/detail/record_types.hpp",
+    "sha256": "8d5c4022e37c7e70142493dde3cbf74376a146ea07542269a861c6473ae6862f"
+  },
+  {
+    "path": "include/qlog/detail/ring_geometry.hpp",
+    "sha256": "09a95995a6cfd61ec821a17f9756bd6ecd38356021e174cbb2ff7e11965d13ca"
+  },
+  {
+    "path": "include/qlog/detail/spsc_ring_buffer.hpp",
+    "sha256": "6671bff910bae46191d143767faab7669da4d08105b039754008617d459cc93f"
+  },
+  {
+    "path": "include/qlog/detail/text_file_appender.hpp",
+    "sha256": "b39e6fb6560ff35dad670c1f2b7d8a8091611fe149979bf03660f5eb7f61a2fa"
+  },
+  {
+    "path": "include/qlog/detail/text_formatter.hpp",
+    "sha256": "a20a0420fc157b500a586aa96a1a974967916afd44f6fa9d98d972c2dd846010"
+  },
+  {
+    "path": "include/qlog/detail/worker_provider.hpp",
+    "sha256": "5031e30b6002342ebf1dcd555e9d1029addf36781f1c703bd3f3ece2a7af1bc9"
+  },
+  {
+    "path": "include/qlog/log_format.hpp",
+    "sha256": "838b3fa357445daed233d6ed149a95bf5909c97a9e0a93d189fee22e05bf05f9"
+  },
+  {
+    "path": "include/qlog/log_level.hpp",
+    "sha256": "2c6f5845098aa7cf1ad5a5b92cc08dbccd1058920a00c888390753ed976fbb4a"
+  },
+  {
+    "path": "include/qlog/log_result.hpp",
+    "sha256": "18801723d75c321186f4d40337c6d52bca388fdc7b9e69c33abf2d4c7f922028"
+  },
+  {
+    "path": "include/qlog/logger_config.hpp",
+    "sha256": "a1a9c583cdfc30979a31231d7c15e28a0568aabd1ec9ba28b57628346ce959a2"
+  },
+  {
+    "path": "include/qlog/management_result.hpp",
+    "sha256": "92fcf5a3a5d55fc5981a506a62a8a334aa2c8368a9b216445ebc15e4128766ef"
+  },
+  {
+    "path": "include/qlog/producer_handle.hpp",
+    "sha256": "bf816d9dead6717de6196b75f17e7261e1edfeba204310548161be471e768eed"
+  },
+  {
+    "path": "include/qlog/version.hpp",
+    "sha256": "2ed4fa04ee7def8ebdaeadfb1e45cc27ef22f0b0285835a0def4bab321623f0c"
+  },
+  {
+    "path": "benchmarks/CMakeLists.txt",
+    "sha256": "1e9ccc23bcda3c733fa65a610912e44383c0836bbb879ef38027eb385fc2ae74"
+  },
+  {
+    "path": "benchmarks/README_CHS.md",
+    "sha256": "52de2d8bc658a6c7d8084ad23686895ad6d48b4e2a0a990ab8706175190a4a2c"
+  },
+  {
+    "path": "benchmarks/adapters/bqlog_siso_adapter.hpp",
+    "sha256": "237b927c7feb8d34bf12a705c66a585f397e56a9c9089a81e751d587012eee18"
+  },
+  {
+    "path": "benchmarks/adapters/qlog_spsc_adapter.hpp",
+    "sha256": "7425f6a4aeb0e0c14966aff324c6a362fa2d3fa3660e465949d06be8d7e4aa16"
+  },
+  {
+    "path": "benchmarks/async_logger_benchmark.cpp",
+    "sha256": "09d3a0c2f76467c11d6683c64f524853c9d29e29e71d5520c0a2885388aaebd8"
+  },
+  {
+    "path": "benchmarks/benchmark_types.hpp",
+    "sha256": "532aa51a28adf541025ca29bce38cb666ab129e1fa727e0c7c9bc2b5fe5af02e"
+  },
+  {
+    "path": "benchmarks/bqlog_async_benchmark.cpp",
+    "sha256": "6294816aa285c0175a0c0e831c41ae0dff2a94ad1433eef4740dd61e0ab5095c"
+  },
+  {
+    "path": "benchmarks/bqlog_benchmark.cpp",
+    "sha256": "4ca4757b0855f5607f95c3a9db52b3b0538ec060a02389bb3cb47c0478cfe877"
+  },
+  {
+    "path": "benchmarks/formatter_benchmark.cpp",
+    "sha256": "b1c82504ae34fad248b7f1750cbe9b5ebfbbdb48fe997918c85312b9ff8cf962"
+  },
+  {
+    "path": "benchmarks/linux_support.hpp",
+    "sha256": "519b8f07aae43420ba72ae5f3097a1051fa8d5c6158ee6e4da74a2b0586ce19e"
+  },
+  {
+    "path": "benchmarks/qlog_benchmark.cpp",
+    "sha256": "3f9d491109b1b258ef8839b2deb587951ecd71c9c37f2017d6e7afe70066f794"
+  },
+  {
+    "path": "benchmarks/qlog_comparison_benchmark.cpp",
+    "sha256": "403b769140850be92e656469bea8c8744fe69b7fecf9b01675c726004654d812"
+  },
+  {
+    "path": "benchmarks/record_core_benchmark.cpp",
+    "sha256": "226bf071b031ebd6b277b793709910456099af034ba034069f40647de2a23b17"
+  },
+  {
+    "path": "benchmarks/record_core_codegen_probe.cpp",
+    "sha256": "93a9143c7bd20ace73a539960a4fc9d4acc7dd28800246bd0730848d9467a7ad"
+  },
+  {
+    "path": "benchmarks/spsc_ring_benchmark.cpp",
+    "sha256": "3661c33418cf4294972ca2f228199d0450d9933f4dd6c2eddbc670bc57c8cbbe"
+  },
+  {
+    "path": "benchmarks/spsc_runner.hpp",
+    "sha256": "8b8f10998ab83d316db751d6ad1f6812c88d6e4a42938aa68b35b137d041ff5b"
+  },
+  {
+    "path": "benchmarks/visibility_benchmark.cpp",
+    "sha256": "aab7c6548e9cb38e4a98db5d10f23b3e633054fb534a8a7684eb5fd24e78ac0a"
+  }
+]
