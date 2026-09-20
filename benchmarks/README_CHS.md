@@ -240,3 +240,13 @@ WSL2 结果用于开发期回归；公开“达到 BQLog 90%”前，应在稳�
 - spdlog 容量按对象槽位配置，QLog 按字节配置，因此同时披露记录数容量和实际内存占用。
 
 这些项目不能混入首版吞吐热循环后再声称口径相同。
+
+## V1 异步文本对照
+
+`tools/run_bqlog_comparison.py` 从同级 BqLog 的 HEAD 导出干净源码并构建，与 QLog 比较同正文的 buffered 管线。先 git pull，再从 QLog 根目录运行脚本。实际结果与不可完全对齐的边界见 [对照报告](../docs/decisions/V1_BQLOG_COMPARISON_20260920_CHS.md)。本节的完整日志基准与上文 Ring 微基准分别解释。
+
+## 原生默认配置的产品工作负载评测
+
+新的 [production 套件](production/README_CHS.md) 用各库原生实现和默认资源策略完成同类文本日志业务，不强制相同的缓存、队列或满策略。预定方案包含 8 个主场景、2 个固定到达率场景和持续负载附加项；结果、配对置信区间、完整证据及冻结源码复现入口见 [2026-09-20 报告](../docs/decisions/V1_NATIVE_PRODUCTION_PERFORMANCE_20260920_CHS.md)。
+
+本报告可以作为明确限定 WSL2 环境的可复现基线；不能外推为原生 Linux 发布性能验收，也不替代上文 Ring 微基准的独立解释。

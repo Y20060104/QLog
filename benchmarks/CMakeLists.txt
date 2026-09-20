@@ -109,3 +109,16 @@ if(QLOG_BENCH_WITH_BQLOG)
 else()
     target_compile_definitions(qlog_spsc_benchmark PRIVATE QLOG_BENCH_WITH_BQLOG=0)
 endif()
+
+add_executable(qlog_async_benchmark async_logger_benchmark.cpp)
+target_link_libraries(qlog_async_benchmark PRIVATE QLog::qlog Threads::Threads)
+target_link_options(qlog_async_benchmark PRIVATE -Wl,--wrap=write -Wl,--wrap=fdatasync)
+qlog_enable_warnings(qlog_async_benchmark)
+
+add_executable(qlog_visibility_benchmark visibility_benchmark.cpp)
+target_link_libraries(qlog_visibility_benchmark PRIVATE QLog::qlog Threads::Threads)
+qlog_enable_warnings(qlog_visibility_benchmark)
+
+add_executable(qlog_formatter_benchmark formatter_benchmark.cpp)
+target_link_libraries(qlog_formatter_benchmark PRIVATE QLog::qlog Threads::Threads)
+qlog_enable_warnings(qlog_formatter_benchmark)
