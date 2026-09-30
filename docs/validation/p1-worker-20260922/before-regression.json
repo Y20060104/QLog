@@ -1,0 +1,8 @@
+{
+  "command": [
+    "/home/qq344/QLog/build/p1-worker-20260922/before/tests/qlog_worker_runtime_test",
+    "--gtest_filter=WorkerRuntimeTest.CompletedEmptySweepsDoNotSpinAfterDrain"
+  ],
+  "returncode": 1,
+  "expected_failure": true
+}

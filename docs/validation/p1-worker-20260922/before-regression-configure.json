@@ -1,0 +1,14 @@
+{
+  "label": "before-regression-configure",
+  "command": [
+    "cmake",
+    "-S",
+    "/home/qq344/QLog/build/p1-worker-20260922/before-src",
+    "-B",
+    "/home/qq344/QLog/build/p1-worker-20260922/before",
+    "-DBUILD_TESTING=ON",
+    "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=/home/qq344/QLog/build/_deps/googletest-src"
+  ],
+  "returncode": 0,
+  "seconds": 4.5671261850000064
+}

@@ -1,0 +1,15 @@
+{
+  "label": "tsan-build",
+  "command": [
+    "cmake",
+    "--build",
+    "/home/qq344/QLog/build/v1-tsan",
+    "-j",
+    "3",
+    "--target",
+    "qlog_worker_runtime_test",
+    "qlog_worker_allocation_test"
+  ],
+  "returncode": 0,
+  "seconds": 17.259538634000023
+}

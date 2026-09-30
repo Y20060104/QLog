@@ -1,0 +1,18 @@
+{
+  "command": [
+    "g++",
+    "-std=c++20",
+    "-O3",
+    "-DNDEBUG",
+    "-DQLOG_ENABLE_DIAGNOSTICS=0",
+    "-pthread",
+    "-I/home/qq344/QLog/include",
+    "/home/qq344/QLog/docs/validation/p1-worker-20260922/benchmark/idle_probe.cpp",
+    "/home/qq344/QLog/build/p1-worker-20260922/after/libqlog.a",
+    "-Wl,--wrap=pthread_sigmask",
+    "-o",
+    "/home/qq344/QLog/docs/validation/p1-worker-20260922/benchmark/after-idle"
+  ],
+  "returncode": 0,
+  "wall_seconds": 4.296789160000003
+}

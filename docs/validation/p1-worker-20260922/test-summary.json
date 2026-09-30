@@ -1,0 +1,71 @@
+[
+  {
+    "label": "release-full-tests",
+    "command": [
+      "ctest",
+      "--test-dir",
+      "/home/qq344/QLog/build/p1-worker-20260922/after",
+      "--output-on-failure",
+      "-j",
+      "2"
+    ],
+    "returncode": 0,
+    "seconds": 50.00139406799997
+  },
+  {
+    "label": "debug-full-tests",
+    "command": [
+      "ctest",
+      "--test-dir",
+      "/home/qq344/QLog/build/formatter-gcc-debug",
+      "--output-on-failure",
+      "-j",
+      "2"
+    ],
+    "returncode": 0,
+    "seconds": 51.268183883000006
+  },
+  {
+    "label": "san-full-tests",
+    "command": [
+      "ctest",
+      "--test-dir",
+      "/home/qq344/QLog/build/formatter-san",
+      "--output-on-failure",
+      "-j",
+      "2"
+    ],
+    "returncode": 0,
+    "seconds": 61.445639450000044
+  },
+  {
+    "label": "debug-worker-stress",
+    "command": [
+      "ctest",
+      "--test-dir",
+      "/home/qq344/QLog/build/formatter-gcc-debug",
+      "-L",
+      "worker",
+      "--output-on-failure",
+      "--repeat",
+      "until-fail:5"
+    ],
+    "returncode": 0,
+    "seconds": 8.394206615999906
+  },
+  {
+    "label": "tsan-worker-stress",
+    "command": [
+      "ctest",
+      "--test-dir",
+      "/home/qq344/QLog/build/v1-tsan",
+      "-L",
+      "worker",
+      "--output-on-failure",
+      "--repeat",
+      "until-fail:3"
+    ],
+    "returncode": 0,
+    "seconds": 16.080793750999874
+  }
+]

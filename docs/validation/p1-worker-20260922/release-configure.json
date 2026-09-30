@@ -1,0 +1,18 @@
+{
+  "label": "release-configure",
+  "command": [
+    "cmake",
+    "-S",
+    "/home/qq344/QLog",
+    "-B",
+    "/home/qq344/QLog/build/p1-worker-20260922/after",
+    "-DCMAKE_BUILD_TYPE=Release",
+    "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=/home/qq344/QLog/build/_deps/googletest-src",
+    "-DBUILD_TESTING=ON",
+    "-DQLOG_BUILD_BENCHMARKS=ON",
+    "-DQLOG_BENCH_WITH_BQLOG=OFF",
+    "-DQLOG_ENABLE_DIAGNOSTICS=OFF"
+  ],
+  "returncode": 0,
+  "seconds": 8.629410463999989
+}

@@ -1,0 +1,20 @@
+{
+  "command": [
+    "g++",
+    "-std=c++20",
+    "-O3",
+    "-DNDEBUG",
+    "-DQLOG_ENABLE_DIAGNOSTICS=0",
+    "-pthread",
+    "-I/home/qq344/QLog/include",
+    "/home/qq344/QLog/docs/validation/p1-worker-20260922/benchmark/async_probe.cpp",
+    "/home/qq344/QLog/build/p1-worker-20260922/before/libqlog.a",
+    "-Wl,--wrap=pthread_sigmask",
+    "-Wl,--wrap=write",
+    "-Wl,--wrap=fdatasync",
+    "-o",
+    "/home/qq344/QLog/docs/validation/p1-worker-20260922/benchmark/before-async"
+  ],
+  "returncode": 0,
+  "wall_seconds": 5.484419986000034
+}

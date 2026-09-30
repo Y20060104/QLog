@@ -1,0 +1,200 @@
+{
+  "workspace": "/home/qq344/QLog",
+  "rehearsal": "/tmp/qlog-r0-guide-20260922-krcs1bq5",
+  "commands": [
+    {
+      "label": "syntax_admission_clock",
+      "command": [
+        "c++",
+        "-std=c++20",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Wconversion",
+        "-Wshadow",
+        "-Iinclude",
+        "-Isrc",
+        "-fsyntax-only",
+        "src/admission_clock.cpp"
+      ],
+      "exit": 0,
+      "log": "/tmp/qlog-r0-guide-20260922-krcs1bq5/syntax_admission_clock.log",
+      "archived_log": "syntax_admission_clock.log"
+    },
+    {
+      "label": "syntax_filter_state",
+      "command": [
+        "c++",
+        "-std=c++20",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Wconversion",
+        "-Wshadow",
+        "-Iinclude",
+        "-Isrc",
+        "-fsyntax-only",
+        "src/filter_state.cpp"
+      ],
+      "exit": 0,
+      "log": "/tmp/qlog-r0-guide-20260922-krcs1bq5/syntax_filter_state.log",
+      "archived_log": "syntax_filter_state.log"
+    },
+    {
+      "label": "syntax_async_logger",
+      "command": [
+        "c++",
+        "-std=c++20",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Wconversion",
+        "-Wshadow",
+        "-Iinclude",
+        "-Isrc",
+        "-fsyntax-only",
+        "src/async_logger.cpp"
+      ],
+      "exit": 0,
+      "log": "/tmp/qlog-r0-guide-20260922-krcs1bq5/syntax_async_logger.log",
+      "archived_log": "syntax_async_logger.log"
+    },
+    {
+      "label": "syntax_producer_context",
+      "command": [
+        "c++",
+        "-std=c++20",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Wconversion",
+        "-Wshadow",
+        "-Iinclude",
+        "-Isrc",
+        "-fsyntax-only",
+        "src/producer_context.cpp"
+      ],
+      "exit": 0,
+      "log": "/tmp/qlog-r0-guide-20260922-krcs1bq5/syntax_producer_context.log",
+      "archived_log": "syntax_producer_context.log"
+    },
+    {
+      "label": "syntax_text_formatter",
+      "command": [
+        "c++",
+        "-std=c++20",
+        "-Wall",
+        "-Wextra",
+        "-Wpedantic",
+        "-Wconversion",
+        "-Wshadow",
+        "-Iinclude",
+        "-Isrc",
+        "-fsyntax-only",
+        "src/text_formatter.cpp"
+      ],
+      "exit": 1,
+      "log": "/tmp/qlog-r0-guide-20260922-krcs1bq5/syntax_text_formatter.log",
+      "archived_log": "syntax_text_formatter.log"
+    },
+    {
+      "label": "configure_debug",
+      "command": [
+        "cmake",
+        "-S",
+        "/tmp/qlog-r0-guide-20260922-krcs1bq5/source",
+        "-B",
+        "/tmp/qlog-r0-guide-20260922-krcs1bq5/build-debug",
+        "-DCMAKE_BUILD_TYPE=Debug",
+        "-DBUILD_TESTING=ON",
+        "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
+        "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=/home/qq344/QLog/build/_deps/googletest-src"
+      ],
+      "exit": 0,
+      "log": "/tmp/qlog-r0-guide-20260922-krcs1bq5/configure_debug.log",
+      "archived_log": "configure_debug.log"
+    },
+    {
+      "label": "build_debug",
+      "command": [
+        "cmake",
+        "--build",
+        "/tmp/qlog-r0-guide-20260922-krcs1bq5/build-debug",
+        "-j",
+        "4"
+      ],
+      "exit": 0,
+      "log": "/tmp/qlog-r0-guide-20260922-krcs1bq5/build_debug.log",
+      "archived_log": "build_debug.log"
+    },
+    {
+      "label": "ctest_debug",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "/tmp/qlog-r0-guide-20260922-krcs1bq5/build-debug",
+        "--output-on-failure",
+        "--parallel",
+        "4",
+        "--timeout",
+        "60"
+      ],
+      "exit": 0,
+      "log": "/tmp/qlog-r0-guide-20260922-krcs1bq5/ctest_debug.log",
+      "archived_log": "ctest_debug.log"
+    },
+    {
+      "label": "configure_release",
+      "command": [
+        "cmake",
+        "-S",
+        "/tmp/qlog-r0-guide-20260922-krcs1bq5/source",
+        "-B",
+        "/tmp/qlog-r0-guide-20260922-krcs1bq5/build-release",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_TESTING=ON",
+        "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=/home/qq344/QLog/build/_deps/googletest-src"
+      ],
+      "exit": 0,
+      "log": "/tmp/qlog-r0-guide-20260922-krcs1bq5/configure_release.log",
+      "archived_log": "configure_release.log"
+    },
+    {
+      "label": "build_release_link",
+      "command": [
+        "cmake",
+        "--build",
+        "/tmp/qlog-r0-guide-20260922-krcs1bq5/build-release",
+        "--target",
+        "qlog_text_formatter_link_test",
+        "-j",
+        "4"
+      ],
+      "exit": 0,
+      "log": "/tmp/qlog-r0-guide-20260922-krcs1bq5/build_release_link.log",
+      "archived_log": "build_release_link.log"
+    },
+    {
+      "label": "ctest_release_link",
+      "command": [
+        "ctest",
+        "--test-dir",
+        "/tmp/qlog-r0-guide-20260922-krcs1bq5/build-release",
+        "-R",
+        "^qlog\\.text_formatter_link$",
+        "--output-on-failure"
+      ],
+      "exit": 0,
+      "log": "/tmp/qlog-r0-guide-20260922-krcs1bq5/ctest_release_link.log",
+      "archived_log": "ctest_release_link.log"
+    }
+  ],
+  "scope": "Temporary copy only; authoritative production source not edited.",
+  "head": "94fefc0f29b21a1dbdd258fdb5725aadf84d770e",
+  "compiler": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0",
+  "test_summary_tail": ": qlog.record_property\n119/124 Test #122: qlog.record_property ...................................................................................................................   Passed    1.94 sec\n        Start 123: qlog.record_allocation\n120/124 Test #123: qlog.record_allocation .................................................................................................................   Passed    0.02 sec\n        Start 124: qlog.text_formatter_link\n121/124 Test #124: qlog.text_formatter_link ...............................................................................................................   Passed    0.00 sec\n122/124 Test #119: qlog.compile_fail.implicit .............................................................................................................   Passed    3.26 sec\n123/124 Test #121: qlog.compile_fail.arg_count ............................................................................................................   Passed    3.22 sec\n124/124 Test #120: qlog.compile_fail.format_as ............................................................................................................   Passed    3.32 sec\n\n100% tests passed, 0 tests failed out of 124\n\nLabel Time Summary:\nallocation          =   0.02 sec*proc (1 test)\narguments           =   0.13 sec*proc (13 tests)\ncodec               =   0.15 sec*proc (19 tests)\ncompile_fail        =  85.41 sec*proc (23 tests)\nformat_hash         =   2.11 sec*proc (16 tests)\nformatter           =   0.00 sec*proc (1 test)\ngeometry            =   0.15 sec*proc (6 tests)\nproperty            =   1.94 sec*proc (1 test)\nr0                  =   0.00 sec*proc (1 test)\nrecord_core         =  89.76 sec*proc (73 tests)\nrecord_header       =   0.03 sec*proc (3 tests)\nsmoke               =   0.00 sec*proc (1 test)\nspsc_ring_buffer    =   0.34 sec*proc (40 tests)\n\nTotal Test time (real) =  22.95 sec\n",
+  "production_source_unchanged": true,
+  "compile_commands_has_formatter": true,
+  "release_test_summary": "Internal ctest changing into directory: /tmp/qlog-r0-guide-20260922-krcs1bq5/build-release\nTest project /tmp/qlog-r0-guide-20260922-krcs1bq5/build-release\n    Start 33: qlog.text_formatter_link\n1/1 Test #33: qlog.text_formatter_link .........   Passed    0.00 sec\n\n100% tests passed, 0 tests failed out of 1\n\nLabel Time Summary:\nformatter    =   0.00 sec*proc (1 test)\nr0           =   0.00 sec*proc (1 test)\n\nTotal Test time (real) =   0.01 sec\n",
+  "archive_directory": "/home/qq344/QLog/docs/validation/r0-guide-rehearsal-20260922"
+}

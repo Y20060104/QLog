@@ -1,0 +1,12 @@
+{
+  "label": "debug-build",
+  "command": [
+    "cmake",
+    "--build",
+    "/home/qq344/QLog/build/formatter-gcc-debug",
+    "-j",
+    "3"
+  ],
+  "returncode": 0,
+  "seconds": 35.82645059899994
+}

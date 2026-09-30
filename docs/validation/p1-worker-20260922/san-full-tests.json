@@ -1,0 +1,13 @@
+{
+  "label": "san-full-tests",
+  "command": [
+    "ctest",
+    "--test-dir",
+    "/home/qq344/QLog/build/formatter-san",
+    "--output-on-failure",
+    "-j",
+    "2"
+  ],
+  "returncode": 0,
+  "seconds": 61.445639450000044
+}

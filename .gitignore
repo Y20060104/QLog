@@ -9,3 +9,9 @@ compile_commands.json
 # Python validation-script bytecode caches
 __pycache__/
 *.py[cod]
+
+# Historical validation probe executables
+/docs/validation/p1-worker-20260922/benchmark/before-async
+/docs/validation/p1-worker-20260922/benchmark/before-idle
+/docs/validation/p1-worker-20260922/benchmark/after-async
+/docs/validation/p1-worker-20260922/benchmark/after-idle

@@ -1,0 +1,12 @@
+{
+  "label": "release-build",
+  "command": [
+    "cmake",
+    "--build",
+    "/home/qq344/QLog/build/p1-worker-20260922/after",
+    "-j",
+    "3"
+  ],
+  "returncode": 0,
+  "seconds": 115.5544311399999
+}

@@ -1,0 +1,13 @@
+{
+  "label": "debug-full-tests",
+  "command": [
+    "ctest",
+    "--test-dir",
+    "/home/qq344/QLog/build/formatter-gcc-debug",
+    "--output-on-failure",
+    "-j",
+    "2"
+  ],
+  "returncode": 0,
+  "seconds": 51.268183883000006
+}

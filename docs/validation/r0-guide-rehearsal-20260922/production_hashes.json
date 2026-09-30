@@ -1,0 +1,6 @@
+{
+  "CMakeLists.txt": "8a9bb3f50a04ae6d628c04f31d0f7bde9fc711bec98e3a3d2f6c2e3d1014e292",
+  "src/text_formatter.cpp": "e265afb0504945641beab3c233fa689763a2e4eb7b64e229f83fd6435ef0ae54",
+  "include/qlog/detail/text_formatter.hpp": "a20a0420fc157b500a586aa96a1a974967916afd44f6fa9d98d972c2dd846010",
+  "tests/CMakeLists.txt": "daf94ad13853ed1accb76da54a59a7166d59bd70f54c36952d1fddd4c702d572"
+}

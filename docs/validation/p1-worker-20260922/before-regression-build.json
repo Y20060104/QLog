@@ -1,0 +1,14 @@
+{
+  "label": "before-regression-build",
+  "command": [
+    "cmake",
+    "--build",
+    "/home/qq344/QLog/build/p1-worker-20260922/before",
+    "--target",
+    "qlog_worker_runtime_test",
+    "-j",
+    "3"
+  ],
+  "returncode": 0,
+  "seconds": 28.766609694999943
+}

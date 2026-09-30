@@ -1,0 +1,13 @@
+{
+  "label": "release-full-tests",
+  "command": [
+    "ctest",
+    "--test-dir",
+    "/home/qq344/QLog/build/p1-worker-20260922/after",
+    "--output-on-failure",
+    "-j",
+    "2"
+  ],
+  "returncode": 0,
+  "seconds": 50.00139406799997
+}

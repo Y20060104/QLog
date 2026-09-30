@@ -1,0 +1,15 @@
+{
+  "label": "debug-worker-stress",
+  "command": [
+    "ctest",
+    "--test-dir",
+    "/home/qq344/QLog/build/formatter-gcc-debug",
+    "-L",
+    "worker",
+    "--output-on-failure",
+    "--repeat",
+    "until-fail:5"
+  ],
+  "returncode": 0,
+  "seconds": 8.394206615999906
+}

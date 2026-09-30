@@ -1,0 +1,12 @@
+{
+  "label": "san-build",
+  "command": [
+    "cmake",
+    "--build",
+    "/home/qq344/QLog/build/formatter-san",
+    "-j",
+    "3"
+  ],
+  "returncode": 0,
+  "seconds": 38.49813685099991
+}

@@ -1,0 +1,14 @@
+{
+  "label": "tsan-configure",
+  "command": [
+    "cmake",
+    "-S",
+    "/home/qq344/QLog",
+    "-B",
+    "/home/qq344/QLog/build/v1-tsan",
+    "-DCMAKE_BUILD_TYPE=Debug",
+    "-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST=/home/qq344/QLog/build/_deps/googletest-src"
+  ],
+  "returncode": 0,
+  "seconds": 1.730755864999992
+}

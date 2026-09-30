@@ -1,0 +1,15 @@
+{
+  "label": "tsan-worker-stress",
+  "command": [
+    "ctest",
+    "--test-dir",
+    "/home/qq344/QLog/build/v1-tsan",
+    "-L",
+    "worker",
+    "--output-on-failure",
+    "--repeat",
+    "until-fail:3"
+  ],
+  "returncode": 0,
+  "seconds": 16.080793750999874
+}
