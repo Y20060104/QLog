@@ -24,6 +24,7 @@ add_library(qlog STATIC
     src/version.cpp
     src/buffer/spsc_ring_buffer.cpp
     src/record/log_entry_handle.cpp
+    src/layout/time_zone.cpp
     src/utility/utf_conversion.cpp
 )
 

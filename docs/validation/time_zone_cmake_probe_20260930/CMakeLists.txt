@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.20)
+project(QLogTimeZoneProbe LANGUAGES CXX)
+include(CTest)
+add_subdirectory(/home/qq344/QLog qlog)
+add_executable(time_zone_consumer consumer.cpp)
+target_link_libraries(time_zone_consumer PRIVATE QLog::qlog)
+target_compile_definitions(time_zone_consumer PRIVATE $<$<CONFIG:Debug>:EXPECT_DEBUG>)
+target_compile_options(time_zone_consumer PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
