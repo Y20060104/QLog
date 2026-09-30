@@ -1,3 +1,3 @@
-#include <qlog/detail/argument_tag.hpp>
+#include <qlog/record/argument_tag.hpp>
 
-static_assert(sizeof(qlog::detail::ArgumentTag) == 1U);
+static_assert(sizeof(qlog::record::ArgumentTag) == 1U);

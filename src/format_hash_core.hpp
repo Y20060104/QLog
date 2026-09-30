@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <cstring>
 
-namespace qlog::detail::hash_impl {
+namespace qlog::record::hash_impl {
 std::uint64_t software_hash_raw(const std::byte*, std::size_t) noexcept;
 std::uint64_t software_copy_raw(const std::byte*, std::byte*, std::size_t) noexcept;
 std::uint64_t x86_hash_raw(const std::byte*, std::size_t) noexcept;
@@ -107,4 +107,4 @@ std::uint64_t hash_core(const std::byte* source, std::byte* destination,
     std::uint32_t high = h2 ^ std::rotl(h4, 19);
     return ((std::uint64_t(high)) << 32) | (std::uint64_t)(low);
 }
-}  // namespace qlog::detail::hash_impl
+}  // namespace qlog::record::hash_impl

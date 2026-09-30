@@ -5,9 +5,9 @@
 
 #include "format_hash_core.hpp"
 
-namespace qlog::detail {}  // namespace qlog::detail
+namespace qlog::record {}  // namespace qlog::record
 
-namespace qlog::detail::hash_impl {
+namespace qlog::record::hash_impl {
 
 // This helper constructs immutable program data and must never execute at runtime.
 consteval std::array<std::uint32_t, 256> make_crc_table() noexcept {
@@ -64,4 +64,4 @@ std::uint64_t software_copy_raw(const std::byte* source, std::byte* destination,
                                 std::size_t size) noexcept {
     return hash_core<true, SoftwareOps>(source, destination, size);
 }
-}  // namespace qlog::detail::hash_impl
+}  // namespace qlog::record::hash_impl

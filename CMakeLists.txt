@@ -23,10 +23,11 @@ endfunction()
 add_library(qlog STATIC
     src/version.cpp
     src/buffer/spsc_ring_buffer.cpp
+    src/record/log_entry_handle.cpp
     src/utility/utf_conversion.cpp
 )
 
-# Block-SISO is built above; the replacement Record view follows separately.
+# Block-SISO and the replacement Record view are built above.
 # Retired byte-cursor Ring/Record fuzzers and benchmarks remain disabled.
 if(QLOG_BUILD_FUZZERS OR QLOG_BUILD_RECORD_BENCHMARK OR QLOG_BUILD_BENCHMARKS)
     message(FATAL_ERROR "Old Record/Ring fuzz and benchmark targets were retired; see R0_BQLOG_BLOCK_RING_GUIDE_CHS.md")

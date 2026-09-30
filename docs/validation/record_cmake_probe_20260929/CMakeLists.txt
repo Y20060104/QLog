@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.20)
+project(QLogIntegrationProbe LANGUAGES CXX)
+include(CTest)
+add_subdirectory(/home/qq344/QLog qlog)
+add_executable(record_consumer consumer.cpp)
+target_link_libraries(record_consumer PRIVATE QLog::qlog)
+target_compile_definitions(record_consumer PRIVATE $<$<CONFIG:Debug>:EXPECT_DEBUG>)
+target_compile_options(record_consumer PRIVATE -Wall -Wextra -Wpedantic -Werror)

@@ -2,7 +2,7 @@
 
 #include "format_hash_core.hpp"
 
-namespace qlog::detail::hash_impl {
+namespace qlog::record::hash_impl {
 struct HardwareOps {
     static std::uint32_t u8(std::uint32_t state, std::uint8_t value) noexcept {
         return _mm_crc32_u8(state, value);
@@ -28,4 +28,4 @@ std::uint64_t x86_copy_raw(const std::byte* source, std::byte* destination,
                            std::size_t size) noexcept {
     return hash_core<true, HardwareOps>(source, destination, size);
 }
-}  // namespace qlog::detail::hash_impl
+}  // namespace qlog::record::hash_impl

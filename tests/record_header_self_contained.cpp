@@ -1,3 +1,3 @@
-#include <qlog/detail/record_header.hpp>
+#include <qlog/record/record_header.hpp>
 
-static_assert(sizeof(qlog::detail::RecordHeader) == 32U);
+static_assert(sizeof(qlog::record::RecordHeader) == 40U);
