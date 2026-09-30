@@ -22,6 +22,7 @@ endfunction()
 
 add_library(qlog STATIC
     src/version.cpp
+    src/buffer/spsc_ring_buffer.cpp
     src/utility/utf_conversion.cpp
 )
 
@@ -34,6 +35,12 @@ endif()
 add_library(QLog::qlog ALIAS qlog)
 
 target_compile_features(qlog PUBLIC cxx_std_20)
+
+# This macro changes public Ring layouts; consumers must inherit the same value.
+# Leave it undefined outside Debug: the headers use #ifdef, not #if.
+target_compile_definitions(qlog PUBLIC
+    $<$<CONFIG:Debug>:QLOG_DEBUG>
+)
 
 set_target_properties(qlog PROPERTIES
     CXX_EXTENSIONS OFF
