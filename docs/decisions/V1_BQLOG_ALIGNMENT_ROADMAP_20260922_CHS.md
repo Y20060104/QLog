@@ -94,9 +94,13 @@ BQLog Manager 独占持有 log_imp；Logger 的轻量业务入口不是另一份
 
 Producer 粗等级位图来自所有 Appender levels 的 OR，不排除 disabled 目标、不合并每个 Appender category；Logger category 也参与过滤。后台再次检查 Logger category 和各目标自己的 category/levels/enabled；积压按处理时配置处理。
 
+2026-10-07 用户确认：保留参考当前两套类别匹配。Logger/Snapshot 调用 log_utils::get_categories_mask_by_config，按相等或紧接点号的子路径匹配，*default 另外允许索引0，*无通配语义；Appender::set_basic_configs 使用普通前缀或*，不特判*default。两套都只收集字符串mask，不trim/不折叠大小写；没有字符串mask时全部允许。后台 Logger 类别拒绝会在分发前返回，Appender/Snapshot 的局部允许不能绕过该拒绝。不要把 helper 直接替换 Appender 逻辑或新增统一匹配策略。源码与完整指导见 [过滤实现指南](CONFIG_FILTER_IMPLEMENTATION_GUIDE_20261007_CHS.md)。
+
 类别掩码、等级名称、默认值、时间区字符串等先按 BQLog parser/helper 逐项核对；不拿现有 QLog 的固定 category 位图 public API、固定 offset_minutes 类型替代参考的配置能力。每种错误输入实际是拒绝、默认还是记录诊断，必须出对照测试。
 
 ## 6. Producer / Channel / Buffer
+
+2026-10-07 接续：等级位图/过滤已由用户填写，当前仍有三处编译/链接问题，见 [实际过滤审查](../validation/FILTER_CODE_REVIEW_20261007_CHS.md)。下一组先建立Buffer配置数据与恢复身份校验、配置树映射，不提前创建Logger/Manager或完整LogBuffer。转换保留参考默认block、非对象/错误类型的默认、uint32容量转换、recovery请求与平台支持、策略不trim、0频率转UINT64_MAX；容量规范化留Buffer实际初始化。完整源码出处与逐函数指导见 [BUFFER_CONFIG_IMPLEMENTATION_GUIDE_20261007_CHS.md](BUFFER_CONFIG_IMPLEMENTATION_GUIDE_20261007_CHS.md)。候选验证不计生产Buffer/并发/恢复验收。
 
 LP 是低频线程共享多生产者缓冲，HP 是高频线程独立缓冲；阈值和降级、旧块退休、消费序号共同工作。参考默认阈值 1000 次/秒，检查间隔 1000ms；先保留参考基线，再测是否有优化需求。
 
