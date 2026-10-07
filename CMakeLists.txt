@@ -23,6 +23,12 @@ endfunction()
 add_library(qlog STATIC
     src/version.cpp
     src/buffer/spsc_ring_buffer.cpp
+    src/buffer/log_buffer_config.cpp
+    src/config/property.cpp
+    src/config/property_value.cpp
+    src/config/filter_config.cpp
+    src/config/buffer_config.cpp
+    src/runtime/log_level_bitmap.cpp
     src/record/log_entry_handle.cpp
     src/layout/time_zone.cpp
     src/layout/layout.cpp

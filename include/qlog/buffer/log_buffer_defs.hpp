@@ -32,7 +32,7 @@ enum class MemoryMapBufferState {
     init_with_memmap,
 };
 
-enum class LogMemoryPolicy{
+enum class LogMemoryPolicy {
     discard_when_full,
     block_when_full,
     auto_expand_when_full,
