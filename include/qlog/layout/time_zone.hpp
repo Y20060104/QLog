@@ -67,7 +67,6 @@ class TimeZone {
 
    private:
     void inner_refresh_time_string_cache(std::uint64_t epoch_ms);
-    static std::string trim(const std::string& text);
 
     bool use_local_time_ = true;
     std::int32_t gmt_offset_hours_ = 0;

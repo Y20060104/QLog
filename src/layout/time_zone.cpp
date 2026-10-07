@@ -7,6 +7,8 @@
 #include <limits>
 #include <utility>
 
+#include "qlog/utility/string_utils.hpp"
+
 namespace qlog::layout {
 TimeZone::TimeZone(const std::string& time_zone_str) {
     reset();
@@ -50,24 +52,10 @@ std::string TimeZone::get_local_timezone_name() {
     return "localtime";
 }
 
-std::string TimeZone::trim(const std::string& text) {
-    std::size_t first = 0;
-    std::size_t last = text.size();
-
-    while (first < last && std::isspace(static_cast<unsigned char>(text[first])) != 0) {
-        ++first;
-    }
-
-    while (first < last && std::isspace(static_cast<unsigned char>(text[last - 1])) != 0) {
-        --last;
-    }
-    return text.substr(first, last - first);
-}
-
 void TimeZone::parse_by_string(const std::string& time_zone_str) {
     reset();
 
-    std::string upper_time_zone = trim(time_zone_str);
+    std::string upper_time_zone = qlog::utility::trim(time_zone_str);
     for (char& c : upper_time_zone) {
         c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
     }
