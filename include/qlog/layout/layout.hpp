@@ -40,8 +40,9 @@ class Layout {
 
     Layout();
 
-    enum_layout_result do_layout(const qlog::record::LogEntryHandle& entry, TimeZone& zone,
-                                 const std::vector<std::string>* categories);
+    enum_layout_result do_layout(const qlog::record::LogEntryHandle& log_entry,
+                                 TimeZone& input_time_zone,
+                                 const std::vector<std::string>* categories_name_array_ptr);
 
     const char* get_formated_str() {
         return format_content_.empty() ? nullptr : format_content_.data();
@@ -54,32 +55,32 @@ class Layout {
     void tidy_memory();
 
    private:
-    enum_layout_result layout_prefix(const qlog::record::LogEntryHandle& entry);
+    enum_layout_result layout_prefix(const qlog::record::LogEntryHandle& log_entry);
 
-    enum_layout_result insert_time(const qlog::record::LogEntryHandle& entry);
+    enum_layout_result insert_time(const qlog::record::LogEntryHandle& log_entry);
 
-    enum_layout_result insert_thread_info(const qlog::record::LogEntryHandle& entry);
+    enum_layout_result insert_thread_info(const qlog::record::LogEntryHandle& log_entry);
 
-    void python_style_format_content(const qlog::record::LogEntryHandle& entry);
+    void python_style_format_content(const qlog::record::LogEntryHandle& log_entry);
 
-    void python_style_format_content_utf8(const qlog::record::LogEntryHandle& entry);
+    void python_style_format_content_utf8(const qlog::record::LogEntryHandle& log_entry);
 
-    void python_style_format_content_utf16(const qlog::record::LogEntryHandle& entry);
+    void python_style_format_content_utf16(const qlog::record::LogEntryHandle& log_entry);
 
     template <typename Char>
     FormatInfo c20_format(const Char* style, std::int32_t len);
 
     void fill_and_alignment(std::uint32_t write_begin_pos);
 
-    void fill_e_style(std::uint32_t exponent, std::uint32_t begin_cursor);
+    void fill_e_style(std::uint32_t e_count, std::uint32_t begin_cursor);
 
-    void expand_format_content_buff_size(std::uint32_t required_size);
+    void expand_format_content_buff_size(std::uint32_t new_size);
 
-    std::uint32_t insert_str_utf8(const char* bytes, std::uint32_t byte_len);
+    std::uint32_t insert_str_utf8(const char* str, const std::uint32_t len);
 
-    std::uint32_t insert_str_utf16(const char* bytes, std::uint32_t byte_len);
+    std::uint32_t insert_str_utf16(const char* str, const std::uint32_t len);
 
-    void insert_pointer(const void* value);
+    void insert_pointer(const void* ptr);
 
     void insert_bool(bool value);
 

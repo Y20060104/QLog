@@ -1,5 +1,7 @@
 # Layout 参数命名与扩容对齐补充（2026-10-01）
 
+> 2026-10-03进度：前缀与入口已填写，本轮修正抄写错误并新增6个Layout行为测试分组。Debug/Release各7/7（含smoke），完整范围见 [验证记录](../validation/LAYOUT_BEHAVIOR_20261003_CHS.md)。下方旧进度为历史记录。
+
 本文件记录用户最新决定，优先于旧指南以及对话中未确认的防御性方案。
 
 ## 对齐范围
@@ -21,7 +23,7 @@
 | insert_bool / insert_char* / insert_decimal | value | 待输出值 |
 | insert_integral_unsigned / insert_integral_signed | value, base | 数值、默认进制 |
 | fill_e_style | eCount, begin_cursor | 指数值、本次数值起始游标 |
-| fill_and_alignment | wirte_begin_pos | 待对齐字段起点；wirte 是参考原有拼写 |
+| fill_and_alignment | write_begin_pos | 待对齐字段起点；用户明确不沿用参考的 wirte 拼写错误 |
 | reverse | begin_cursor, end_cursor | 反转区间的首尾下标，尾端包含在内 |
 
 参数名对齐以含义和单位一致为前提。当前 utf16_to_utf8_sw 是接收原始字节的适配接口，src_byte_len 是字节数；BQLog 的 src_character_num 是 UTF-16 码元数。不能只改名就隐式改变单位。该适配差异保留并解释，后续若改变签名先核对调用方。
@@ -45,3 +47,5 @@ std::vector<char>::resize 会初始化新增字符，与 BQLog fill_uninitialize
 ## 协作分工补充（2026-10-01）
 
 用户明确：已经实现的函数由助手核对 BQLog 并同步参数名（声明、定义和函数体引用一起修改）；尚未实现函数由用户完成定义和实现，不由助手补写。本次仅将已实现 Layout::reverse 的 end_inclusive 改为 end_cursor，闭区间语义不变。c20_format 的 style/len 及 TimeZone 对应函数参数已与参考一致，无需重复修改；UTF 字节适配接口保留上文的单位差异。空的 expand_format_content_buff_size 仍视为未实现，留给用户按 new_size 命名填写。
+
+命名补充：用户在 fill_and_alignment 的 CR 中明确不沿用 wirte 拼写错误，QLog 保留 write_begin_pos；命名学习侧重实际含义，不复制明显拼写错误。已核实 Release_2.5.0 标签的 layout.cpp:540 也使用 wirte_begin_pos。fill_e_style 在参考头文件使用 eCount、cpp 使用 e_count；后续 QLog 声明/定义统一使用 cpp 的 e_count。
