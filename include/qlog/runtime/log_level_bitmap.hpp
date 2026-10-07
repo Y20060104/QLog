@@ -16,9 +16,7 @@ class LogLevelBitmap {
 
     LogLevelBitmap& operator=(const LogLevelBitmap& rhs);
 
-    void clear(){
-        bitmap_=0;
-    }
+    void clear();
 
     bool have_level(qlog::LogLevel level) const {
         const auto index = static_cast<std::int32_t>(level);

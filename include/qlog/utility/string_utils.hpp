@@ -1,8 +1,8 @@
 #pragma once
 
 #include <string>
-#include <vector>
 #include <string_view>
+#include <vector>
 
 namespace qlog::utility {
 std::string trim(const std::string& value);

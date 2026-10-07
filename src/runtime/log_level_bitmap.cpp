@@ -2,11 +2,10 @@
 
 #include <cctype>
 #include <cstdio>
-#include <string_view>
+
+#include "qlog/utility/string_utils.hpp"
 
 namespace qlog::runtime {
-
-
 
 LogLevelBitmap::LogLevelBitmap() : bitmap_(0) {}
 
@@ -19,6 +18,10 @@ LogLevelBitmap& LogLevelBitmap::operator=(const LogLevelBitmap& rhs) {
     return *this;
 }
 
+void LogLevelBitmap::clear() {
+    bitmap_ = 0;
+}
+
 void LogLevelBitmap::add_level(qlog::LogLevel level) {
     const auto index = static_cast<std::int32_t>(level);
     assert(index >= 0 && index < 32);
@@ -27,22 +30,22 @@ void LogLevelBitmap::add_level(qlog::LogLevel level) {
 }
 
 void LogLevelBitmap::add_level(const std::string& level_string) {
-    if (equals_ignore_case(level_string, "all")) {
+    if (qlog::utility::equals_ignore_case(level_string, "all")) {
         bitmap_ = 0xFFFFFFFFU;
         return;
     }
 
-    if (equals_ignore_case(level_string, "verbose")) {
+    if (qlog::utility::equals_ignore_case(level_string, "verbose")) {
         add_level(qlog::LogLevel::verbose);
-    } else if (equals_ignore_case(level_string, "debug")) {
+    } else if (qlog::utility::equals_ignore_case(level_string, "debug")) {
         add_level(qlog::LogLevel::debug);
-    } else if (equals_ignore_case(level_string, "info")) {
+    } else if (qlog::utility::equals_ignore_case(level_string, "info")) {
         add_level(qlog::LogLevel::info);
-    } else if (equals_ignore_case(level_string, "warning")) {
+    } else if (qlog::utility::equals_ignore_case(level_string, "warning")) {
         add_level(qlog::LogLevel::warning);
-    } else if (equals_ignore_case(level_string, "error")) {
+    } else if (qlog::utility::equals_ignore_case(level_string, "error")) {
         add_level(qlog::LogLevel::error);
-    } else if (equals_ignore_case(level_string, "fatal")) {
+    } else if (qlog::utility::equals_ignore_case(level_string, "fatal")) {
         add_level(qlog::LogLevel::fatal);
     } else {
         std::fprintf(stderr, "qlog warnning: invalid level mask was found:\"%s\"\n",
