@@ -31,4 +31,11 @@ enum class MemoryMapBufferState {
     recover_from_memory_map,
     init_with_memmap,
 };
+
+enum class LogMemoryPolicy{
+    discard_when_full,
+    block_when_full,
+    auto_expand_when_full,
+};
+
 }  // namespace qlog::buffer
