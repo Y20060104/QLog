@@ -6,6 +6,7 @@ project(QLog VERSION 0.1.0 LANGUAGES CXX)
 function(qlog_enable_warnings target_name)
     if(MSVC)
         target_compile_options(${target_name} PRIVATE
+            /utf-8
             /W4
             /permissive-
         )
@@ -34,7 +35,45 @@ add_library(qlog STATIC
     src/layout/layout.cpp
     src/utility/string_utils.cpp
     src/utility/utf_conversion.cpp
+    src/utility/hash.cpp
+    src/utility/hash_software.cpp
+    src/utility/hash_x86_crc32c.cpp
+    src/global/global_vars.cpp
+    src/global/common_vars.cpp
+    src/io/file_manager.cpp
+    src/platform/file_defs.cpp
+    src/platform/file_path.cpp
+    src/utility/diagnostics.cpp
 )
+
+# Keep hardware CRC instructions in their own translation unit.
+if(NOT MSVC AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang" AND
+   CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|amd64|AMD64|i[3-6]86|x86|X86)$")
+    set_source_files_properties(src/utility/hash_x86_crc32c.cpp PROPERTIES
+        COMPILE_OPTIONS "-msse4.2"
+    )
+endif()
+
+if(WIN32)
+    target_sources(qlog PRIVATE
+        src/platform/windows/aligned_memory.cpp
+        src/platform/windows/file_io.cpp
+        src/platform/windows/file_path.cpp
+        src/platform/windows/thread_ops.cpp
+        src/platform/windows/mutex_win64.cpp
+        src/platform/windows/system_api.cpp
+    )
+else()
+    target_sources(qlog PRIVATE
+        src/platform/posix/aligned_memory.cpp
+        src/platform/posix/file_io.cpp
+        src/platform/posix/file_path.cpp
+        src/platform/posix/thread_ops.cpp
+        src/platform/posix/mutex_posix.cpp
+    )
+    find_package(Threads REQUIRED)
+    target_link_libraries(qlog PUBLIC Threads::Threads)
+endif()
 
 # Block-SISO and the replacement Record view are built above.
 # Retired byte-cursor Ring/Record fuzzers and benchmarks remain disabled.
