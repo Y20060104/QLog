@@ -22,7 +22,7 @@ bool LogEntryHandle::validate() const {
     const std::uint64_t ext = header.ext_info_offset;
     if (args_begin > data_len_ || ext < args_begin || ext + 1U > data_len_) {
         return false;
-    }  // The one-byte extension header must fit in the record.
+    }
     if (ext + sizeof(RecordExtHeader) + data_ptr_[static_cast<std::size_t>(ext)] > data_len_) {
         return false;
     }

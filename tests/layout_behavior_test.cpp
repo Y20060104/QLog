@@ -103,7 +103,7 @@ struct Record {
 };
 const std::string time_prefix = "UTC0 1970-01-01 00:00:01.123";
 const std::string thread_prefix = "[tid-42 worker]\t";
-const std::string prefix = time_prefix + thread_prefix + "[I]\t[core]\t";
+const std::string expected_prefix = time_prefix + thread_prefix + "[I]\t[core]\t";
 std::string output(Layout& layout) {
     return {layout.get_formated_str(), layout.get_formated_str_len()};
 }
@@ -121,7 +121,8 @@ void body(std::string_view format, const Args& args, std::string_view expected, 
     const std::vector<std::string> categories{"core"};
     Record record(format, u16 ? ArgumentTag::string_utf16_type : ArgumentTag::string_utf8_type,
                   args);
-    equal(render(layout, zone, record, categories), prefix + std::string(expected), "body");
+    equal(render(layout, zone, record, categories), expected_prefix + std::string(expected),
+          "body");
 }
 // Integration path: production measurement and serialization feed the same public Layout API.
 template <class... Ts>
@@ -363,7 +364,7 @@ void failure_cases() {
           "bad category");
     equal(output(layout), time_prefix + thread_prefix + "[I]\t", "partial prefix bad category");
     Record good("ok", ArgumentTag::string_utf8_type);
-    equal(render(layout, zone, good, categories), prefix + "ok", "reuse after failure");
+    equal(render(layout, zone, good, categories), expected_prefix + "ok", "reuse after failure");
 }
 void reuse_cases() {
     Layout layout;
@@ -371,11 +372,11 @@ void reuse_cases() {
     const std::vector<std::string> categories{"core"};
     const std::string large(10000, 'x');
     Record big(large, ArgumentTag::string_utf8_type);
-    equal(render(layout, zone, big, categories), prefix + large, "buffer growth");
+    equal(render(layout, zone, big, categories), expected_prefix + large, "buffer growth");
     layout.tidy_memory();
     check(layout.get_formated_str_len() == 0, "tidy length");
     Record renamed("short", ArgumentTag::string_utf8_type, {}, 2, 0, 42, "renamed");
-    equal(render(layout, zone, renamed, categories), prefix + "short",
+    equal(render(layout, zone, renamed, categories), expected_prefix + "short",
           "thread cache survives tidy");
     Record other("x", ArgumentTag::string_utf8_type, {}, 2, 0, 43, "new");
     equal(render(layout, zone, other, categories), time_prefix + "[tid-43 new]\t[I]\t[core]\tx",

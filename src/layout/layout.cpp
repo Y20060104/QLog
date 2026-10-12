@@ -245,7 +245,8 @@ std::uint32_t Layout::insert_str_utf16(const char* str, const std::uint32_t len)
     // CR:什么是按实际utf8长度推进？传入的长度len是对于utf8而言吗？
     // CR:普通 BMP 字符是utf16吗？为什么不是2个utf8？
     const std::uint32_t write_size = qlog::utility::utf16_to_utf8_sw(
-        str, len, format_content_.data() + format_content_cursor_, max_bytes_len);
+        reinterpret_cast<const char16_t*>(str), len >> 1U,
+        format_content_.data() + format_content_cursor_, max_bytes_len);
 
     format_content_cursor_ += write_size;
 
@@ -1152,29 +1153,27 @@ void Layout::python_style_format_content_utf8(const qlog::record::LogEntryHandle
 namespace {
 std::uint32_t find_brace_and_convert_u16_sw(const char16_t* src, std::uint32_t len, char* dst,
                                             bool& found_brace, bool& non_ascii) {
-    found_brace = false;
-    non_ascii = false;
+    const char16_t* start = src;
+    const char16_t* end = src + len;
 
-    std::uint32_t processed = 0;
-
-    while (processed < len) {
-        const char16_t c = src[processed];
-
-        if (c == u'{' || c == u'}') {
-            found_brace = true;
-            break;
-        }
-
+    while (src < end) {
+        const char16_t c = *src;
         if (c >= 0x80U) {
             non_ascii = true;
-            break;
+            found_brace = false;
+            return static_cast<std::uint32_t>(src - start);
         }
-
-        dst[processed] = static_cast<char>(c);
-        ++processed;
+        if (c == u'{' || c == u'}') {
+            found_brace = true;
+            non_ascii = false;
+            return static_cast<std::uint32_t>(src - start);
+        }
+        *dst++ = static_cast<char>(c);
+        ++src;
     }
-
-    return processed;
+    found_brace = false;
+    non_ascii = false;
+    return len;
 }
 
 }  // namespace
