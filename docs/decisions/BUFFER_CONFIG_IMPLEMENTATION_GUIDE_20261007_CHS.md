@@ -1,10 +1,14 @@
 # Buffer 运行态配置完整实现指导
 
-日期：2026-10-07。用户手写生产实现，本轮只给指导、临时验证与文档更新；没有创建下面的新生产声明/定义。现有过滤模块先修复审查记录的三处问题，再填写本组；详见 [实际过滤审查](../validation/FILTER_CODE_REVIEW_20261007_CHS.md)。
+> **本轮实际源码收口（优先于下方历史指导验证）：** 用户已完成四个新文件，当前QLog HEAD为f24f3afcd8e9418ea48ad5a6b05680c622008145（1614ea56为审查起点）。助手同步声明/定义名称与utility引用，现有clear从头迁cpp；配置/过滤/Buffer配置六cpp已接根target，实际库Debug/Release及外部调用方CTest各12/12，定向UBSan通过。详见 [实际收口记录](../validation/BUFFER_CONFIG_CMAKE_20261007_CHS.md)。用户已确认先补平台存储依赖再实现MISO；下一组为 [平台对齐分配完整指导](PLATFORM_ALIGNED_MEMORY_IMPLEMENTATION_GUIDE_20261007_CHS.md)，随后文件/MemoryMap→NormalBuffer→MISO。
 
-QLog HEAD ec3f72b27784b3b1a9047391117395b4848afb8d，分支 feat/spsc-ring-opt；BQLog HEAD 78cbfbef4f87e7558335f0c04bf6dd6894b46451。本组采用 enum、log_buffer_defs、log_imp、log_buffer、string_def/impl、type_tools、平台 memory_map 文件均无 HEAD 差异；参考整树仍有 MISO/构建本地修改，后续 MISO 采用前单独审计实际差异。
+日期：2026-10-07。下方保留上一轮给用户填写的完整指导与当时验证快照；最新实际进度以上方记录为准。早期填写阶段曾要求先修复过滤问题；这些问题现已收口，clear缺失判断亦已更正，不再要求重写本组；详见 [实际过滤审查](../validation/FILTER_CODE_REVIEW_20261007_CHS.md)。
+
+原指导快照QLog HEAD ec3f72b27784b3b1a9047391117395b4848afb8d，分支 feat/spsc-ring-opt；BQLog HEAD 78cbfbef4f87e7558335f0c04bf6dd6894b46451。本组采用 enum、log_buffer_defs、log_imp、log_buffer、string_def/impl、type_tools、平台 memory_map 文件均无 HEAD 差异；参考整树仍有 MISO/构建本地修改，后续 MISO 采用前单独审计实际差异。
 
 ## 本组职责、出处与归属
+
+本次记录复核确认：实际接口为get_log_buffer_config_by_config；equals_ignore_case已归utility，runtime/config共用；已实现函数参数命名按BQLog含义同步，格式沿用QLog当前要求。后续为平台分配→文件操作→MemoryMap→NormalBuffer→MISO，本组不再是下一项待实现工作。本次只核对记录与已有证据，未运行新测试。
 
 本组把已有配置树转换成之后创建 Buffer 所需的数据，建立恢复文件的身份校验值。仍不创建 LoggerImpl/Manager/Worker/Appender/LogBuffer 或 LP/HP/TLS 对象。
 

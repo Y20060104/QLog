@@ -1,5 +1,106 @@
 # QLog V1 后续开发路线：统一先对齐 BQLog
 
+> **2026-10-12 FileManager实际收口与MemoryMap主线（本段最新）：** 用户已填47定义；助手将现有定义/TLS错误槽从公共头移cpp，修正遗漏seq=0、比较误赋值、两个接口拼写及原参数/局部名，原12行注释全保留。174生产/测试/CMake仅FileManager头/cpp改变，其余172哈希不变，根库仍Linux27/Windows28无需重复注册。实际GNU/原生MSVC Debug/Release严格库、双翻译单元调用方链接及现有CTest各12/12，Debug PUBLIC宏核对；不是文件行为/并发验收。MemoryMap原五参考及相关FileManager/NormalBuffer相对BQ HEAD无差异，整树仍脏。完整6文件候选只在仓库外四配置编译链接通过、未运行，指导留对话由用户写；生产未创建、不挂不存在源。8字节区显式用memcpy存取；原Windows页大小/非零偏移边界、POSIX物化、复制映射释放和原void错误/flush规则明示保留，不加新类/assert/atomic/默认。填写后审查/接库并直接NormalBuffer→MISO，无更多基础组。见[本组决定](MEMORY_MAP_ALIGNMENT_20261012_CHS.md)。下方为历史快照。
+
+> **2026-10-12 存储基础实际接库与FileManager主线（本段最新）：** 最后一组已填写；助手按用户最新草稿同步POSIX析构变量拼写及Windows有参构造store_seq_cst，原CR保留。根CMake接6公共cpp和各native锁/API，实际Linux27/Windows28cpp；174个生产/测试/CMake仅两mutex及CMake改变，其余171个哈希不变。实际GNU/原生MSVC Debug/Release严格库和基础调用方链接、现有CTest各12/12通过，PUBLIC Debug宏核对；MSVC仅外部已有C4324/C4146排除。FileManager头/已写6函数不改，完整47定义指导留对话由用户写；外部完整候选四配置只编译链接通过、未运行，不计FileManager/存储/并发/退出/MISO/性能。原赋值引用泄漏、copy短读循环、路径全匹配替换、共享游标和TLS错误边界明确保留。填写后实际审查并接MemoryMap→NormalBuffer→MISO，无更多基础组。见[本组决定](FILE_MANAGER_ALIGNMENT_20261012_CHS.md)。下方为历史快照。
+
+> **2026-10-12 完整指导重新核对（本段最新）：** 用户已填写Windows线程名及common构造/原空partial，剩余为两能力helper、两mutex成员及两native九文件接口/原helper。本轮只修正3个已写cpp的拼写/缺头/重复提前入口，174个生产/测试/CMake其余171个哈希不变，CR保留；完整新定义仍留对话由用户写。实际Windows两个cpp两配置严格编译通过；当前源码＋仓库外5cpp完整候选四配置严格编译和公开调用方链接通过，源清单Linux27/Windows28、Debug宏传播核对，MSVC仅外部既有C4324/C4146排除。未运行/CTest、未改根CMake20cpp，不计生产基础闭合/存储/并发/退出/MISO/性能；ARM未验。参考原mutex内存序、独占无引用计数、Windows路径拼接与prefix_size=2及既有失败边界继续保留。填写后下一轮同轮审查/CMake并直接FileHandle/FileManager→MemoryMap→NormalBuffer→MISO，无更多基础指导组。见[本组决定与证据](COMMON_GLOBAL_VARS_DECLARATIONS_ALIGNMENT_20261011_CHS.md)。下方为历史快照。
+
+> **2026-10-12 最后一组存储基础实际复核（最新）：** 用户要求先修复已写问题，再一次给齐最后一组指导。助手修正已有7文件：误放POSIX的Windows基准目录构造移回Windows并补拼写/头；POSIX词法补返回且反斜杠按BQ POSIX保留；native身份hash和FileManager启动补头；close返回int32_t；公共头提前入口移到新增common_vars.cpp且纠正default_initer_。新cpp仅移动已有入口，未代写构造/能力检查/partial或其他新函数；CR保留。172原生产/测试/CMake文件其余165哈希不变，现173，根库20cpp未改CMake。实际GNU相关9cpp和MSVC相关10cpp两配置严格编译通过；Linux实际库两配置构建/现有CTest各12/12；实际＋外部剩余候选四配置严格构建及公开调用方链接通过，候选未运行，不计存储/锁并发/首次初始化退出/MISO/性能。MSVC仅已有C4324/C4146外部排除。已有std::hash/身份hash/FileManager三启动/Windows版本及基准目录不重写。最后指导覆盖两native9文件接口及原helper、Windows名称、两个mutex、common构造；用户填完后下一轮同轮审查/CMake并直接FileHandle/FileManager→MemoryMap→NormalBuffer→MISO，不再分基础组。预计Linux27/Windows28cpp，mutex文件沿用POSIX mutex_posix.cpp、Windows mutex_win64.cpp。见[本组决定与证据](docs/decisions/COMMON_GLOBAL_VARS_DECLARATIONS_ALIGNMENT_20261011_CHS.md)。下方为历史快照。
+
+> **2026-10-12 哈希复用接续（最新）：** 保留的三份hash核心已迁utility并接入根库，当前20cpp；CRC用crc/v、内部src/dst/len、公开get_hash_64用data/size。用户已确认采用BQ软件原表（含206/207差值），分别对齐软件/硬件结果；没有重抄核心或恢复旧包装。Linux/原生Windows x64 Debug/Release实际库严格构建与CTest各13/13；公共入口补入仓库外完整依赖候选后各14/14。实际共享构造/生命周期仍待用户填写/接库，x86-32 Release复制差分未过，均不算存储/MISO/性能验收。其余164个原文件和CR不变。删除重写hash任务，其余上一组依赖完成后同轮审查/接库并直接进入FileHandle/FileManager→MemoryMap→NormalBuffer→MISO；最终预计Linux27cpp/Windows28cpp。见[最新决定与验证边界](COMMON_GLOBAL_VARS_DECLARATIONS_ALIGNMENT_20261011_CHS.md)。下方为历史快照。
+
+> **2026-10-11 最后一组存储基础依赖收口（最新）：** 用户要求本组一次给齐依赖、完成后的下一轮直接进入主线。公共基准目录实际cpp已修正platfrom、尝试锁未检查、setter对象/成员/调用及文本拼写，原CR保留；实际GNU Debug/Release公共/POSIX与MSVC两配置公共编译通过，168个生产/测试/CMake文件仅该cpp变更，其余167个不变。用户对Windows三项候选修正回复“严格对齐BQlog”，因此_wgetcwd未检查/未释放、版本输入未初始化大小及线程名缓冲未LocalFree按参考保留，原先失败回退/释放建议未采纳，不称失败路径安全或首次并发初始化可用。本组指导覆盖身份哈希与std::hash适配、POSIX词法路径、两系统9个文件平台缺项及原私有helper、Windows基准目录/版本/名称、完整mutex、common_global_vars构造/原空partial_destruct和默认提前入口、FileManager原构造/instance/get_base_dir三启动函数；没有空替身或新Manager。完整外部候选在Linux/GCC与原生MSVC x64 Debug/Release严格构建、实际库组成和公开调用方链接通过，未运行/CTest/差分/并发/退出/存储验收；MSVC外部仅排除既有C4324/C4146。根CMake仍17cpp未改，新生产函数由用户写；填写后下一轮助手同轮审查修正、接库并直接指导FileHandle/FileManager描述符/引用和读写，随后MemoryMap→NormalBuffer→MISO，不再拆出零散基础组。16个采用参考文件相对BQ HEAD无差异，整树仍脏。详细指导在对话，文件仅记决定，见[接续决定](COMMON_GLOBAL_VARS_DECLARATIONS_ALIGNMENT_20261011_CHS.md)。下方为此前快照。
+
+> **2026-10-11 诊断实际修正与目录接续（最新）：** 已按用户授权修正实际诊断cpp和两处声明拼写，保留8条CR及用户console命名；GNU/MSVC Debug/Release普通/测试/工具/CI分支编译通过，未运行/完整共享状态链接，根17cpp未改。下一组：基准目录公共getter/setter＋native当前工作目录构造；公共/POSIX候选只编译，Windows_wgetcwd空指针/释放规则尚待用户选择，原提前初始化顺序待共享状态闭合。随后Windows版本/线程名→mutex/共享构造→FileManager→MemoryMap→NormalBuffer→MISO。167个快照仅3个生产文件变更；详细指南留对话。见[接续决定](COMMON_GLOBAL_VARS_DECLARATIONS_ALIGNMENT_20261011_CHS.md)。下方为历史快照。
+
+> **2026-10-11 纯路径实际复核与诊断接续（最新）：** 用户填写的FileManager三个纯路径函数及共享声明探针在Linux/原生Windows Debug/Release编译通过，纯路径公开调用方链接通过；move赋值参数、is_valid、open_mode和Windows版本查询声明仍须原接口补齐。下一组只补utility::util原控制台诊断四入口及条件minimum setter，保留共享buffer/递归锁/翻倍扩容/callback与native输出，明确成对修正参考va_list调用；随后基准目录→Windows线程名/mutex/共享状态→FileManager→MemoryMap→NormalBuffer→MISO。外部诊断候选及BQ摘录四配置含UNIT_TEST分支仅编译，未运行/完整共享状态链接；165个生产/测试/CMake文件不变。详细指南留对话。见[接续决定](COMMON_GLOBAL_VARS_DECLARATIONS_ALIGNMENT_20261011_CHS.md)。下方为历史快照。
+
+> **2026-10-11 最新声明与依赖接续：** 新共享声明已进入实际工作区，但hash特化命名空间/宏拼写等使两平台两配置定向编译失败，完整接口仍有遗漏；生产/CR/CMake/测试164文件未修改。下一组先修声明，填写FileManager get_directory_from_path/get_file_name_from_path/combine_path三个纯路径函数，为相对路径转换和文件创建提供原有底层规则；基准目录构造本身直接读取当前工作目录。保留BQ find_last不检查索引0、min选分隔符、split忽略空项的实际行为，不将字符串拼接视为文件系统规范化。外部声明与原参考仅编译通过，纯路径候选/原参考摘录四配置仅编译链接通过，无运行或完整共享状态验收。详细指南留对话。见[接续记录](COMMON_GLOBAL_VARS_DECLARATIONS_ALIGNMENT_20261011_CHS.md)。下方为历史快照。
+
+> **2026-10-11 上一组收口后状态（最新）：** 原子前置--已正确；POSIX线程名已在实际src/platform/posix/thread_ops.cpp闭合，7条CR保留，公开include旧cpp已不存在。实际Linux/原生Windows Debug/Release库及原子运算符实例化调用方编译链接通过，Linux名称调用方从实际库链接通过；未运行程序或CTest。根CMake仍17cpp，无重复源注册；本轮仅1个生产cpp变更，其他161个生产/测试/CMake文件不变。后续沿原完整共享声明及真实平台依赖继续；不将此次编译链接计作行为、并发、退出或MISO验收。见[实际收口记录](COMMON_GLOBAL_VARS_DECLARATIONS_ALIGNMENT_20261011_CHS.md)。下方为历史快照。
+
+> **2026-10-11 最新实际状态与接续：** 前置atomic--和POSIX名称草稿的放置/拼写仍待修正，名称实际调用方链接失败；全局分配和mutex声明已修正，Windows查询/全局基础适用配置定向编译通过但未接根CMake。下一组为真实平台类型、原FileHandle/FileManager与common_global_vars完整声明及构造顺序，随后闭合基准目录/诊断/Windows线程名/mutex/共享状态，再返回文件管理 → MemoryMap → NormalBuffer → MISO。根17cpp未改，163个生产/测试/CMake文件哈希不变；外部新声明及实际BQ头四配置仅编译通过，无运行/完整共享状态链接验收。详见[接续决定](COMMON_GLOBAL_VARS_DECLARATIONS_ALIGNMENT_20261011_CHS.md)。下方为历史阶段快照。
+
+> **2026-10-10 最新依赖进度：** 自旋锁及退出登记cpp定向编译通过，平凡atomic三个函数、mutex两处声明和全局get分配遗漏尚待修正；全局get虽能实例化编译，运行时空地址构造缺陷仍未收口。根CMake17cpp未改，生产/CR/测试/CMake160文件哈希不变。下一组：原POSIX线程名四分支/三trait＋Windows原函数地址查询，再以真实完整声明闭合common_global_vars、Windows线程名、诊断及mutex，返回文件句柄/管理 → MemoryMap → NormalBuffer → MISO。候选只有相应两平台两配置编译证据，未链接/运行，不能算完整锁/退出/Buffer验收。详见[最新决定](GLOBAL_LIFETIME_FOUNDATION_ALIGNMENT_20261010_CHS.md)。下方为历史阶段快照。
+
+> **2026-10-10 锁与共享状态接续（当前）：** 普通 atomic 和第七个 trait 已补；平凡类型运算符及 spin_lock 尚有返回类型/副本、宏/序、分号和尝试包装遗漏，实际两平台两配置定向编译仍失败。BQLog mutex 的诊断/线程名与共享 mutex 形成依赖环；先修正原子/自旋，建立原 mutex 完整声明并填写原全局生命周期基础，再闭合共享状态、线程名、诊断和 mutex 定义，返回文件句柄/管理 → MemoryMap → NormalBuffer → MISO。临时修正及新基础候选四配置仅编译通过，未写新生产函数/未链接运行/未改 CMake，不计锁/退出/并发/性能验收。详细指导留在对话，文件仅记决定。见 [接续决定](GLOBAL_LIFETIME_FOUNDATION_ALIGNMENT_20261010_CHS.md)。下方为此前阶段快照。
+
+> **2026-10-10 算术/位运算实际完成（当前有效）：** 公共头与 GNU/MSVC 后端各补齐原参考的70个方法，保持 val、无默认order、原结构/宏/断言；保留用户GNU add_fetch逻辑并修正其多余结束括号，CR不变。GNU sub使用自身builtin，MSVC sub包括raw仍委托add(-val)，原参考算术边界继续保留。新增常驻算术回归并注册1项，根CMake与17cpp源列表不改。实际Linux/原生Windows Debug/Release各CTest 15/15（常驻12＋外部3），新算术各9858检查、第一组/CAS各1518检查与实际BQLog一致；MSVC外部严格审查仅排除已记录C4324/C4146，不改生产警告。
+>
+> 后续顺序为运算符＋普通atomic＋第七个trait，再普通自旋锁及文件管理的真实平台依赖，然后文件句柄/管理 → MemoryMap → NormalBuffer → MISO。文件仅记录决策与验证边界，详细指导留在对话；当前结果不代表Ring/MISO完整并发、恢复或性能验收。下方条目按此前阶段快照解读。
+
+> 见[实际实施记录](../validation/ATOMIC_FIRST_GROUP_REVIEW_CAS_GUIDANCE_20261010_CHS.md)。
+
+> **2026-10-10 授权补齐后的当前决定：** 按用户要求，助手已修正本次第一组和 CAS 遗漏；后端名称已落实为 `_inner_atomic_GNU_C.h` / `_inner_atomic_msvc.h`，CR 保留。GNU CAS 的 RELEASE/ACQUIRE 合同边界及 MSVC 失败再次 load、strong 委托 weak 的规则继续保留。实际两平台 Debug/Release 库与公开调用方已编译链接，定向检查各 1518 项且与实际 BQLog 一致；这不代表完整原子、并发或性能验收。模板不建 cpp，根 CMake 未改。
+>
+> **后续协作决定：** 实现指导放在对话中，文件仅记录决策。接续压缩为三组：算术/位运算 → 运算符、普通 atomic、第七个 trait → 普通自旋锁。此后逐模块说明存储调用者、阻塞依赖和可继续的完成边界，再沿文件句柄/管理 → MemoryMap → NormalBuffer → MISO 返回存储主线。下方原日期条目属于此前阶段快照。
+
+> 详见 [本轮实际补齐与验证边界](../validation/ATOMIC_FIRST_GROUP_REVIEW_CAS_GUIDANCE_20261010_CHS.md)。
+
+> **2026-10-10 原子第一组实际审查与 CAS 决定（本段最新）：** 用户已写 GNU/MSVC 第一组，但实际头在两平台 Debug/Release 都编译失败：GNU 拼写、非指针转换缺失、load_acq_rel 序及 exchange 分支/命名；MSVC 缺 CONCATX、intrinsic 宏名及选择宏续行。公共平凡类型尚未写，先依完整第9节闭合19个转发和六个原 trait，再接 CAS。用户已确认 GNU CAS 保留 BQLog RELEASE/ACQUIRE 映射并明确记录 GCC 合同边界；MSVC 失败再次 load、strong 委托 weak 也保留，完整下一组见原子指导第11节。独立修正/补齐与 CAS 候选两平台两配置仅目标文件编译通过，未运行，不计实际原子/并发/性能验收；MSVC 审查仅排除既有 C4324。155个生产/测试/CMake文件哈希不变，CR/草稿/文件名未改，模板不建cpp；后端最终仍为 _inner_atomic_GNU_C.h/_inner_atomic_msvc.h。整数越界两方案继续暂不选定。
+
+> 详见 [本轮实际审查与证据边界](../validation/ATOMIC_FIRST_GROUP_REVIEW_CAS_GUIDANCE_20261010_CHS.md)。
+
+> **2026-10-09 原子第一组完整指导（本段最新）：** 用户最新明确不沿用草稿文件名，后端固定 _inner_atomic_GNU_C.h/_inner_atomic_msvc.h。 用户要求完整正确指导，已在对话/指导第9节给出公共头与GNU/MSVC后端的完整第一组正文：原存储、原帮助函数、explicit_copy、load/store/exchange及全部raw/固定序变体。仅工程前缀/std基础/格式适配，结构、命名、参数/default/order/原断言保持参考；没有单槽或新封装。普通atomic/CAS/算术/运算符按原类后续接续，现阶段保留六个已有平凡断言，普通atomic否定断言待该类填齐。Linux GCC/原生Windows MSVC Debug/Release新临时候选各637定向检查与独立实际BQLog参考一致，含一次发布检查；仅候选，不计生产或完整并发/性能，旧633/20000不复用。MSVC检查排除原对齐C4324，参考SYSTEM头单独编译。实际atomic.hpp部分草稿/CR/CMake不改，根库仍17cpp；用户继续填写新生产函数。见 [完整第一组正文](PLATFORM_ATOMIC_PRIMITIVES_IMPLEMENTATION_GUIDE_20261009_CHS.md)；证据 D:/qq344/Documents/qlog-atomic-group1-complete-guide-20261009-3fa2b7。
+
+> **2026-10-09 原子严格对齐纠正（本段最新，替代下方同日原子候选指导）：** 用户明确要求默认参数、memory order、断言、内部结构与命名逐声明按 BQLog。实际参考 78cbfbef 的三原子头、宏及 trait 文件无 HEAD 差异，整树仍脏。类名保留 atomic_trivially_constructible、atomic、_atomic_base<T,N>；GNU 保留 value_/value_standard 的 union，MSVC 保留 value_、原宏及四个尺寸特化。不再采用 AtomicTriviallyConstructible/AtomicBase/atomic_backend/GnuAtomicType/MsvcAtomicOps 或单一 mutable 原生槽方案。load 的公共及两个后端默认 seq_cst；store/exchange/十个算术入口没有默认 order；weak/strong CAS 的 success_order/fail_order 均默认 seq_cst。仅保留参考静态断言，三个原子头没有运行时 assert；不新增类、默认值、字段、类型限制或回退。QLog 已有未完成 atomic.hpp 草稿，由用户继续填写，本次生产源码/CR/CMake 不改；仅核对和修正文档，未重跑构建测试。旧 633/20000 仅为已替代候选历史，不作为本版原子验收，实际线程基础 12/12 证据保留。union/const RMW/CAS 边界已明确记录，后续组不静默修复。见 [严格完整指导](PLATFORM_ATOMIC_PRIMITIVES_IMPLEMENTATION_GUIDE_20261009_CHS.md)、[修订与证据边界](../validation/THREAD_OPS_REVIEW_ATOMIC_GUIDANCE_20261009_CHS.md)。整数越界两方案仍暂不选定。
+
+> **2026-10-09 线程基础实际审查与原子接续（最新）：** 用户已写线程4函数并接根CMake；助手只同步Windows thred_ops为thread_ops及四处宏/intrinsic拼写，CR保留。Linux/原生Windows实际库/调用方两配置CTest各12/12（常驻11+临时线程1），17cpp和PUBLIC宏已核对。期间用户路径头移到include并改cpp引用/格式已保留，最新Windows库再构建通过；其余149个原生产/测试/CMake文件哈希不变。本轮未改根CMake。下一组由用户写平凡构造原子load/store/exchange三项，按实际GNU/MSVC接口、8字节对齐与静态零初始化；MSVC load为ExchangeAdd(0)，不直接用C++20 std::atomic绕过平凡约束。单一原生可修改槽保留正常值和原子路径，存储差异已明确。临时两系统两配置633检查及20000受保护更新仅算候选，未写原子生产实现，不记完整并发/性能。见[实际审查](../validation/THREAD_OPS_REVIEW_ATOMIC_GUIDANCE_20261009_CHS.md)及[完整指导](PLATFORM_ATOMIC_PRIMITIVES_IMPLEMENTATION_GUIDE_20261009_CHS.md)；随后普通自旋锁，再闭合诊断/共享状态/路径。整数越界仍暂不选定。
+
+> **2026-10-09 Windows词法生产修正及线程基础接续（最新）：** 用户已填完整Windows词法函数及公共声明，POSIX定义仍未写。助手仅把已实现函数..分支的!result.empty()改为!result_split.empty()，复现后纠正行为，保留CR；148个无关原生产/测试/CMake文件哈希相同。实际Windows根库/调用方Debug及Release各1071路径对照通过，PUBLIC宏和16cpp核对；MSVC审查仅排除既有C4324，未改生产警告，未重跑常驻CTest。下一组由用户写当前线程ID/yield/cpu_relax/sleep四函数，保留BQLog pthread_self/TLS和两系统sleep差异；临时Linux/原生Windows两配置编译与定向调用通过仅算候选。没有新增线程/POSIX生产定义或改根CMake；后续先闭合锁/诊断/共享状态再账户路径/基准目录，仍不造Manager。整数越界仍暂不选定。见[实际审查](../validation/WINDOWS_LEXICAL_THREAD_GUIDANCE_20261009_CHS.md)及[完整下一组指导](PLATFORM_THREAD_OPS_IMPLEMENTATION_GUIDE_20261009_CHS.md)。
+
+> **2026-10-09 路径基础审查及实际库接入（最新）：** 已实现路径函数算法与BQLog一致；助手按此前授权整理系统文件、将Windows内部头移到src并同步namespace，保留函数体/CR。I/O和路径cpp已在WIN32/else接根target，当前每个平台16cpp。原生整库验证发现TimeZone仍用POSIX日历调用，已按BQLog补_s/_r平台宏及Windows名称localtime分支，偏移/缓存算法不重写；现有Layout测试预期prefix改名expected_prefix消除MSVC遮蔽提示。最终Linux及原生Windows实际库/调用方Debug/Release CTest各13/13（常驻11+临时实际路径/I/O两项），两平台源列表和PUBLIC宏已核对。Windows临时验证/WX仅排除既有C4324对齐提示，根警告配置未变，不称无例外严格通过；143个无关原文件哈希不变。下一组由用户写Windows完整get_lexically_path，指导候选Linux两配置各1071场景与BQLog摘录及真实string类型一致，仅算候选。POSIX账户/诊断及基准目录真实依赖接续后再写，不造helper/Manager；严格对齐及整数越界暂不选定决定继续有效。见[实际接入记录](../validation/PLATFORM_PATH_REVIEW_CMAKE_20261009_CHS.md)和[下一组完整指导](WINDOWS_LEXICAL_PATH_IMPLEMENTATION_GUIDE_20261009_CHS.md)。下方待填写/待接入文字按原阶段保留。
+
+> **2026-10-09 UTF与平台I/O最新审查：** 用户已填写UTF-8软件函数并在审查期间修正位运算和Windows API抄写；重新核对最新实际源码，当前范围无新增阻塞缺陷。Linux实际Debug/Release严格库/调用方及外部CTest各13/13（常驻11+临时实际UTF/I/O两项），原生Windows对应源码严格编译运行通过；UTF对1,112,064个有效Unicode标量与BQLog软件源码摘录一致并回转，LinuxASan+UBSan同组通过，实际两系统I/O各31检查通过。根库仍14cpp，I/O仍未接根target；生产145文件SHA-256及CR未改，不把临时验证写成正式I/O集成或完整系统验收。下一组由用户填写路径判定和Windows内部编码适配器。用户最新回复“严格对齐BQLog”：不选择~user分隔符修正或账户查询失败回退；参考缺陷须明确说明，不宣称失败路径安全。整数越界两方案仍暂不选定。见[本轮记录](../validation/UTF8_PLATFORM_IO_CODE_REVIEW_20261009_CHS.md)和[完整下一组指导](PLATFORM_PATH_FOUNDATION_IMPLEMENTATION_GUIDE_20261009_CHS.md)。下方旧阶段结果按原日期解读。
+> **2026-10-08 UTF通用核心生产对齐（最新）：** 用户授权助手修改代码。utf16_to_utf8_sw已统一为const char16_t*及码元数量、BQLog直接读取/代理项规则；容量参数保留未使用，调用方保证空间。Layout在insert_str_utf16处把字节数转成码元数，专用花括号扫描留在Layout，格式串主函数未改，CR保留。实际库/调用方Debug/Release严格构建和CTest各12/12（常驻11+临时参考摘录1）通过；参考软件核心65761组对照一致，ASan+UBSan定向7/7通过，PUBLIC宏传播已核对。根CMake未改，生产仍14cpp；UTF-8新函数仍待用户填写，平台I/O接入及其他验收边界不变。详见[实际对齐记录](../validation/UTF_CORE_ALIGNMENT_20261008_CHS.md)。下方旧字节utility接口/仅指导进度及81、117项结果按历史快照解读。
+
+> **2026-10-08 文件I/O实际审查与UTF接续（此前阶段快照）：** 用户已填两系统8函数及公共声明。实际POSIX Debug/Release严格编译链接、定向各29检查通过；Apple宏已由用户在审查期间修正，Linux预处理不变。Windows最新原生MSVC/SDK编译失败，尚有2处：SetFileInfoByHandle应为SetFileInformationByHandle，以及读取循环>应为<；其他本轮发现已由用户修正并复核。助手未改生产源码/CMake/CR，I/O未接根target，根库仍14cpp；临时Windows完整候选各12/12仅算候选。用户最新要求UTF软件转换完全对齐BQLog，撤销尾部不足时停止并保留前缀的规则；不加多字节尾部break或容量截断，正常调用要求完整有效输入及足够目标空间。修订指导候选Linux Debug/Release及ASan+UBSan各81项空/合法输入检查通过，未写生产新函数；旧117项只属于已被替代的前缀候选。见[实际审查](../validation/PLATFORM_IO_CODE_REVIEW_20261008_CHS.md)及[UTF完整指导](UTF8_TO_UTF16_IMPLEMENTATION_GUIDE_20261008_CHS.md)。参考整树仍脏；路径/登记边界与整数越界两方案继续未决。
+
+> **2026-10-08 按系统拆分（本段最新）：** 用户授权助手拆分已有头文件/函数，现采用公共 API、POSIX/Windows 原生类型头和系统 cpp。两个已实现分配函数仅搬移，CMake 按 WIN32 二选一，根库每个平台仍为 14 个 cpp；公共 API/命名空间不变。file_io.hpp 当前已由用户补到 8 个声明，两个系统 file_io.cpp 只有待填写骨架、未接库；助手未写 I/O 函数体。实际 Linux Debug/Release 严格构建与公开调用方链接、CTest 各 11/11（常驻 10 + 临时拆分调用方 1）通过；Windows 仅做模拟宏头文件语法检查，未编译运行原生 Windows 实现。详见 [系统拆分记录](PLATFORM_SYSTEM_SPLIT_20261008_CHS.md)，后续仍按 [文件 I/O 指导](PLATFORM_FILE_IO_IMPLEMENTATION_GUIDE_20261007_CHS.md) 由用户完成。下方原日期结果保留为历史证据。
+> **2026-10-07 平台分配收口后的完整开发次序（本段最新）：** QLog feat/spsc-ring-opt@f24f3afc，BQLog78cbfbef；参考整树仍有MISO/构建修改。实际平台分配已修好声明/定义拼写并接CMake；根库现在14个cpp，Debug/Release严格库/公开调用方与外部CTest各13/13、实际Linux分配85检查及定向UBSan通过，常驻CTest仍10项。证据见 [平台分配实际收口](../validation/PLATFORM_ALIGNED_MEMORY_CMAKE_20261007_CHS.md)。下方旧13cpp/草稿未接库进度由本段替代，其他未完成验收边界不变。
+ >
+ > 用户手写未实现函数；助手审查、同步已实现名字及维护授权范围内构建/记录。以下为完整接续路线，不代表新模块已实现。下一组完整指导见 [平台文件I/O](PLATFORM_FILE_IO_IMPLEMENTATION_GUIDE_20261007_CHS.md)。
+
+| 次序 | 完整依赖组与主要工作 | 完成条件及实际参考 |
+| --- | --- | --- |
+| 1 当前下一组 | platform原生文件类型；get_size(handle)/read/write/seek/truncate/flush/lock/unlock 8函数 | POSIX/Windows实际返回规则；公开头/实际库链接、短读/部分写/游标测试；参考platform_misc.h、posix_misc.cpp、win64_misc.cpp |
+| 2 文件平台其余依赖 | 基准目录与词法路径、目录/文件查询创建删除列举、Windows UTF8→UTF16软件转换、open/close和exclusive登记成对实现 | 先讨论参考~user拼接/账户查询和登记寿命边界，不静默改合同；参考platform_misc/各platform misc及common_vars |
+| 3 FileHandle / FileManager | native句柄的共享引用；idx/seq代际身份、描述符槽、copy/move/析构/关闭、seek读写、错误槽、路径工具 | 原生标量与拥有引用分开；最后引用关闭；同一槽重用不得误认旧handle。参考bq_common/utils/file_manager.h/.cpp；这是BQLog实际FileManager职责，不新增另一套Manager |
+| 4 MemoryMap | 平台能力/对齐、offset与实际映射范围、文件持有、创建/刷新/显式release、失败状态 | Linux mmap/msync/munmap与Windows映射对象/视图；失败不返回伪有效映射；释放别名及不对齐访问进入时审查。参考bq_common/platform/io/memory_map* |
+| 5 NormalBuffer | mmap/对齐堆内存所有权、new_created/use_existed/failed分类、构造失败回退、resize备份/重映射、析构删除规则 | 先核对OOM/备份失败与resize边界；不提前声称失败保留旧数据。参考normal_buffer.h/.cpp |
+| 6 MISO | cache-line块、Head/原子布局、多生产者reserve/commit、wrap marker、单消费者read/return、初始化与恢复/Debug | 正式采用前重新核HEAD/diff；packed原子、别名、状态发布/元数据读取、未提交洞和恢复扫描单列审查；不能外部化存储或关recovery绕依赖 |
+| 7 其余Buffer基础 | memory_pool、miso_linked_list；block_node/block_list；group_node/group_list；oversize_buffer；必要aligned对象构造/析构工具 | 按头文件依赖先基础再group；Block内用已写8字节SISO；池化/退休回收/扩容/恢复文件/大记录；参考buffer同名文件 |
+| 8 LogBuffer / TLS / LP-HP | TLS身份与退出标记、频率阈值/检查时间、LP→HP/HP→LP、运输context/消费序号、三种满策略与oversize、alloc/commit/read/return | 单消费者测试驱动先贯通；并发切换、顺序、TLS/Buffer析构交错、退休回收与恢复验证。必要时补实际时钟/线程身份/同步原语，保持毫秒取时位置 |
+| 9 LoggerImpl / Manager运行态与公开记录入口 | 所有权/锁序/phase；配置应用、类别/等级门控与目标工厂；Record模板接alloc-write/commit；必要诊断/console平台能力 | 只建立BQ对应新运行态，不恢复旧Logger/Channel/codec/PreparedRecord；跨循环依赖先完整声明后补函数；参数序列化/正文仍使用现有协议 |
+| 10 Appender链与日志处理 | AppenderBase公共过滤与虚log_impl；Console/TextFile；文件基类缓存、滚动/清理/磁盘满、每目标完整Layout；按目标处理/恢复/时间修正 | Logger/Snapshot类别规则与Appender不同，局部不能绕过全局拒绝；多目标失败独立；按scoped read handle实际寿命归还，持有期间可I/O。参考appender_base/file_base/console/file_text及log_imp::process_log_chunk |
+| 11 Worker / 3线程模式 | 公共async Worker、独立Worker、sync；Manager遍历、读到empty、低空间通知、66ms等待、等待请求/cancel/join | 根据实际处理/Appender依赖接实流程；单消费者和Layout互斥，控制唤醒/退出边界；不预设公平预算/新mailbox |
+| 12 Snapshot / reset / flush / uninit | Snapshot既有过滤/内存文本接口；配置重置部分失败、对象复用替换、保存文本与bool；force处理、缓存flush与文件同步、线程/TLS/静态退出交错 | 接口和锁序在9/11先规划，本阶段做完整功能与故障收口；不声明强事务reset、固定截止flush或退出自动排空/持久化 |
+| 13 V1对齐验收 | 常驻定向回归、实际BQ差分、Ring行为/并发/回绕/恢复、Buffer策略/切换、配置边界、DST、文件故障与生命周期、示例文档与公平性能基准 | 写清一致/差异/待查；Debug/Release/消费者宏一致；旧47项不算；冷接入与热路径、LP/HP、策略/模式/目标/flush分开测 |
+| 14 后续优化 | SIMD、布局缓存/正文共享、调度公平性/错误报告等用户另行选题 | 本轮先完成已确认软件基线；每项另提合同和A/B证据，不能先以优化理由改BQ规则 |
+
+BQLog实际group_list依赖memory_pool、block_list、NormalBuffer；LogBuffer还直接依赖miso_linked_list、MISO与oversize_buffer。因此“做完MISO直接写TLS/LogBuffer”不是完整依赖图。关键公共路径为：
+
+配置树 → Buffer配置/过滤 → LogBuffer分配运输chunk → RecordHeader/模板序列化 → commit发布 → Worker/同步处理读取 → Logger全局类别过滤 → 各Appender/Snapshot选择 → 各目标完整Layout → Console/文件缓存。
+
+记录归还在BQ scoped read handle对应的作用域结束时发生；输出过程中可能I/O，不新增“release后才允许I/O”约束。缓存write与文件同步属于各自flush路径，不能把每条记录的归还排在所有文件同步之后。Snapshot和Appender的独立选择次序按进入模块时实际process函数再核对。
+
+仍未选定：配置数值越界保留double/原字符串；custom四字节字符协议仍static_assert未决。SIMD后置不改变软件输出合同。任何与BQLog功能/实现大方向的冲突，先给来源和替代方案与用户商讨；测试通过不是选择未决合同的授权。
+
+> **2026-10-07 最新实现快照与接续路线：** 实际 QLog `feat/spsc-ring-opt@f24f3afcd8e9418ea48ad5a6b05680c622008145`，BQLog 参考 `78cbfbef4f87e7558335f0c04bf6dd6894b46451`；参考整树仍有 MISO/构建修改。下方旧 HEAD、缺失文件和阶段计划均按原日期保留，当前进度以本段及 [实际收口记录](../validation/BUFFER_CONFIG_CMAKE_20261007_CHS.md) 为准。
+
+| 当前模块 | 实际实现与构建状态 | 验证边界 |
+| --- | --- | --- |
+| block SISO / Record | 单条、批量、恢复、Debug、记录视图与模板序列化已填写；普通 cpp 已接根库 | 不计作 Ring 行为/并发/恢复或完整记录差分验收 |
+| TimeZone / Layout / utility | TimeZone、Layout 软件路径、UTF 与共享字符串 helper 已填写并接根库 | 已有 9 组 Layout/序列化组合回归；local 日历转换使用系统 DST 规则，DST 专项/完整差分/SIMD/性能仍未验收 |
+| 配置、过滤与 Buffer 配置 | Property/PropertyValue、LogLevelBitmap、两个过滤 helper、LogBufferConfig 与树转换均已接根库 | 既有实际公开调用方与定向检查通过；整数越界 double/原字符串仍仅记录、暂不选定 |
+| 平台存储与完整 Buffer | 平台分配已有生产声明/函数体草稿，待实际审查，未接库/未验；文件操作、MemoryMap、NormalBuffer、MISO、LP/HP/TLS/LogBuffer尚未实现 | 下一模块为 [aligned_memory](PLATFORM_ALIGNED_MEMORY_IMPLEMENTATION_GUIDE_20261007_CHS.md)，逐模块读取参考并由用户填写 |
+| Logger/Manager/Worker/Appender/生命周期 | 尚未建立新主链 | 按下方路线后置，不恢复旧接口 |
+
+用户已确认依赖顺序：平台对齐分配 → 文件句柄/文件操作 → MemoryMap → NormalBuffer → MISO → LP/HP/TLS/LogBuffer。MemoryMap 作为 NormalBuffer 存储依赖已纳入本轮路线；本次不扩展 raw/compressed、跨语言等能力。BQLog MISO 本地布局/Debug 修改在正式采用前另行审查。
+
+已有 Debug/Release 各 12/12 为仓库常驻 10 项加外部临时配置 2 项，本次只核对日志及对应 135 文件校验值，没有重跑测试，也没有新增常驻配置测试。
+
 > 2026-09-23接续更新：SpscRingBuffer已迁入buffer模块，第一、二批已有草稿，第三、四批尚未完成。当前动手顺序及已有/缺失指南见[补全指南第0节](./R0_POST_CLEANUP_IMPLEMENTATION_GUIDE_CHS.md)。R0/R2是模块归属编号，不阻止当前先完成Ring；不要把本路线当作MISO/TLS等模块已经具备完整逐函数实现稿。
 
 
@@ -12,7 +113,7 @@
 
 
 - 日期：2026-09-22；修订：按用户最新“其余建议也先对齐 BQLog”统一替换首版路线。
-- 状态：对齐方向已确定；路线交维护者检查，未开始生产代码替换。
+- 状态（2026-10-07）：对齐方向已确定，按模块推进；已实现范围及下一模块以上方最新快照为准，未完成完整异步日志主链。
 - 权威开发目录：`/home/qq344/QLog`，Windows 入口 `\\wsl.localhost\Ubuntu\home\qq344\QLog`。
 - 起点：`feat/spsc-ring-opt@94fefc0f29b21a1dbdd258fdb5725aadf84d770e`。
 - 参考源码：`E:\VisualStudioProject\BqLog@60ef4d3ea52635dc54e87e79dfb3a71fb5b1ecc9`。
@@ -27,7 +128,7 @@
 
 顺序是：查清参考调用链和实际行为 → 建立对应模块 → 实现并验证对齐基线 → 再提出有依据的优化。对齐不等于将疑似缺陷写成正确性保证；未查清的分支标记待核查，不自行补成另一种 QLog 设计。
 
-范围是当前 V1 日志主链。现有 Ring/Record 保留可复用基础，但不能用旧集成合同阻止对齐；wire 不会因文档更新自动改变。raw/compressed、mmap 恢复、snapshot、跨语言和崩溃信号处理列入范围外能力清单，不自动全量移植。若主链依赖其中某机制，先说明依赖再确定拆分范围。
+范围是当前 V1 日志主链。现有 Ring/Record 保留可复用基础，但不能用旧集成合同阻止对齐；wire 不会因文档更新自动改变。raw/compressed、snapshot、跨语言和崩溃信号处理不自动全量移植。MemoryMap 已按 2026-10-07 用户确认纳入 NormalBuffer/MISO 的存储依赖；映射、恢复实现与验收仍未完成，不据此扩展其他持久化或崩溃恢复保证。其他主链依赖先说明再确定拆分范围。
 
 ## 2. 回退时的历史基线
 
@@ -100,7 +201,9 @@ Producer 粗等级位图来自所有 Appender levels 的 OR，不排除 disabled
 
 ## 6. Producer / Channel / Buffer
 
-2026-10-07 接续：等级位图/过滤已由用户填写，当前仍有三处编译/链接问题，见 [实际过滤审查](../validation/FILTER_CODE_REVIEW_20261007_CHS.md)。下一组先建立Buffer配置数据与恢复身份校验、配置树映射，不提前创建Logger/Manager或完整LogBuffer。转换保留参考默认block、非对象/错误类型的默认、uint32容量转换、recovery请求与平台支持、策略不trim、0频率转UINT64_MAX；容量规范化留Buffer实际初始化。完整源码出处与逐函数指导见 [BUFFER_CONFIG_IMPLEMENTATION_GUIDE_20261007_CHS.md](BUFFER_CONFIG_IMPLEMENTATION_GUIDE_20261007_CHS.md)。候选验证不计生产Buffer/并发/恢复验收。
+2026-10-07 最新接续：配置/过滤/Buffer配置已经完成实际CMake接入与所测公开调用方验证，见 [收口记录](../validation/BUFFER_CONFIG_CMAKE_20261007_CHS.md)。用户确认先补真实存储依赖再实现MISO，次序为平台对齐分配→文件/MemoryMap→NormalBuffer→MISO→LP/HP/TLS/LogBuffer；下一组完整指导见 [PLATFORM_ALIGNED_MEMORY_IMPLEMENTATION_GUIDE_20261007_CHS.md](PLATFORM_ALIGNED_MEMORY_IMPLEMENTATION_GUIDE_20261007_CHS.md)。不把完整MISO改成外部存储Ring来绕过NormalBuffer，也不提前创建Worker/Appender。下方前轮编译失败说明只保留为历史快照。
+
+2026-10-07 早期审查快照（已由上方收口替代，clear 判断后续更正）：等级位图/过滤已由用户填写，当时记录了编译/链接问题，见 [实际过滤审查](../validation/FILTER_CODE_REVIEW_20261007_CHS.md)。下一组先建立Buffer配置数据与恢复身份校验、配置树映射，不提前创建Logger/Manager或完整LogBuffer。转换保留参考默认block、非对象/错误类型的默认、uint32容量转换、recovery请求与平台支持、策略不trim、0频率转UINT64_MAX；容量规范化留Buffer实际初始化。完整源码出处与逐函数指导见 [BUFFER_CONFIG_IMPLEMENTATION_GUIDE_20261007_CHS.md](BUFFER_CONFIG_IMPLEMENTATION_GUIDE_20261007_CHS.md)。候选验证不计生产Buffer/并发/恢复验收。
 
 LP 是低频线程共享多生产者缓冲，HP 是高频线程独立缓冲；阈值和降级、旧块退休、消费序号共同工作。参考默认阈值 1000 次/秒，检查间隔 1000ms；先保留参考基线，再测是否有优化需求。
 
@@ -170,7 +273,7 @@ uninit 路径：管理协调、解除 console callback、phase 变为 uninitiali
 |---|---|---|
 | R0 记录/Layout 基础 | 重建 Record/编码/视图、TimeZone、完整 Layout 对象和缓冲；列主链接口映射 | 结构断言、记录往返、完整字节差分、实际库链接；撤销旧正文抽取验收 |
 | R1 配置与运行态骨架 | 配置树/解析入口、Manager/LoggerImpl 归属、类型工厂 | 默认值/空配置/无效配置与参考对照；没有 Session/双重所有权 |
-| R2 Producer / Buffer | 先按ADR-016重建8字节block SISO，再补缓存行block MISO、TLS、LP/HP、频率、顺序、块退休、满策略、oversize | 切换顺序、失败/退出、竞争、block 唤醒与 expand；以测试消费者先验证 |
+| R2 Producer / Buffer | 8字节block SISO已填写；先补平台分配、文件操作、MemoryMap与NormalBuffer，再补缓存行block MISO、TLS、LP/HP、频率、顺序、块退休、满策略、oversize | 切换顺序、失败/退出、竞争、block 唤醒与 expand；以测试消费者先验证 |
 | R3 Worker 与模式 | 公共异步贯通，随后 independent/sync；处理、等待、管理协调 | 单消费者与 layout 互斥；按参考调度行为；不先优化公平性 |
 | R4 Appender/layout 接入/文件 | 公共基类、文件基类、Console/TextFile，接入 R0 Layout、缓存/滚动/故障 | 真实字节对照、时区/过滤、多目标；持有记录期间 I/O 与参考一致；故障真实行为可复现 |
 | R5 reset/flush/退出 | 完整动态替换、部分失败、强制处理、取消/join/析构关系 | 返回 bool 与实际状态分开核对；不额外声称原子 reset、有限 flush 或可靠退出 |

@@ -1,10 +1,14 @@
 # 配置文本 Property 对齐决定与当前进度
 
+> **2026-10-07 CMake收口补充（最新）：** 当前QLog HEAD为f24f3afcd8e9418ea48ad5a6b05680c622008145；Property/PropertyValue、过滤helper、等级位图与Buffer配置六cpp已经加入根qlog target；实际Debug/Release库及公开调用方构建链接、外部CTest各12/12与配置/过滤定向UBSan通过。证据与验证范围见 [BUFFER_CONFIG_CMAKE_20261007_CHS.md](../validation/BUFFER_CONFIG_CMAKE_20261007_CHS.md)。超int64保留double/原字符串两方案继续仅记录、暂不选定；CMake接入不代表选定数值合同或完整配置/异步系统验收。
+
 日期：2026-10-05；最近源码复核：2026-10-07。
-QLog 核对 HEAD：ec3f72b27784b3b1a9047391117395b4848afb8d，工作树有未提交修改和未跟踪草稿。
+
+本次仅同步记录并核对已有日志/135文件校验值，没有重新运行测试。共享trim/split_nonempty/equals_ignore_case继续归utility；末尾未完成项按已确认规则跳过并保留其他有效项。配置/过滤及Buffer配置已接库，下一模块是平台分配，之后文件操作/MemoryMap→NormalBuffer→MISO；数值越界备选继续待决，不由本次进度更新选定。
+早期构树审查QLog HEAD：ec3f72b27784b3b1a9047391117395b4848afb8d；当前HEAD及构建状态以上方最新收口为准。
 BQLog 参考 HEAD：78cbfbef4f87e7558335f0c04bf6dd6894b46451；本次 property.cpp 与 HEAD 无差异，不能据此称整个参考树干净。
 
-## 2026-10-07 后续过滤兼容方向确认（最新）
+## 2026-10-07 后续过滤兼容方向确认（填写前历史快照）
 
 用户确认 Logger/Snapshot 与 Appender 类别过滤按 BQLog 各自规则保留；具体匹配、调用顺序、fallback 与模块目标见 [过滤完整指南](CONFIG_FILTER_IMPLEMENTATION_GUIDE_20261007_CHS.md)。本次重新读取 actual源码，PropertyValue 前轮三处编译修正保持；LogLevelBitmap/filter_config 四个目标文件尚未创建，不根据历史指南称它们已实现。
 

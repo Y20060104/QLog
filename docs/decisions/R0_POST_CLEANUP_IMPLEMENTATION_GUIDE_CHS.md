@@ -1,5 +1,21 @@
 # R0 补全实现指南：从当前头文件到完整 BQLog Layout
 
+> **2026-10-09 原子第一组完整指导（本段最新）：** 用户最新明确不沿用草稿文件名，后端固定 _inner_atomic_GNU_C.h/_inner_atomic_msvc.h。 用户要求完整正确指导，已在对话/指导第9节给出公共头与GNU/MSVC后端的完整第一组正文：原存储、原帮助函数、explicit_copy、load/store/exchange及全部raw/固定序变体。仅工程前缀/std基础/格式适配，结构、命名、参数/default/order/原断言保持参考；没有单槽或新封装。普通atomic/CAS/算术/运算符按原类后续接续，现阶段保留六个已有平凡断言，普通atomic否定断言待该类填齐。Linux GCC/原生Windows MSVC Debug/Release新临时候选各637定向检查与独立实际BQLog参考一致，含一次发布检查；仅候选，不计生产或完整并发/性能，旧633/20000不复用。MSVC检查排除原对齐C4324，参考SYSTEM头单独编译。实际atomic.hpp部分草稿/CR/CMake不改，根库仍17cpp；用户继续填写新生产函数。见 [完整第一组正文](PLATFORM_ATOMIC_PRIMITIVES_IMPLEMENTATION_GUIDE_20261009_CHS.md)；证据 D:/qq344/Documents/qlog-atomic-group1-complete-guide-20261009-3fa2b7。
+
+> **2026-10-09 原子严格对齐纠正（本段最新，替代下方同日原子候选指导）：** 用户明确要求默认参数、memory order、断言、内部结构与命名逐声明按 BQLog。实际参考 78cbfbef 的三原子头、宏及 trait 文件无 HEAD 差异，整树仍脏。类名保留 atomic_trivially_constructible、atomic、_atomic_base<T,N>；GNU 保留 value_/value_standard 的 union，MSVC 保留 value_、原宏及四个尺寸特化。不再采用 AtomicTriviallyConstructible/AtomicBase/atomic_backend/GnuAtomicType/MsvcAtomicOps 或单一 mutable 原生槽方案。load 的公共及两个后端默认 seq_cst；store/exchange/十个算术入口没有默认 order；weak/strong CAS 的 success_order/fail_order 均默认 seq_cst。仅保留参考静态断言，三个原子头没有运行时 assert；不新增类、默认值、字段、类型限制或回退。QLog 已有未完成 atomic.hpp 草稿，由用户继续填写，本次生产源码/CR/CMake 不改；仅核对和修正文档，未重跑构建测试。旧 633/20000 仅为已替代候选历史，不作为本版原子验收，实际线程基础 12/12 证据保留。union/const RMW/CAS 边界已明确记录，后续组不静默修复。见 [严格完整指导](PLATFORM_ATOMIC_PRIMITIVES_IMPLEMENTATION_GUIDE_20261009_CHS.md)、[修订与证据边界](../validation/THREAD_OPS_REVIEW_ATOMIC_GUIDANCE_20261009_CHS.md)。整数越界两方案仍暂不选定。
+
+> **2026-10-09 线程基础实际审查与原子接续（最新）：** 用户已写线程4函数并接根CMake；助手只同步Windows thred_ops为thread_ops及四处宏/intrinsic拼写，CR保留。Linux/原生Windows实际库/调用方两配置CTest各12/12（常驻11+临时线程1），17cpp和PUBLIC宏已核对。期间用户路径头移到include并改cpp引用/格式已保留，最新Windows库再构建通过；其余149个原生产/测试/CMake文件哈希不变。本轮未改根CMake。下一组由用户写平凡构造原子load/store/exchange三项，按实际GNU/MSVC接口、8字节对齐与静态零初始化；MSVC load为ExchangeAdd(0)，不直接用C++20 std::atomic绕过平凡约束。单一原生可修改槽保留正常值和原子路径，存储差异已明确。临时两系统两配置633检查及20000受保护更新仅算候选，未写原子生产实现，不记完整并发/性能。见[实际审查](../validation/THREAD_OPS_REVIEW_ATOMIC_GUIDANCE_20261009_CHS.md)及[完整指导](PLATFORM_ATOMIC_PRIMITIVES_IMPLEMENTATION_GUIDE_20261009_CHS.md)；随后普通自旋锁，再闭合诊断/共享状态/路径。整数越界仍暂不选定。
+
+> **2026-10-09 Windows词法生产修正及线程基础接续（最新）：** 用户已填完整Windows词法函数及公共声明，POSIX定义仍未写。助手仅把已实现函数..分支的!result.empty()改为!result_split.empty()，复现后纠正行为，保留CR；148个无关原生产/测试/CMake文件哈希相同。实际Windows根库/调用方Debug及Release各1071路径对照通过，PUBLIC宏和16cpp核对；MSVC审查仅排除既有C4324，未改生产警告，未重跑常驻CTest。下一组由用户写当前线程ID/yield/cpu_relax/sleep四函数，保留BQLog pthread_self/TLS和两系统sleep差异；临时Linux/原生Windows两配置编译与定向调用通过仅算候选。没有新增线程/POSIX生产定义或改根CMake；后续先闭合锁/诊断/共享状态再账户路径/基准目录，仍不造Manager。整数越界仍暂不选定。见[实际审查](../validation/WINDOWS_LEXICAL_THREAD_GUIDANCE_20261009_CHS.md)及[完整下一组指导](PLATFORM_THREAD_OPS_IMPLEMENTATION_GUIDE_20261009_CHS.md)。
+
+> **2026-10-09 路径基础审查及实际库接入（最新）：** 已实现路径函数算法与BQLog一致；助手按此前授权整理系统文件、将Windows内部头移到src并同步namespace，保留函数体/CR。I/O和路径cpp已在WIN32/else接根target，当前每个平台16cpp。原生整库验证发现TimeZone仍用POSIX日历调用，已按BQLog补_s/_r平台宏及Windows名称localtime分支，偏移/缓存算法不重写；现有Layout测试预期prefix改名expected_prefix消除MSVC遮蔽提示。最终Linux及原生Windows实际库/调用方Debug/Release CTest各13/13（常驻11+临时实际路径/I/O两项），两平台源列表和PUBLIC宏已核对。Windows临时验证/WX仅排除既有C4324对齐提示，根警告配置未变，不称无例外严格通过；143个无关原文件哈希不变。下一组由用户写Windows完整get_lexically_path，指导候选Linux两配置各1071场景与BQLog摘录及真实string类型一致，仅算候选。POSIX账户/诊断及基准目录真实依赖接续后再写，不造helper/Manager；严格对齐及整数越界暂不选定决定继续有效。见[实际接入记录](../validation/PLATFORM_PATH_REVIEW_CMAKE_20261009_CHS.md)和[下一组完整指导](WINDOWS_LEXICAL_PATH_IMPLEMENTATION_GUIDE_20261009_CHS.md)。下方待填写/待接入文字按原阶段保留。
+
+> **2026-10-09 UTF与平台I/O最新审查：** 用户已填写UTF-8软件函数并在审查期间修正位运算和Windows API抄写；重新核对最新实际源码，当前范围无新增阻塞缺陷。Linux实际Debug/Release严格库/调用方及外部CTest各13/13（常驻11+临时实际UTF/I/O两项），原生Windows对应源码严格编译运行通过；UTF对1,112,064个有效Unicode标量与BQLog软件源码摘录一致并回转，LinuxASan+UBSan同组通过，实际两系统I/O各31检查通过。根库仍14cpp，I/O仍未接根target；生产145文件SHA-256及CR未改，不把临时验证写成正式I/O集成或完整系统验收。下一组由用户填写路径判定和Windows内部编码适配器。用户最新回复“严格对齐BQLog”：不选择~user分隔符修正或账户查询失败回退；参考缺陷须明确说明，不宣称失败路径安全。整数越界两方案仍暂不选定。见[本轮记录](../validation/UTF8_PLATFORM_IO_CODE_REVIEW_20261009_CHS.md)和[完整下一组指导](PLATFORM_PATH_FOUNDATION_IMPLEMENTATION_GUIDE_20261009_CHS.md)。下方旧阶段结果按原日期解读。
+> **2026-10-08 按系统拆分（本段最新）：** 用户授权助手拆分已有头文件/函数，现采用公共 API、POSIX/Windows 原生类型头和系统 cpp。两个已实现分配函数仅搬移，CMake 按 WIN32 二选一，根库每个平台仍为 14 个 cpp；公共 API/命名空间不变。file_io.hpp 当前已由用户补到 8 个声明，两个系统 file_io.cpp 只有待填写骨架、未接库；助手未写 I/O 函数体。实际 Linux Debug/Release 严格构建与公开调用方链接、CTest 各 11/11（常驻 10 + 临时拆分调用方 1）通过；Windows 仅做模拟宏头文件语法检查，未编译运行原生 Windows 实现。详见 [系统拆分记录](PLATFORM_SYSTEM_SPLIT_20261008_CHS.md)，后续仍按 [文件 I/O 指导](PLATFORM_FILE_IO_IMPLEMENTATION_GUIDE_20261007_CHS.md) 由用户完成。下方原日期结果保留为历史证据。
+> **2026-10-07 平台分配实际收口（本段最新）：** 实际aligned_memory已审查、名称同步并接根库，当前14个cpp；Debug/Release实际库/公开调用方严格构建链接、外部CTest各13/13（常驻10+临时3）、实际Linux分配85检查及定向UBSan通过。Windows/移动端、完整Buffer/并发/恢复/性能不计通过。下一组是 [文件原生类型及8个句柄操作](PLATFORM_FILE_IO_IMPLEMENTATION_GUIDE_20261007_CHS.md)，随后路径/open-close/exclusive与FileHandle/FileManager→MemoryMap→NormalBuffer→MISO及完整LP/HP依赖。整数越界两方案仍暂不选定。详见 [实际证据](../validation/PLATFORM_ALIGNED_MEMORY_CMAKE_20261007_CHS.md)。下方未接库/草稿快照按原阶段理解。
+
+> **2026-10-07 最新实现与入口：** QLog HEAD `f24f3afcd8e9418ea48ad5a6b05680c622008145`；Ring/Record、TimeZone/Layout 软件路径、utility、配置/过滤与 Buffer 配置均已有源码并接根 qlog target。当前目标包含 13 个 cpp，仓库常驻 CTest 10 项。已复核此前实际库与外部调用方 Debug/Release 各 12/12 的日志及对应 135 文件校验值；本次没有重跑构建或测试。下一模块为 [平台对齐分配](PLATFORM_ALIGNED_MEMORY_IMPLEMENTATION_GUIDE_20261007_CHS.md)，随后文件操作 → MemoryMap → NormalBuffer → MISO → LP/HP/TLS/LogBuffer。下方旧进度及初版代码按日期理解，不能据此覆盖已实现代码或恢复旧接口。验证边界见 [实际收口](../validation/BUFFER_CONFIG_CMAKE_20261007_CHS.md)。
+
 > **2026-10-01 最新决定与进度：** 参数命名按 BQLog 实际含义对齐，代码格式沿用 QLog 当前要求；扩容按参考 layout.cpp:1100，不增加 layout_failed_ 或通用防御性错误协议。Layout/UTF cpp 已接入 CMake，但扩容仍为空，完整布局尚未实现；Debug/Release 库与现有 smoke 可执行文件构建通过，保留空扩容函数警告；未运行测试，未验证完整 Layout 调用方链接。详见 [构建记录](../validation/LAYOUT_CMAKE_20261001_CHS.md)。详见 [命名与扩容补充](./LAYOUT_ALIGNMENT_20261001_CHS.md)。本条优先于下方历史进度。
 
 > **2026-09-29构建接入完成（优先于下方历史快照）：** qlog现编译version.cpp、buffer/spsc_ring_buffer.cpp、record/log_entry_handle.cpp。QLOG_DEBUG通过target_compile_definitions(qlog PUBLIC $<$<CONFIG:Debug>:QLOG_DEBUG>)传播：仅Debug定义，Release/RelWithDebInfo/MinSizeRel及空配置不定义；标准assert仍由NDEBUG控制，不得在调用方单独定义/取消宏造成类布局不一致。Debug/Release实际构建与调用方链接均通过，两种配置现有version smoke各1/1通过；已核对库及调用方编译命令的宏状态。此次未执行Record/Ring行为、并发、恢复或BQLog差分测试。参数序列化保留log_*接口及CR，普通UTF-32参数转换为UTF-16，custom四字节字符仍为显式未决项。下一模块为TimeZone，目前未创建实现，进入前重新检查实际文件。详见[TIMEZONE_HANDOFF_20260929_CHS.md](./TIMEZONE_HANDOFF_20260929_CHS.md)。
@@ -17,26 +33,29 @@
 
 日期：2026-09-23。参考 BQLog 固定提交 `60ef4d3ea52635dc54e87e79dfb3a71fb5b1ecc9`。QLog 为 `/home/qq344/QLog`。
 
-**当前状态以顶部2026-10-01记录为准：TimeZone已接入，Layout/UTF cpp本轮接入但Layout主链仍未完成。下方带日期记录为历史证据。**
+**当前状态以顶部 2026-10-08 记录及实际源码为准：TimeZone/Layout 软件路径、配置/过滤/Buffer 配置和平台分配已接库；平台已按系统拆分，文件 I/O 只有声明及系统 cpp 骨架，其他存储模块待实现。下方带日期记录为历史证据，不要求重写已完成函数。**
 
 本文接续 [完整 Layout 指南](./R0_BQLOG_LAYOUT_REBUILD_GUIDE_CHS.md)，补齐当前树的落地顺序、具体文件、可复制声明/基础实现、构建连接和验收样本。旧 R0 六参数方案不再使用。
 
-## 0. Ring之后的模块顺序与文档范围（2026-09-23源码复核）
+## 0. 当前模块顺序与文档范围（2026-10-08源码复核）
 
-截至2026-09-29，SpscRingBuffer单条/批量/恢复/Debug已填写，Record序列化及视图已填写；Ring和Record视图均已接入库，Debug宏已PUBLIC传播。构建/链接通过不等于行为验收；下一开发模块为TimeZone。
+当前源码已有 block SISO 的单条/批量/恢复/Debug、Record 视图及参数序列化、TimeZone/Layout 软件路径、共享 utility、配置树/过滤与 Buffer 配置。普通 cpp 已接根库，QLOG_DEBUG 已按 Debug-only PUBLIC 传播；构建/所测行为通过不等于完整模块验收。
 
-| 接续模块 | 具体工作 | 现有文档覆盖 |
-|---|---|---|
-| Ring收口 | 第三、四批后静态审查、CMake接入、实际调用者链接；QLOG_DEBUG两种配置一致 | Ring指南；行为/并发/恢复测试暂缓但仍是最终验收项 |
-| Record | RecordHeader/ArgumentTag/限制迁入record；LogEntryHandle；参数测量、序列化和扩展信息 | 本文第3、4节及完整Layout指南第4、5节 |
-| TimeZone与Layout | 完整前缀和正文、UTF转换、内部缓冲借用、逐目标完整布局 | 本文第5、6节及完整Layout指南第6至10节 |
-| 配置与运行态骨架 | 配置树、Logger/Manager持有关系、目标过滤和工厂 | V1路线R1，尚非完整逐函数实施稿 |
-| Buffer集成 | 独立MISO协议、block_list、oversize_buffer，再接LogBuffer/TLS/LP-HP/序号/满策略 | V1路线R2及BQLog源码；尚缺同等细度逐函数指南 |
-| Worker/Appender/生命周期 | 三种模式、Console/TextFile与文件层、reset/flush/退出 | V1路线R3至R5，进入模块前继续源码核对 |
+| 模块 | 当前实现状态 | 后续工作与文档 |
+| --- | --- | --- |
+| Ring / Record | 已填写并接库；序列化是模板头 | 保留 CR；Ring 行为/并发/恢复及完整差分仍需验收 |
+| TimeZone / Layout | 已填写并接库；现有 Layout 与序列化组合回归共 9 组 | 维护实际源码，不能按旧空函数快照再次补写；完整差分/DST/SIMD/性能未验收 |
+| 配置 / 等级位图 / 过滤 / Buffer 配置 | 已填写并接库；实际公开调用方与定向行为检查已有证据 | [配置决定](CONFIG_PROPERTY_ALIGNMENT_20261005_CHS.md)、[过滤指导](CONFIG_FILTER_IMPLEMENTATION_GUIDE_20261007_CHS.md)、[Buffer 配置](BUFFER_CONFIG_IMPLEMENTATION_GUIDE_20261007_CHS.md)；整数越界两方案仍待选定 |
+| 平台对齐分配 | 已实现、接库并按 POSIX/Windows 拆分，Linux 实际库验证通过；Windows 原生实现未验 | [拆分记录](PLATFORM_SYSTEM_SPLIT_20261008_CHS.md)、[aligned_memory 指导](PLATFORM_ALIGNED_MEMORY_IMPLEMENTATION_GUIDE_20261007_CHS.md) |
+| 文件操作 / MemoryMap / NormalBuffer | 文件 I/O 已有 8 个声明和两个系统 cpp 骨架，函数体、其余文件依赖及 MemoryMap/NormalBuffer 尚未实现 | 当前动手入口：[文件 I/O 指导](PLATFORM_FILE_IO_IMPLEMENTATION_GUIDE_20261007_CHS.md)；每组先核对实际依赖、接口与失败路径 |
+| 完整 Buffer | MISO、block_list、oversize_buffer、LogBuffer/TLS/LP-HP 尚未实现 | 存储基础之后进入；MISO 采用前再次审计参考本地 diff |
+| Worker / Appender / 生命周期 | 尚未实现 | V1 路线 R3 至 R5 后置，不恢复旧 Logger/codec/PreparedRecord |
 
-这是QLog的开发顺序，不是声称BQLog要求先写哪个文件。Record/Layout可用固定fixture解耦；不能仅为读取一条记录而提前扩展Worker。
+这是 QLog 的学习与开发顺序。Record/Layout 可用独立 fixture 解耦；NormalBuffer 拥有堆内存或文件映射，完整 MISO 不能改成外部内存 Ring 来绕过这一依赖，也不关闭 recovery 跳过存储基础。
 
-本次选定Windows参考HEAD 60ef4d3并确认采用的源码文件相对HEAD无差异：
+以下保留 2026-09-23 的参考核对快照，入口职责仍可用于导航；本次当前参考 HEAD 为 78cbfbef，整树有 MISO/构建修改，正式进入新模块需重新核对实际文件与差异：
+
+历史核对选定Windows参考HEAD 60ef4d3，当时确认下列采用文件相对HEAD无差异：
 - src/bq_log/types/buffer/siso_ring_buffer.h/.cpp：单条/批读、恢复；不能代替多生产者协议。
 - src/bq_log/types/buffer/block_list.h：block_node_head内嵌SISO实例；不是仅有一个裸Ring的最终拓扑。
 - src/bq_log/types/buffer/log_buffer.h/.cpp：alloc_write_chunk按TLS频率选HP节点或共享LP MISO；block_when_full映射err_wait_and_retry；oversize另有路径。
@@ -240,17 +259,17 @@ size_seq 的空参数实例 get_total()==0；调用端的零参数路径无需�
 
 ## 5. 第三个文件组：TimeZone
 
-头放 include/qlog/layout/time_zone.hpp，定义放 src/layout/time_zone.cpp。字符串直接 std::string，字符缓存是 char[129]，无需新配置包装类。
+头位于 include/qlog/layout/time_zone.hpp，定义位于 src/layout/time_zone.cpp，均已完成并接库。字符串使用 std::string，字符缓存是 char[129]；普通成员头声明/cpp限定名定义，简单getter类内inline。构建与调用方证据见 [TimeZone接入记录](../validation/TIMEZONE_CMAKE_20260930_CHS.md)，不据此称DST/缓存差分通过。
 
 成员：bool use_local_time_；int32_t gmt_offset_hours_/minutes_/time_zone_diff_to_gmt_ms_；std::string time_zone_str_；char time_cache_[129]；size_t time_cache_len_；uint64_t last_time_epoch_cache_。
 
-公有签名按原完整指南的逐函数表落地。关键实现顺序：reset → parse_by_string → get_tm_by_epoch → inner_refresh_time_string_cache → 缓存 getter → get_time_str_by_epoch/配置 getter。
+构造、reset、parse_by_string、get_tm_by_epoch、inner_refresh_time_string_cache、refresh_time_string_cache、get_time_str_by_epoch、restore_by_config及getter均已有定义。维护时以实际头/cpp为准，不再次生成旧TimeZoneConfig或拥有型包装。
 
-parse_by_string：字符串 trim/大写；local 别名、UTC/GMT/Z、带符号时差分别处理；strtol 解析小时/分钟并检查尾部；小时 [-12,14]、分钟 [0,59]；按参考错误诊断/default local 路径，不额外返回强事务错误对象。
+parse_by_string先reset，复用utility::trim再大写；local/LOCALTIME/LOCAL_TIME、UTC/GMT/Z以及数值偏移按实际分支处理，strtol检查小时[-12,14]、分钟[0,59]与尾部；失败诊断并回退local，不引入强事务错误对象。当前-00:30按小时是否负数决定分钟符号，因此保留参考的负号丢失行为，不把它记作已修复。
 
-get_tm_by_epoch(epoch_ms,out)：先 ms/1000；local 分支用 localtime_r；固定偏移分支加时差后 gmtime_r；成功返回 true。Windows 对应安全日历接口另做平台映射，本轮 Linux 为权威目标。
+get_tm_by_epoch(epoch_ms,out)先ms/1000；local分支调用localtime_r，使用系统对该epoch的日历/DST规则；固定偏移分支按小时/分钟以有符号秒加偏移，再调用gmtime_r，不应用DST。实际实现有time_t可表示范围检查，转换失败返回false；这不是全部算术边界已验收的证明。当前是POSIX实际接口，Windows映射与专项验证仍待完成。
 
-inner_refresh_time_string_cache：日历转换后生成“时区 年-月-日 时:分:秒.”，保存有效长度和 epoch_ms；毫秒不在此函数追加。初次 epoch0 和 -00:30 疑点见完整指南，不能悄悄定义与参考不同的结果。
+inner_refresh_time_string_cache生成“时区 年-月-日 时:分:秒.”并保存长度和完整epoch_ms，Layout另写毫秒。refresh按完整毫秒值相等判断；初次epoch=0会跳过生成，restore_by_config也不使旧缓存失效，均按当前参考行为保留。get_time_str_by_epoch单独返回不含时区/末尾点号/毫秒的日期时间字符串。转换失败使用清零tm继续格式化；本段只是源码事实，不代表缓存/DST行为验收。
 
 ## 6. 第四个文件组：具体 Layout 声明
 
@@ -370,35 +389,37 @@ UTC0 2023-11-14 22:13:20.007[tid-123 t]\t[I]\tvalue=42
 
 最小反例：总长度57导致线程名截断；ext_info_offset=47进入格式区；参数 tag=255；格式长度 UINT32_MAX；string 参数声明长度超出扩展起点。validate 应拒绝。级别/类别越界则在 Layout 前缀路径返回 parse_error，不把这两个检查误塞回旧 RecordValidationPolicy。
 
-## 8. 构建如何补回
+## 8. 当前构建接入与验证边界（2026-10-07）
 
-截至2026-09-29，qlog已编译version.cpp、src/buffer/spsc_ring_buffer.cpp、src/record/log_entry_handle.cpp。
-宏配置为target_compile_definitions(qlog PUBLIC $<$<CONFIG:Debug>:QLOG_DEBUG>)。
-Debug定义QLOG_DEBUG，其余配置不定义；不能使用QLOG_DEBUG=0，因为头文件用#ifdef判断。PUBLIC同时作用于库和链接QLog::qlog的调用方。assert仍按NDEBUG控制。多配置生成器由实际选择的配置决定宏，不通过configure时判断CMAKE_BUILD_TYPE。
-
-以下仅是未来新增源文件，完成实现后再加入，不提前引用不存在的文件：
+根 qlog target 当前已包含以下 13 个实际 cpp；这是一份源码清单，本次只同步文档，没有再次修改 CMake：
 
 ```cmake
-target_sources(qlog PRIVATE
+add_library(qlog STATIC
+    src/version.cpp
+    src/buffer/spsc_ring_buffer.cpp
+    src/buffer/log_buffer_config.cpp
+    src/config/property.cpp
+    src/config/property_value.cpp
+    src/config/filter_config.cpp
+    src/config/buffer_config.cpp
+    src/runtime/log_level_bitmap.cpp
+    src/record/log_entry_handle.cpp
     src/layout/time_zone.cpp
-    src/utility/utf_conversion.cpp
     src/layout/layout.cpp
+    src/utility/string_utils.cpp
+    src/utility/utf_conversion.cpp
 )
 ```
 
-argument_serialization.hpp 是模板头，无需空 cpp。UTF转换同时服务Record序列化与Layout，采用qlog::utility独立函数文件；只有仅本cpp使用的扫描/标量辅助放匿名namespace。模板定义仍在头中，不建空cpp。
+宏配置仍是 `target_compile_definitions(qlog PUBLIC $<$<CONFIG:Debug>:QLOG_DEBUG>)`。Debug定义QLOG_DEBUG，其他配置不定义，不设为0；调用方通过链接QLog::qlog继承，不能单独切换。标准assert仍由NDEBUG控制，多配置生成器按实际配置选择宏。
 
-tests/CMakeLists.txt 增加 qlog_layout_record_test，链接 QLog::qlog 与 GTest::gtest_main，gtest_discover_tests 添加 qlog. 前缀、layout_record 标签。测试必须从库链接非内联 do_layout/validate，不能直接 include cpp 绕过库连接。
+argument_serialization.hpp是模板头，不建空cpp。共享字符串/UTF函数归utility；不将全部实现放进detail。aligned_memory.hpp与aligned_memory.cpp已有生产草稿，尚未接根target；用户完成后再审查实际模块与构建接入。
 
-在新的构建目录执行，避免旧测试发现文件污染：
+仓库现有tests/CMakeLists.txt注册qlog.smoke，以及qlog.layout下的prefix、scanner、numeric、arguments、failure、reuse、serialization_mixed、serialization_strings、serialization_custom九组，共10项；实际测试程序是qlog_layout_behavior_test，通过QLog::qlog链接，当前不使用本初版曾建议的GTest目标。
 
-```bash
-cmake -S . -B build/r0-layout-new -DCMAKE_BUILD_TYPE=Debug -DBUILD_TESTING=ON
-cmake --build build/r0-layout-new -j 4
-ctest --test-dir build/r0-layout-new --output-on-failure
-```
+此前实际根库Debug/Release严格构建及公开调用方链接通过，外部工程CTest各12/12（仓库10项+外部临时配置2项）；实际Buffer配置48、过滤61个定向UBSan检查通过。完整证据见 [BUFFER_CONFIG_CMAKE_20261007_CHS.md](../validation/BUFFER_CONFIG_CMAKE_20261007_CHS.md)。本次只核对既有日志及135文件SHA-256，没有重新构建/运行测试，也没有把临时测试注册为仓库常驻项。
 
-以上build/r0-layout-new命令仍是后续Layout实施示例。本轮已在独立临时调用方工程完成Debug/Release构建、Record真实链接及各1/1 smoke；详见[构建证据](../validation/RECORD_CMAKE_20260929_CHS.md)。Debug 通过后做一次 ASan/UBSan 针对记录长度、UTF和数值边界的检查；实际变更再选测试，不用重复跑旧 I1 数量凑验收。
+Ring行为/并发/恢复、完整BQLog差分、整数越界合同、DST专项、Windows/移动端、完整异步主链及性能仍有未完成项；旧47项与旧协议证据不能计入当前验收。
 
 ## 9. 与 BQLog 对照的完成标准
 

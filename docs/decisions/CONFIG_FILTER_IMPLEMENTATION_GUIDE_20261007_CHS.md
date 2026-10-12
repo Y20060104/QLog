@@ -1,8 +1,10 @@
 # 等级位图与配置过滤 helper 完整实现指导
 
-日期：2026-10-07。本文保留完整填写指导；截至本次实际审查用户已写生产声明/定义，但有 mask 拼写、当前类别引用与 clear 缺定义三处问题，实际过滤尚未编译/链接通过。详见 [本次实际审查](../validation/FILTER_CODE_REVIEW_20261007_CHS.md)。实际 Property/PropertyValue 已修正三处编译问题，Debug/Release 实际源码及公开调用方检查通过；配置 cpp 尚未接根 qlog target。见 [生产编译修正记录](../validation/CONFIG_TREE_COMPILE_20261007_CHS.md)。
+> **最新收口：** 用户已修正类别函数与头内clear，助手同步utility引用并把clear既有定义迁cpp，配置与过滤已经接根target。Debug/Release实际库与公开调用方检查通过，不再是“生产过滤未编译/链接”的状态。完整证据与边界见 [BUFFER_CONFIG_CMAKE_20261007_CHS.md](../validation/BUFFER_CONFIG_CMAKE_20261007_CHS.md)；下方早期失败描述保留作历史快照，不能覆盖最新源码状态。
 
-QLog 实际 HEAD：ec3f72b27784b3b1a9047391117395b4848afb8d，分支 feat/spsc-ring-opt，工作树有草稿。
+日期：2026-10-07。生产位图/过滤已经填写并接根qlog target；mask与当前类别引用已修正，clear原有类内函数体已迁cpp，早期缺定义判断已更正。下方实现示例同步共享utility归属，已完成函数不再重写。早期审查见 [FILTER_CODE_REVIEW_20261007_CHS.md](../validation/FILTER_CODE_REVIEW_20261007_CHS.md)，实际收口见上方记录。本次只同步文档与既有证据，没有重跑构建/测试。
+
+QLog本次实际HEAD：f24f3afcd8e9418ea48ad5a6b05680c622008145，分支feat/spsc-ring-opt；早期指导HEAD为ec3f72b27784b3b1a9047391117395b4848afb8d。
 BQLog 参考 HEAD：78cbfbef4f87e7558335f0c04bf6dd6894b46451。本文涉及的 log_level_bitmap.h/.cpp、log_utils.h/.cpp、log_imp.cpp、appender_base.cpp 和底层字符串/数组实现已核对；被采用的参考文件无 HEAD 差异，不能称整树干净。
 
 ## 2026-10-07 用户确认：保留两套类别规则
@@ -31,11 +33,11 @@ BQ string::begin_with 在 string_impl.h:296 使用长度检查与 memcmp，c_str
 | 生产目标文件（当前已由用户建立） | 归属与用途 | BQLog 对应 |
 | --- | --- | --- |
 | include/qlog/runtime/log_level_bitmap.hpp | qlog::runtime::LogLevelBitmap，运行态等级集合 | src/bq_log/log/log_level_bitmap.h |
-| src/runtime/log_level_bitmap.cpp | 普通成员与 cpp 内大小写比较 | src/bq_log/log/log_level_bitmap.cpp |
+| src/runtime/log_level_bitmap.cpp | 普通成员，大小写比较调用共享utility | src/bq_log/log/log_level_bitmap.cpp |
 | include/qlog/config/filter_config.hpp | qlog::config 的两个过滤转换函数声明 | src/bq_log/utils/log_utils.h:125/127 |
 | src/config/filter_config.cpp | 配置树转等级位图/类别 byte 数组 | src/bq_log/utils/log_utils.cpp:16/58 |
 
-已有 qlog::LogLevel、config::PropertyValue 和 utility::trim 直接复用。bitmap 不依赖 PropertyValue；config helper 依赖 bitmap。等级位图后续同时服务 Producer 粗筛选、Appender 和堆栈等级，因此放 runtime。只有纯字符串比较是本 cpp 私有辅助，不复制整个 log_utils 或建立 Manager/拥有型配置包装。
+已有 qlog::LogLevel、config::PropertyValue 和 utility::trim 直接复用。bitmap 不依赖 PropertyValue；config helper 依赖 bitmap。等级位图后续同时服务 Producer 粗筛选、Appender 和堆栈等级，因此放 runtime。纯字符串比较已经迁至utility/string_utils.hpp与.cpp，runtime/config共用qlog::utility::equals_ignore_case；不复制局部helper，不复制整个log_utils或建立Manager/拥有型配置包装。
 
 ## 明确规则
 
@@ -90,71 +92,67 @@ class LogLevelBitmap {
 
 ```cpp
 #include "qlog/runtime/log_level_bitmap.hpp"
+
 #include <cctype>
 #include <cstdio>
-#include <string_view>
+
+#include "qlog/utility/string_utils.hpp"
 
 namespace qlog::runtime {
-namespace {
-bool equals_ignore_case(const std::string& value, std::string_view expected) {
-    if (value.size() != expected.size()) {
-        return false;
-    }
-    for (std::size_t i = 0; i < value.size(); ++i) {
-        const auto lhs = static_cast<unsigned char>(value[i]);
-        const auto rhs = static_cast<unsigned char>(expected[i]);
-        if (lhs != rhs && std::toupper(lhs) != std::toupper(rhs)) {
-            return false;
-        }
-    }
-    return true;
-}
-}  // namespace
 
 LogLevelBitmap::LogLevelBitmap() : bitmap_(0) {}
-LogLevelBitmap::LogLevelBitmap(std::uint32_t init_bitmap_value)
-    : bitmap_(init_bitmap_value) {}
-LogLevelBitmap::LogLevelBitmap(const LogLevelBitmap& rhs)
-    : bitmap_(rhs.bitmap_) {}
+
+LogLevelBitmap::LogLevelBitmap(std::uint32_t init_bitmap_value) : bitmap_(init_bitmap_value) {}
+
+LogLevelBitmap::LogLevelBitmap(const LogLevelBitmap& rhs) : bitmap_(rhs.bitmap_) {}
+
 LogLevelBitmap& LogLevelBitmap::operator=(const LogLevelBitmap& rhs) {
     bitmap_ = rhs.bitmap_;
     return *this;
 }
+
 void LogLevelBitmap::clear() {
     bitmap_ = 0;
 }
+
 void LogLevelBitmap::add_level(qlog::LogLevel level) {
     const auto index = static_cast<std::int32_t>(level);
     assert(index >= 0 && index < 32);
+
     bitmap_ |= std::uint32_t{1} << static_cast<std::uint32_t>(index);
 }
+
 void LogLevelBitmap::add_level(const std::string& level_string) {
-    if (equals_ignore_case(level_string, "all")) {
+    if (qlog::utility::equals_ignore_case(level_string, "all")) {
         bitmap_ = 0xFFFFFFFFU;
         return;
     }
-    if (equals_ignore_case(level_string, "verbose")) {
+
+    if (qlog::utility::equals_ignore_case(level_string, "verbose")) {
         add_level(qlog::LogLevel::verbose);
-    } else if (equals_ignore_case(level_string, "debug")) {
+    } else if (qlog::utility::equals_ignore_case(level_string, "debug")) {
         add_level(qlog::LogLevel::debug);
-    } else if (equals_ignore_case(level_string, "info")) {
+    } else if (qlog::utility::equals_ignore_case(level_string, "info")) {
         add_level(qlog::LogLevel::info);
-    } else if (equals_ignore_case(level_string, "warning")) {
+    } else if (qlog::utility::equals_ignore_case(level_string, "warning")) {
         add_level(qlog::LogLevel::warning);
-    } else if (equals_ignore_case(level_string, "error")) {
+    } else if (qlog::utility::equals_ignore_case(level_string, "error")) {
         add_level(qlog::LogLevel::error);
-    } else if (equals_ignore_case(level_string, "fatal")) {
+    } else if (qlog::utility::equals_ignore_case(level_string, "fatal")) {
         add_level(qlog::LogLevel::fatal);
     } else {
-        std::fprintf(stderr, "qlog warning: invalid level mask was found:\"%s\"\n",
-                     level_string.c_str());
+        std::fprintf(stderr, "qlog warnning: invalid level mask was found:\"%s\"\n",
+                     level_string.c_str());  // CR::\"%s\"\n"如何拆解 这段语法？
     }
 }
+
 void LogLevelBitmap::del_level(qlog::LogLevel level) {
     const auto index = static_cast<std::int32_t>(level);
     assert(index >= 0 && index < 32);
+
     bitmap_ &= ~(std::uint32_t{1} << static_cast<std::uint32_t>(index));
 }
+
 std::uint32_t* LogLevelBitmap::get_bitmap_ptr() {
     return &bitmap_;
 }
@@ -262,7 +260,7 @@ bool get_log_level_bitmap_by_config(
 
 2026-10-07 接续指导验证目录：/tmp/qlog-filter-rules-guide-j768okgl。位图/过滤模块仍为临时候选，连接的是实际 PropertyValue/Property/string_utils，Debug/Release 严格编译链接、定向场景和 UBSan 通过。在前轮位图/过滤场景上增加9组两套类别规则的矩阵、Logger/Snapshot配置树连通与全局拒绝不能绕过检查。Appender只摘录参考比较条件放入对照探针，未创建/调用生产Appender，也未运行BQLog原库；不是正式配置CMake/CTest、双库差分或并发/Windows/性能验收。见 [指导验证记录](../validation/FILTER_RULES_GUIDE_20261007_CHS.md)。
 
-配置生产 cpp 的三处编译问题现已由助手按用户授权修正，实际源码验证见上方记录；根 qlog target 尚未加入配置 cpp。用户写好本组后，再审查实际文件、完成配置与过滤的 CMake 接入和正式定向测试；保持 QLOG_DEBUG PUBLIC 仅 Debug 定义。之后继续 Buffer 运行态配置/MISO/TLS/LP-HP。
+配置/过滤cpp现已接根qlog target，实际公开调用方与所测行为证据见最新收口记录；上述临时指导验证按原日期保留，不能替代生产证据。QLOG_DEBUG保持PUBLIC且仅Debug定义，仓库常驻配置回归尚未建立。Buffer配置亦已收口，下一组为平台分配，然后文件操作/MemoryMap→NormalBuffer→MISO→LP/HP/TLS/LogBuffer。
 
 ## 学习重点
 
@@ -271,4 +269,4 @@ bool get_log_level_bitmap_by_config(
 
 ## 本次用户实现审查与下一组
 
-本次实际审查优先于上面的临时指导验证快照：生产 filter_config Debug/Release 编译失败，bitmap 独立语法通过但 clear 调用链接失败。助手未修改生产，仅临时修正版的 Debug/Release 与UBSan各61个检查通过，不计实际模块通过/正式CMake集成。已有CPP与CR保持。先按 [实际审查记录](../validation/FILTER_CODE_REVIEW_20261007_CHS.md) 补齐，再按 [Buffer配置完整指导](BUFFER_CONFIG_IMPLEMENTATION_GUIDE_20261007_CHS.md) 建立配置数据/校验值与转换；本轮没有加入CMake。
+当前状态以顶部收口记录为准：生产配置/过滤/Buffer配置已完成构建接入及所测公开调用方验证；早期编译失败和clear误判仅保留为历史，不覆盖当前源码。Logger/Snapshot与Appender类别规则继续分别对齐BQLog；当前没有生产Appender调用链。本次文档同步未修改生产CPP/CR，也没有重新执行运行验证。

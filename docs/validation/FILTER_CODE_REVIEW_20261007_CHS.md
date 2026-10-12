@@ -1,14 +1,16 @@
 # 等级位图与过滤模块实际代码审查
 
+> **2026-10-07 后续更正与当前状态：** 本文是早期审查快照；最新实际QLog HEAD为 `f24f3afcd8e9418ea48ad5a6b05680c622008145`。类别抄写问题已修正，utility引用/转换函数名称已同步，配置/过滤/Buffer配置已经接根库且已有实际调用方验证。下文“clear缺定义/链接失败”结论已在重新核对头文件后更正：已有类内clear，后续仅将既有函数体迁cpp，不算新增实现。详见 [实际收口与更正](BUFFER_CONFIG_CMAKE_20261007_CHS.md)。下方失败结果按原快照保留，不能用于判断当前生产源码；本次没有重跑测试。
+
 日期：2026-10-07。QLog HEAD ec3f72b27784b3b1a9047391117395b4848afb8d，分支 feat/spsc-ring-opt，存在未提交草稿/CR。BQLog HEAD 78cbfbef4f87e7558335f0c04bf6dd6894b46451；本组采用 log_level_bitmap、log_utils、appender_base 文件无 HEAD 差异，整树仍有 MISO/构建等修改。
 
-## 实际结果与三处问题
+## 早期审查结果与问题记录（clear结论后续更正）
 
 本轮用户已建立 include/qlog/runtime/log_level_bitmap.hpp、src/runtime/log_level_bitmap.cpp、include/qlog/config/filter_config.hpp、src/config/filter_config.cpp。不是前轮文档所写的“尚未填写”。
 
 1. src/config/filter_config.cpp:32 的局部变量 maks 应为 mask；35/42/47/53 使用 mask，实际 Debug/Release 均报未声明。
 2. 同 cpp:39-41 的三处 categories_name 应为 category_name：这是当前名称字符串的长度/前缀/边界检查。现在使用 vector 的长度、不存在的 compare 和 string 与字符比较，实际不能编译。只改 compare 仍不够，必须同步三处。
-3. include/qlog/runtime/log_level_bitmap.hpp:19 声明 clear，但 cpp 缺少定义。位图 cpp 单独语法检查通过；实际公开调用方调用 clear 时链接失败 undefined reference，等级 helper 非数组分支也依赖它。完整定义为 bitmap_ = 0，按既有普通成员规则在 cpp 写 LogLevelBitmap:: 限定名定义，不删掉调用。
+3. 更正早期clear判断：只检查cpp不足以确定缺少定义；后续重新核对最新头文件确认它已有类内clear，公开调用方在修正helper引用后链接通过。按普通成员分工仅将原bitmap_=0函数体迁cpp。早期缺定义/undefined-reference归因已撤回，不作为实际缺陷，不在保留头内定义时再补cpp造成重复定义。
 
 本轮只审查、回答 CR、准备临时候选和更新文档；没有修改 include/src、CMake 或测试源码，没有替用户填写缺失的生产函数。生产草稿和 CR 保留。warnning 是诊断文字的拼写问题，不影响位图处理，可随修正写成 warning。
 
@@ -32,4 +34,4 @@ fprintf 的字符串中，\" 输出一个双引号，%s 是 printf 格式占位�
 - 根 qlog target 仍未编译 Property/PropertyValue/bitmap/filter。不是实际生产过滤行为通过，也不是正式 CMake/CTest 集成、双库过滤差分、并发、Ring恢复、Windows或性能验收。
 - include/src 全部文件 SHA-256 与审查前清单一致；没有提交 Git。
 
-用户补好上述三处后再审查生产、接入四个现有 cpp 的 CMake 并做真实公开调用方验证。下一组是 Buffer 配置数据/校验值与配置树转换，完整指导见 [BUFFER_CONFIG_IMPLEMENTATION_GUIDE_20261007_CHS.md](../decisions/BUFFER_CONFIG_IMPLEMENTATION_GUIDE_20261007_CHS.md)。整数越界两方案继续仅记录、暂不选定，不把当前 double 草稿认作新决定。
+上述生产修正、配置/过滤CMake接入及公开调用方验证已经完成；最新结果以上方收口记录为准。Buffer配置数据/校验值与配置树转换亦已完成，当前下一组是平台对齐分配。早期Buffer指导仍可用于理解实现，完整指导见 [BUFFER_CONFIG_IMPLEMENTATION_GUIDE_20261007_CHS.md](../decisions/BUFFER_CONFIG_IMPLEMENTATION_GUIDE_20261007_CHS.md)。整数越界两方案继续仅记录、暂不选定，不把当前 double 草稿认作新决定。

@@ -1,5 +1,7 @@
 # TimeZone CMake 接入验证（2026-09-30）
 
+> **2026-10-09 平台编译补齐：** 原生整库检查发现此前实现只有POSIX localtime_r/gmtime_r调用；已按BQLog宏补齐Windows localtime_s/gmtime_s及Windows名称localtime分支。日期计算/缓存逻辑保留，local仍由系统日历支持DST；DST专项未验收。实际库/调用方两系统Debug/Release回归见[最新接入记录](PLATFORM_PATH_REVIEW_CMAKE_20261009_CHS.md)，其中原生/WX临时排除既有C4324。下方Linux-only结果保留为原日期快照。
+
 权威仓库：/home/qq344/QLog；feat/spsc-ring-opt@94fefc0，工作树未提交。
 
 ## 本轮修改
