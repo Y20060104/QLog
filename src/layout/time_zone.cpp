@@ -9,6 +9,14 @@
 
 #include "qlog/utility/string_utils.hpp"
 
+#if defined(_WIN32)
+#define QLOG_LOCALTIME(dst, tptr) (::localtime_s((dst), (tptr)) == 0)
+#define QLOG_GMTIME(dst, tptr) (::gmtime_s((dst), (tptr)) == 0)
+#else
+#define QLOG_LOCALTIME(dst, tptr) (::localtime_r((tptr), (dst)) != nullptr)
+#define QLOG_GMTIME(dst, tptr) (::gmtime_r((tptr), (dst)) != nullptr)
+#endif
+
 namespace qlog::layout {
 TimeZone::TimeZone(const std::string& time_zone_str) {
     reset();
@@ -38,17 +46,19 @@ void TimeZone::reset() {
 std::string TimeZone::get_local_timezone_name() {
     const std::time_t now = std::time(nullptr);
     std::tm lt{};
-    if (::localtime_r(&now, &lt) == nullptr) {
+    if (!QLOG_LOCALTIME(&lt, &now)) {
         std::fprintf(stderr, "failed to fetch localtime.\n");
         return "localtime";
     }
 
+#if !defined(_WIN32)
     char tzbuf[128]{};
 
     const std::size_t length = std::strftime(tzbuf, sizeof(tzbuf), "%Z", &lt);
     if (length > 0 && tzbuf[0] != '\0') {
         return std::string(tzbuf);
     }
+#endif
     return "localtime";
 }
 
@@ -131,7 +141,7 @@ void TimeZone::parse_by_string(const std::string& time_zone_str) {
         std::tm lt{};
         std::tm gt{};
 
-        if (::localtime_r(&now, &lt) == nullptr || ::gmtime_r(&now, &gt) == nullptr) {
+        if (!QLOG_LOCALTIME(&lt, &now) || !QLOG_GMTIME(&gt, &now)) {
             return;
         }
 
@@ -182,7 +192,7 @@ bool TimeZone::get_tm_by_epoch(std::uint64_t epoch_ms, std::tm& result) const {
     }
 
     const time_t base_sec = static_cast<time_t>(epoch_second);
-    if (use_local_time_ == true) return ::localtime_r(&base_sec, &result) != nullptr;
+    if (use_local_time_ == true) return QLOG_LOCALTIME(&result, &base_sec);
 
     const std::int64_t delta_sec = static_cast<std::int64_t>(gmt_offset_hours_) * 3600 +
                                    static_cast<std::int64_t>(gmt_offset_minutes_) * 60;
@@ -193,7 +203,7 @@ bool TimeZone::get_tm_by_epoch(std::uint64_t epoch_ms, std::tm& result) const {
         return false;
     }
     const auto adjusted = static_cast<std::time_t>(adjusted_sec);
-    return ::gmtime_r(&adjusted, &result) != nullptr;
+    return QLOG_GMTIME(&result, &adjusted);
 }
 
 void TimeZone::inner_refresh_time_string_cache(std::uint64_t epoch_ms) {
@@ -261,3 +271,6 @@ void TimeZone::restore_by_config(bool use_local_time, std::int32_t gmt_offset_ho
 }
 
 }  // namespace qlog::layout
+
+#undef QLOG_LOCALTIME
+#undef QLOG_GMTIME
