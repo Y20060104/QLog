@@ -6,13 +6,14 @@
 #include <type_traits>
 
 #include "qlog/buffer/log_buffer_defs.hpp"
+#include "qlog/utility/utility_types.hpp"
 
 namespace qlog::buffer {
 class SpscRingBuffer {
    private:
     static constexpr std::size_t BLOCK_SIZE = 8;
     static constexpr std::size_t BLOCK_SIZE_LOG2 = 3;
-    static constexpr std::size_t CACHE_LINE_SIZE = 64;
+    static constexpr std::size_t CACHE_LINE_SIZE = qlog::utility::QLOG_CACHE_LINE_SIZE;
 
     struct alignas(4) ChunkHead {
         std::uint32_t block_num;
@@ -58,10 +59,10 @@ class SpscRingBuffer {
     static_assert(offsetof(Head, aligned_blocks_count_cache_) == 0);
     static_assert(offsetof(Head, rt_reading_cursor_cache_) == 4);
     static_assert(offsetof(Head, rt_writing_cursor_cache_) == 8);
-    static_assert(offsetof(Head, wt_reading_cursor_cache_) == 64);
-    static_assert(offsetof(Head, wt_writing_cursor_cache_) == 68);
-    static_assert(offsetof(Head, reading_cursor_) == 128);
-    static_assert(offsetof(Head, writing_cursor_) == 192);
+    static_assert(offsetof(Head, wt_reading_cursor_cache_) == CACHE_LINE_SIZE);
+    static_assert(offsetof(Head, wt_writing_cursor_cache_) == CACHE_LINE_SIZE + 4);
+    static_assert(offsetof(Head, reading_cursor_) == 2 * CACHE_LINE_SIZE);
+    static_assert(offsetof(Head, writing_cursor_) == 3 * CACHE_LINE_SIZE);
 
    public:
     struct BatchReadHandle {

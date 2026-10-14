@@ -5,6 +5,7 @@
 #include <limits>
 #include <new>
 
+#include "qlog/global/log_vars.hpp"
 #include "qlog/utility/utility.hpp"
 
 namespace qlog::buffer {
@@ -499,7 +500,7 @@ void SpscRingBuffer::debug_check_read_thread() {
 
 bool SpscRingBuffer::is_thread_check_enable() const {
 #ifdef QLOG_DEBUG
-    return check_thread_;
+    return check_thread_ && qlog::log_global_vars::get().is_thread_check_enabled();
 #else
     return false;
 #endif
