@@ -1,5 +1,7 @@
 # Ring 重建指南：按 BQLog 的 block 单位实现 SISO
 
+> **2026-10-14 当前布局更正：** 用户明确采用BQLog提交版公共128。实际SPSC Head=512，writer缓存offset128/132，read/write原子offset256/384；最小长度roundup(expected)+640。下面64字节/256/+320图例为历史数值，不能用于当前实现或作为BQLog当前源码事实。块仍8字节，标准原子/memcpy适配和CR保留；旧64映射不宣称兼容。见[最新决定](GROUP_LIST_ALIGNMENT_20261014_CHS.md)。
+
 > **2026-09-26最新进度（优先于下方2026-09-23快照）：** 第三、四批已填写；本轮补全try_recover_from_exist_memory_map并修正batch结果、断言/拼写、线程身份判断和Release开关方法定义。恢复以外部存储重算有效块数，memcpy读取普通游标快照，用remaining有界验证u32回绕与chunk几何，验证后建立Head/原子并恢复游标；坏快照返回false，非法外部存储仍是assert前置条件。QLOG_DEBUG和NDEBUG/O2两种配置以-Werror编译，并通过独立共享检查库的--no-undefined链接；未接入项目CMake，未运行行为/并发/恢复差分或性能测试。性能CR保留。
 >
 > 下一轮先做Ring的CMake接入与宏PUBLIC传播，再以Record为一个模块：补全指南第2至4节，配合完整Layout指南第4、5节。TimeZone/Layout排在之后；不要把本次链接检查记为完整Ring验收。
