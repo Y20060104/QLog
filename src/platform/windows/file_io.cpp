@@ -400,10 +400,10 @@ static bool add_file_execlusive_check(const platform_file_handle& file_handle,
     auto iter = file_exclusive_cache.find(node_info);
 
     if (iter == file_exclusive_cache.end()) {
-        file_exclusive_cache.emplace(node_info, mode);
+        file_exclusive_cache.add(node_info, mode);
         return true;
     } else {
-        if ((std::int32_t)((iter->second | mode) & file_open_mode_enum::exclusive)) {
+        if ((std::int32_t)((iter->value() | mode) & file_open_mode_enum::exclusive)) {
             return false;
         }
     }

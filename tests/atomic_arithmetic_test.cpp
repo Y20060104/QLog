@@ -7,7 +7,7 @@
 #include <stdexcept>
 #include <thread>
 
-#include "qlog/platform/atomic.hpp"
+#include "qlog/platform/atomic/atomic.hpp"
 
 namespace p = qlog::platform;
 

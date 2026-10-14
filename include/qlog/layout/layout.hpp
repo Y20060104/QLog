@@ -4,11 +4,11 @@
 #include <cstdint>
 #include <limits>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "qlog/layout/time_zone.hpp"
 #include "qlog/record/log_entry_handle.hpp"
+#include "qlog/utility/hash_map.hpp"
 
 namespace qlog::layout {
 class Layout {
@@ -108,7 +108,7 @@ class Layout {
     std::vector<char> format_content_;
     std::uint32_t format_content_cursor_ = 0;
 
-    std::unordered_map<std::uint64_t, std::string> thread_names_cache_;
+    qlog::utility::hash_map<std::uint64_t, std::string> thread_names_cache_;
 
     FormatInfo format_info_;
 };

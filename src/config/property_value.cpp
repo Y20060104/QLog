@@ -272,8 +272,8 @@ PropertyValue PropertyValue::create_from_string(const std::string& property_stri
     Property pbase;
     pbase.load(property_string);
 
-    for (const auto& [key, value] : pbase.maps()) {
-        trans_parson_to_property_value(pv_root, key, value);
+    for (const auto& item : pbase.maps()) {
+        trans_parson_to_property_value(pv_root, item.key(), item.value());
     }
 
     return pv_root;
@@ -378,10 +378,8 @@ void PropertyValue::copy_data_from(const PropertyValue& rhs) {
 
         case PropertyValueType::object_type: {
             object_type copied;
-            copied.reserve(rhs.data_.object.size());
-
-            for (const auto& [key, item] : rhs.data_.object) {
-                copied.emplace(key, std::make_unique<PropertyValue>(*item));
+            for (const auto& item : rhs.data_.object) {
+                copied.add(item.key(), std::make_unique<PropertyValue>(*item.value()));
             }
 
             std::construct_at(std::addressof(data_.object), std::move(copied));
@@ -585,7 +583,7 @@ const PropertyValue& PropertyValue::operator[](const string_type& name) const {
         return get_null_value();
     }
 
-    return *it->second;
+    return *it->value();
 }
 
 PropertyValue& PropertyValue::operator[](const string_type& name) {
@@ -596,10 +594,10 @@ PropertyValue& PropertyValue::operator[](const string_type& name) {
 
     auto it = data_.object.find(name);
     if (it == data_.object.end()) {
-        it = data_.object.emplace(name, std::make_unique<PropertyValue>()).first;
+        it = data_.object.add(name, std::make_unique<PropertyValue>());
     }
 
-    return *it->second;
+    return *it->value();
 }
 
 const PropertyValue& PropertyValue::operator[](array_type::size_type idx) const {
@@ -693,7 +691,7 @@ std::vector<PropertyValue::string_type> PropertyValue::get_object_key_set() cons
     result.reserve(data_.object.size());
 
     for (const auto& item : data_.object) {
-        result.push_back(item.first);
+        result.push_back(item.key());
     }
 
     return result;

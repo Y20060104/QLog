@@ -6,9 +6,10 @@
 #include <cstdio>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include "qlog/utility/hash_map.hpp"
 
 namespace qlog::config {
 enum class PropertyValueType {
@@ -31,7 +32,7 @@ class PropertyValue {
 
     using array_type = std::vector<std::unique_ptr<PropertyValue>>;
 
-    using object_type = std::unordered_map<string_type, std::unique_ptr<PropertyValue>>;
+    using object_type = qlog::utility::hash_map<string_type, std::unique_ptr<PropertyValue>>;
 
     PropertyValue(PropertyValueType value_type = PropertyValueType::null_type);
 

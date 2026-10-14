@@ -19,7 +19,7 @@ std::string Property::get(const std::string& key, const std::string& default_val
     const auto it = properties_.find(key);
 
     if (it != properties_.end()) {
-        return it->second;
+        return it->value();
     }
 
     return default_value;
@@ -28,11 +28,11 @@ std::string Property::get(const std::string& key, const std::string& default_val
 std::string Property::serialize() const {
     std::string lines;
 
-    for (const auto& [key, value] : properties_) {
-        lines += key;
+    for (const auto& item : properties_) {
+        lines += item.key();
         lines += '=';
 
-        for (const char c : value) {
+        for (const char c : item.value()) {
             switch (c) {
                 case '\n':
                     lines += "\\n";
@@ -166,7 +166,7 @@ bool Property::load(const std::string& context) {
         set(key, value);
     }
 
-    return !properties_.empty();
+    return !properties_.is_empty();
 }
 
 }  // namespace qlog::config

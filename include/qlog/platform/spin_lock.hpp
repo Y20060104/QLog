@@ -1,10 +1,13 @@
 #pragma once
 
 #include <cassert>
+#include <limits>
 #include <type_traits>
 
-#include "qlog/platform/atomic.hpp"  //CR:atomic.cpp是不是应该收录再atomic文件夹下？ 如果是 请一并修改include等
+#include "qlog/platform/atomic/atomic.hpp"  //CR:atomic.cpp是不是应该收录再atomic文件夹下atomic/atomic.cpp？ 如果是 请一并修改include等
 #include "qlog/platform/thread_ops.hpp"
+#include "qlog/utility/type_tools.hpp"
+#include "qlog/utility/utility_types.hpp"
 
 namespace qlog::platform {
 
@@ -128,6 +131,181 @@ class scoped_try_spin_lock {
     ~scoped_try_spin_lock() {
         if (locked_) {
             lock_.unlock();
+        }
+    }
+};
+
+class alignas(qlog::utility::QLOG_CACHE_LINE_SIZE) spin_lock_rw_crazy {
+   public:
+    typedef qlog::utility::condition_type_t<sizeof(void*) == 4, std::int32_t, std::int64_t>
+        counter_type;
+
+    static constexpr counter_type write_lock_mark_value =
+        (std::numeric_limits<counter_type>::min)();
+
+    qlog::platform::atomic<counter_type> counter_;
+    char padding_[qlog::utility::QLOG_CACHE_LINE_SIZE - sizeof(counter_)];
+
+   public:
+    spin_lock_rw_crazy() : counter_(0) {
+        (void)padding_;
+    }
+
+    spin_lock_rw_crazy(const spin_lock_rw_crazy&) = delete;
+    spin_lock_rw_crazy(spin_lock_rw_crazy&&) noexcept = delete;
+    spin_lock_rw_crazy& operator=(const spin_lock_rw_crazy&) = delete;
+    spin_lock_rw_crazy& operator=(spin_lock_rw_crazy&&) noexcept = delete;
+
+    inline void read_lock() {
+        while (true) {
+            counter_type previous_counter = counter_.fetch_add_acq_rel(1);
+
+            if (previous_counter >= 0) {
+                break;
+            }
+
+            counter_.fetch_sub_relaxed(1);
+
+            while (true) {
+                qlog::platform::cpu_relax();
+                counter_type current_counter = counter_.load_acquire();
+
+                if (current_counter >= 0) {
+                    break;
+                }
+            }
+        }
+    }
+
+    inline bool try_read_lock() {
+        counter_type previous_counter = counter_.fetch_add_acq_rel(1);
+
+        if (previous_counter >= 0) {
+            return true;
+        }
+
+        counter_.fetch_sub_relaxed(1);
+        return false;
+    }
+
+    inline void read_unlock() {
+        counter_type previous_counter = counter_.fetch_sub_release(1);
+        (void)previous_counter;
+    }
+
+    inline void write_lock() {
+        while (true) {
+            counter_type expected_counter = 0;
+
+            if (counter_.compare_exchange_strong(expected_counter, write_lock_mark_value,
+                                                 qlog::platform::memory_order::acq_rel,
+                                                 qlog::platform::memory_order::acquire)) {
+                break;
+            }
+
+            qlog::platform::cpu_relax();
+        }
+    }
+
+    inline bool try_write_lock() {
+        counter_type expected_counter = 0;
+
+        if (counter_.compare_exchange_strong(expected_counter, write_lock_mark_value,
+                                             qlog::platform::memory_order::acq_rel,
+                                             qlog::platform::memory_order::acquire)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    inline void write_unlock() {
+        while (true) {
+            counter_type expected_counter = write_lock_mark_value;
+
+            if (counter_.compare_exchange_strong(expected_counter, 0,
+                                                 qlog::platform::memory_order::acq_rel,
+                                                 qlog::platform::memory_order::acquire)) {
+                break;
+            }
+        }
+    }
+};
+
+class scoped_spin_lock_read_crazy {
+   private:
+    spin_lock_rw_crazy& lock_;
+
+   public:
+    scoped_spin_lock_read_crazy() = delete;
+
+    explicit scoped_spin_lock_read_crazy(spin_lock_rw_crazy& lock) : lock_(lock) {
+        lock_.read_lock();
+    }
+
+    ~scoped_spin_lock_read_crazy() {
+        lock_.read_unlock();
+    }
+};
+
+class scoped_try_spin_lock_read_crazy {
+   private:
+    spin_lock_rw_crazy& lock_;
+    bool locked_;
+
+   public:
+    scoped_try_spin_lock_read_crazy() = delete;
+
+    explicit scoped_try_spin_lock_read_crazy(spin_lock_rw_crazy& lock) : lock_(lock) {
+        locked_ = lock_.try_read_lock();
+    }
+
+    bool owns_lock() const {
+        return locked_;
+    }
+
+    ~scoped_try_spin_lock_read_crazy() {
+        if (locked_) {
+            lock_.read_unlock();
+        }
+    }
+};
+
+class scoped_spin_lock_write_crazy {
+   private:
+    spin_lock_rw_crazy& lock_;
+
+   public:
+    scoped_spin_lock_write_crazy() = delete;
+
+    explicit scoped_spin_lock_write_crazy(spin_lock_rw_crazy& lock) : lock_(lock) {
+        lock_.write_lock();
+    }
+
+    ~scoped_spin_lock_write_crazy() {
+        lock_.write_unlock();
+    }
+};
+
+class scoped_try_spin_lock_write_crazy {
+   private:
+    spin_lock_rw_crazy& lock_;
+    bool locked_;
+
+   public:
+    scoped_try_spin_lock_write_crazy() = delete;
+
+    explicit scoped_try_spin_lock_write_crazy(spin_lock_rw_crazy& lock) : lock_(lock) {
+        locked_ = lock_.try_write_lock();
+    }
+
+    bool owns_lock() const {
+        return locked_;
+    }
+
+    ~scoped_try_spin_lock_write_crazy() {
+        if (locked_) {
+            lock_.write_unlock();
         }
     }
 };

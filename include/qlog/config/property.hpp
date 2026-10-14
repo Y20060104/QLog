@@ -1,15 +1,16 @@
 #pragma once
 
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include "qlog/utility/hash_map.hpp"
 
 namespace qlog::config {
 
 class Property {
    public:
-    using hash_type = std::unordered_map<std::string, std::string>;
+    using hash_type = qlog::utility::hash_map<std::string, std::string>;
 
     using pair_type = std::pair<std::string, std::string>;
 

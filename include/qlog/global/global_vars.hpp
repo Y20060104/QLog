@@ -5,7 +5,7 @@
 #include <new>
 
 #include "qlog/platform/aligned_memory.hpp"
-#include "qlog/platform/atomic.hpp"
+#include "qlog/platform/atomic/atomic.hpp"
 #include "qlog/platform/thread_ops.hpp"
 
 namespace qlog {

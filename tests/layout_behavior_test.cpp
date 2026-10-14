@@ -284,6 +284,28 @@ void prefix_cases() {
     equal(render(layout, zone, later, categories),
           "UTC0 1970-01-01 00:00:02.007" + thread_prefix + "[I]\t[core]\tx", "time refresh");
 }
+void thread_cache_cases() {
+    Layout layout;
+    TimeZone zone(false, 0, 0, 0, "UTC0");
+    const std::vector<std::string> categories{"core"};
+    for (std::uint64_t i = 0; i < 768; ++i) {
+        const auto tid = 1000 + i;
+        const auto name = "worker-" + std::to_string(i);
+        Record record("x", ArgumentTag::string_utf8_type, {}, 2, 0, tid, name);
+        equal(render(layout, zone, record, categories),
+              time_prefix + "[tid-" + std::to_string(tid) + ' ' + name + "]\t[I]\t[core]\tx",
+              "thread cache insertion after growth");
+    }
+    layout.tidy_memory();
+    for (std::uint64_t i = 0; i < 768; ++i) {
+        const auto tid = 1000 + i;
+        Record record("again", ArgumentTag::string_utf8_type, {}, 2, 0, tid, "renamed");
+        equal(render(layout, zone, record, categories),
+              time_prefix + "[tid-" + std::to_string(tid) + " worker-" + std::to_string(i) +
+                  "]\t[I]\t[core]\tagain",
+              "thread cache lookup retains first name after growth/tidy");
+    }
+}
 void scanner_cases() {
     Args a;
     a.pod(ArgumentTag::int32_type, std::int32_t{7});
@@ -399,6 +421,8 @@ int main(int argc, char** argv) {
             serialized_custom_cases();
         else if (group == "prefix")
             prefix_cases();
+        else if (group == "thread_cache")
+            thread_cache_cases();
         else if (group == "scanner")
             scanner_cases();
         else if (group == "numeric")

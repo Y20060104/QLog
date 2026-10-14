@@ -1,16 +1,16 @@
 #pragma once
 
 #include <cstddef>
-#include <unordered_map>
 #include <vector>
 
 #include "qlog/config/property_value.hpp"
 #include "qlog/global/global_vars.hpp"
 #include "qlog/io/file_manager.hpp"
-#include "qlog/platform/atomic.hpp"
+#include "qlog/platform/atomic/atomic.hpp"
 #include "qlog/platform/file_defs.hpp"
 #include "qlog/platform/file_path.hpp"
 #include "qlog/platform/mutex.hpp"
+#include "qlog/utility/hash_map.hpp"
 
 namespace qlog {
 // CR:common_global_vars是什么意思?
@@ -32,7 +32,7 @@ struct common_global_vars : public global_vars_base<common_global_vars> {
 
     qlog::platform::base_dir_initializer base_dir_init_inst_;
 
-    std::unordered_map<qlog::platform::file_node_info, qlog::platform::file_open_mode_enum>
+    qlog::utility::hash_map<qlog::platform::file_node_info, qlog::platform::file_open_mode_enum>
         file_exclusive_cache_;
     // CR:下面两是什么
     qlog::platform::mutex file_exclusive_mutex_;

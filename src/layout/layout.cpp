@@ -36,7 +36,9 @@ constexpr auto kDigits3 = [] {
 }();
 }  // namespace
 
-Layout::Layout() = default;
+Layout::Layout() {
+    thread_names_cache_.set_expand_rate(4);
+}
 
 void Layout::FormatInfo::reset() {
     used = false;
@@ -1583,19 +1585,18 @@ Layout::enum_layout_result Layout::insert_thread_info(
 
         std::string thread_name = tmp;
 
-        iter = thread_names_cache_
-                   .emplace(log_entry.get_log_head().log_thread_id, std::move(thread_name))
-                   .first;
+        iter =
+            thread_names_cache_.add(log_entry.get_log_head().log_thread_id, std::move(thread_name));
     }
 
-    if (!iter->second.empty()) {
+    if (!iter->value().empty()) {
         expand_format_content_buff_size(format_content_cursor_ +
-                                        static_cast<std::uint32_t>(iter->second.size()));
+                                        static_cast<std::uint32_t>(iter->value().size()));
 
-        std::memcpy(format_content_.data() + format_content_cursor_, iter->second.c_str(),
-                    iter->second.size());
+        std::memcpy(format_content_.data() + format_content_cursor_, iter->value().c_str(),
+                    iter->value().size());
 
-        format_content_cursor_ += static_cast<std::uint32_t>(iter->second.size());
+        format_content_cursor_ += static_cast<std::uint32_t>(iter->value().size());
     }
 
     return enum_layout_result::finished;

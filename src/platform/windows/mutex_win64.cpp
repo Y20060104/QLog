@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <new>
 
-#include "qlog/platform/atomic.hpp"
+#include "qlog/platform/atomic/atomic.hpp"
 #include "qlog/platform/mutex.hpp"
 #include "qlog/platform/thread_ops.hpp"
 #include "qlog/utility/diagnostics.hpp"

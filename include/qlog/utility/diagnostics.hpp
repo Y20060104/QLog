@@ -1,6 +1,8 @@
 #pragma once
 
 #include "qlog/log_level.hpp"
+#include "qlog/platform/aligned_memory.hpp"
+#include "qlog/utility/type_tools.hpp"
 
 namespace qlog::utility {
 
@@ -29,5 +31,24 @@ class util {
     static void set_console_output_callback(type_func_ptr_qlog_util_console_callback callback);
 
     static void _default_console_output(qlog::LogLevel level, const char* text);
+
+    template <typename T, typename... V>
+    static T* aligned_new(const std::size_t alignment, V&&... args) {
+        void* ptr = qlog::platform::aligned_alloc(alignment, sizeof(T));
+
+        if (!ptr) {
+            return nullptr;
+        }
+
+        new (ptr, qlog::utility::enum_new_dummy::dummy) T(qlog::utility::forward<V>(args)...);
+
+        return static_cast<T*>(ptr);
+    }
+
+    template <typename T, typename... V>
+    static void aligned_delete(T* ptr) {
+        qlog::utility::object_destructor<T>::destruct(ptr);
+        qlog::platform::aligned_free(ptr);
+    }
 };
 }  // namespace qlog::utility

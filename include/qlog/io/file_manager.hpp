@@ -10,7 +10,7 @@
 #include <utility>
 #include <vector>
 
-#include "qlog/platform/atomic.hpp"
+#include "qlog/platform/atomic/atomic.hpp"
 #include "qlog/platform/file_defs.hpp"
 #include "qlog/platform/file_io.hpp"
 #include "qlog/platform/mutex.hpp"
