@@ -10,7 +10,7 @@ set_tests_properties(qlog.smoke PROPERTIES LABELS "smoke")
 add_executable(qlog_layout_behavior_test layout_behavior_test.cpp)
 target_link_libraries(qlog_layout_behavior_test PRIVATE QLog::qlog)
 qlog_enable_warnings(qlog_layout_behavior_test)
-foreach(group IN ITEMS prefix scanner numeric arguments failure reuse
+foreach(group IN ITEMS prefix thread_cache scanner numeric arguments failure reuse
                        serialization_mixed serialization_strings serialization_custom)
     add_test(NAME qlog.layout.${group} COMMAND qlog_layout_behavior_test ${group})
     set_tests_properties(qlog.layout.${group} PROPERTIES LABELS "layout")
@@ -29,3 +29,28 @@ target_link_libraries(qlog_atomic_arithmetic_test PRIVATE QLog::qlog)
 qlog_enable_warnings(qlog_atomic_arithmetic_test)
 add_test(NAME qlog.platform.atomic_arithmetic COMMAND qlog_atomic_arithmetic_test)
 set_tests_properties(qlog.platform.atomic_arithmetic PROPERTIES LABELS "platform;atomic")
+
+# Original HashMap public behavior: collisions, growth, reuse and object lifetime.
+add_executable(qlog_hash_map_test hash_map_test.cpp)
+target_link_libraries(qlog_hash_map_test PRIVATE QLog::qlog)
+qlog_enable_warnings(qlog_hash_map_test)
+foreach(group IN ITEMS basic collision lifetime)
+    add_test(NAME qlog.utility.hash_map.${group} COMMAND qlog_hash_map_test ${group})
+    set_tests_properties(qlog.utility.hash_map.${group} PROPERTIES LABELS "utility;hash_map")
+endforeach()
+
+# Original HashMap integration in strings, configuration and native file registration.
+add_executable(qlog_hash_map_integration_test hash_map_integration_test.cpp)
+target_link_libraries(qlog_hash_map_integration_test PRIVATE QLog::qlog)
+qlog_enable_warnings(qlog_hash_map_integration_test)
+foreach(group IN ITEMS strings properties registry)
+    add_test(NAME qlog.hash_map_integration.${group} COMMAND qlog_hash_map_integration_test ${group})
+    set_tests_properties(qlog.hash_map_integration.${group} PROPERTIES LABELS "hash_map;integration")
+endforeach()
+
+# Original global Debug disable counter, nested RAII and Ring query integration.
+add_executable(qlog_thread_check_test thread_check_test.cpp)
+target_link_libraries(qlog_thread_check_test PRIVATE QLog::qlog)
+qlog_enable_warnings(qlog_thread_check_test)
+add_test(NAME qlog.buffer.thread_check_policy COMMAND qlog_thread_check_test)
+set_tests_properties(qlog.buffer.thread_check_policy PROPERTIES LABELS "buffer;debug;global")

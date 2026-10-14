@@ -25,6 +25,12 @@ add_library(qlog STATIC
     src/version.cpp
     src/buffer/spsc_ring_buffer.cpp
     src/buffer/log_buffer_config.cpp
+    src/buffer/normal_buffer.cpp
+    src/buffer/miso_ring_buffer.cpp
+    src/buffer/block_list.cpp
+    src/buffer/group_list.cpp
+    src/buffer/oversize_buffer.cpp
+    src/buffer/log_buffer.cpp
     src/config/property.cpp
     src/config/property_value.cpp
     src/config/filter_config.cpp
@@ -40,6 +46,7 @@ add_library(qlog STATIC
     src/utility/hash_x86_crc32c.cpp
     src/global/global_vars.cpp
     src/global/common_vars.cpp
+    src/global/log_vars.cpp
     src/io/file_manager.cpp
     src/platform/file_defs.cpp
     src/platform/file_path.cpp
@@ -60,6 +67,7 @@ if(WIN32)
         src/platform/windows/file_io.cpp
         src/platform/windows/file_path.cpp
         src/platform/windows/thread_ops.cpp
+        src/platform/windows/time_ops.cpp
         src/platform/windows/mutex_win64.cpp
         src/platform/windows/system_api.cpp
     )
@@ -69,12 +77,26 @@ else()
         src/platform/posix/file_io.cpp
         src/platform/posix/file_path.cpp
         src/platform/posix/thread_ops.cpp
+        src/platform/posix/time_ops.cpp
         src/platform/posix/mutex_posix.cpp
     )
     find_package(Threads REQUIRED)
     target_link_libraries(qlog PUBLIC Threads::Threads)
 endif()
 
+target_sources(qlog PRIVATE
+    src/platform/memory_map.cpp
+)
+
+if(WIN32)
+    target_sources(qlog PRIVATE
+        src/platform/windows/memory_map.cpp
+    )
+else()
+    target_sources(qlog PRIVATE
+        src/platform/posix/memory_map.cpp
+    )
+endif()
 # Block-SISO and the replacement Record view are built above.
 # Retired byte-cursor Ring/Record fuzzers and benchmarks remain disabled.
 if(QLOG_BUILD_FUZZERS OR QLOG_BUILD_RECORD_BENCHMARK OR QLOG_BUILD_BENCHMARKS)
