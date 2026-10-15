@@ -1,0 +1,7 @@
+# BQLog source attribution
+
+QLog contains C++ files and algorithms adapted from Tencent BQLog, Copyright (C) 2025-2026 Tencent, licensed under Apache License 2.0. The adopted reference is commit 78cbfbef4f87e7558335f0c04bf6dd6894b46451 of Tencent/BqLog. Original copyright headers remain in directly migrated runtime and Appender files; platform stack capture and record begin/finish are also adapted from that reference. The license text is retained in LICENSES/BQLog-APACHE-2.0.txt. This notice does not relicense unrelated QLog code.
+
+The compressed v10 file container/writer, bounded template cache, VLQ/ZigZag, UTF-Mixed, encryption helpers (RSA/AES/Vernam), random helpers and public test-key fixtures are also adapted from the same reference. Normal-byte encoding is retained; the documented RSA zero-integer fixes avoid out-of-range reads, and standard-container/aligned-allocation adaptations are described in docs/decisions/FILE_COMPRESSED_ALIGNMENT_20261015_CHS.md.
+
+The C++ benchmark entry, generated format-template pool and write-thread-cost test in benchmark/cpp are adapted from Tencent/BqLog commit 086f2fd831af86fcfa40e90015f89626d498d3d7, retrieved on 2026-10-15. Original copyright notices are retained where present. QLog uses its existing standard-library types and normal logging API; upstream FAST cases are not emulated. The original benchmark file hashes are recorded in benchmark/cpp/UPSTREAM.json. This benchmark reference does not change the earlier reference used for the production library.

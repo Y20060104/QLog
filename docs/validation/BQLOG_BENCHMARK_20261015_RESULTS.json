@@ -1,0 +1,1018 @@
+{
+  "date": "2026-10-15",
+  "bqlog_head": "086f2fd831af86fcfa40e90015f89626d498d3d7",
+  "qlog_head": "c2faba4032c145de534d0a3d70cc05af58b523b4",
+  "qlog_worktree_manifest_sha256": "8a1690754ed559601ecc0227727b80175cc67610f2f8f1e1f4a782cf740fcfd9",
+  "binary_sha256": {
+    "qlog": "05a1e54db2ef47c5c7039721da6d209d4f080535d8a1af5049835076634710e0",
+    "bqlog": "2090e98362de3722b5d9306c3187259d7e53637348eda01276367e619ba15dbc"
+  },
+  "environment": {
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "compiler": "g++ (Ubuntu 13.3.0-6ubuntu2~24.04.1) 13.3.0\nCopyright (C) 2023 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+    "cpu": "Architecture:                         x86_64\nCPU op-mode(s):                       32-bit, 64-bit\nAddress sizes:                        39 bits physical, 48 bits virtual\nByte Order:                           Little Endian\nCPU(s):                               12\nOn-line CPU(s) list:                  0-11\nVendor ID:                            GenuineIntel\nModel name:                           Intel(R) Core(TM) i7-9750H CPU @ 2.60GHz\nCPU family:                           6\nModel:                                158\nThread(s) per core:                   2\nCore(s) per socket:                   6\nSocket(s):                            1\nStepping:                             10\nBogoMIPS:                             5184.05\nFlags:                                fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ss ht syscall nx pdpe1gb rdtscp lm constant_tsc arch_perfmon rep_good nopl xtopology cpuid tsc_known_freq pni pclmulqdq vmx ssse3 fma cx16 pdcm pcid sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm abm 3dnowprefetch pti ssbd ibrs ibpb stibp tpr_shadow ept vpid ept_ad fsgsbase bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt xsaveopt xsavec xgetbv1 xsaves vnmi md_clear flush_l1d arch_capabilities\nVirtualization:                       VT-x\nHypervisor vendor:                    Microsoft\nVirtualization type:                  full\nL1d cache:                            192 KiB (6 instances)\nL1i cache:                            192 KiB (6 instances)\nL2 cache:                             1.5 MiB (6 instances)\nL3 cache:                             12 MiB (1 instance)\nNUMA node(s):                         1\nNUMA node0 CPU(s):                    0-11\nVulnerability Gather data sampling:   Unknown: Dependent on hypervisor status\nVulnerability Itlb multihit:          KVM: Mitigation: VMX disabled\nVulnerability L1tf:                   Mitigation; PTE Inversion; VMX conditional cache flushes, SMT vulnerable\nVulnerability Mds:                    Mitigation; Clear CPU buffers; SMT Host state unknown\nVulnerability Meltdown:               Mitigation; PTI\nVulnerability Mmio stale data:        Mitigation; Clear CPU buffers; SMT Host state unknown\nVulnerability Reg file data sampling: Not affected\nVulnerability Retbleed:               Mitigation; IBRS\nVulnerability Spec rstack overflow:   Not affected\nVulnerability Spec store bypass:      Mitigation; Speculative Store Bypass disabled via prctl\nVulnerability Spectre v1:             Mitigation; usercopy/swapgs barriers and __user pointer sanitization\nVulnerability Spectre v2:             Mitigation; IBRS; IBPB conditional; STIBP conditional; RSB filling; PBRSB-eIBRS Not affected; BHI SW loop, KVM SW loop\nVulnerability Srbds:                  Unknown: Dependent on hypervisor status\nVulnerability Tsx async abort:        Not affected\n",
+    "affinity": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "settings": {
+      "threads": [
+        1,
+        4
+      ],
+      "repeats": 3,
+      "logs_per_thread_per_throughput_case": 2000000,
+      "BENCH_POOL_SIZE": 50000,
+      "latency_iterations": 10000,
+      "latency_messages_per_iteration": 20
+    },
+    "started_utc": "2026-10-15T06:54:27.636075+00:00",
+    "completed_utc": "2026-10-15T07:06:35.227009+00:00",
+    "source_drift": false,
+    "reference_drift": false
+  },
+  "normal_interface": [
+    {
+      "threads": 1,
+      "case": "Begin Test Compressed File Log ASCII UTF8",
+      "qlog": {
+        "milliseconds": [
+          554,
+          494,
+          1315
+        ],
+        "median_ms": 554,
+        "min_ms": 494,
+        "max_ms": 1315,
+        "nominal_million_calls_per_second": 3.6101083032490973
+      },
+      "bqlog": {
+        "milliseconds": [
+          535,
+          703,
+          638
+        ],
+        "median_ms": 638,
+        "min_ms": 535,
+        "max_ms": 703,
+        "nominal_million_calls_per_second": 3.134796238244514
+      },
+      "qlog_bqlog_throughput_ratio": 1.151624548736462
+    },
+    {
+      "threads": 1,
+      "case": "Begin Test Compressed File Log ASCII UTF16",
+      "qlog": {
+        "milliseconds": [
+          934,
+          761,
+          889
+        ],
+        "median_ms": 889,
+        "min_ms": 761,
+        "max_ms": 934,
+        "nominal_million_calls_per_second": 2.249718785151856
+      },
+      "bqlog": {
+        "milliseconds": [
+          1143,
+          1205,
+          1177
+        ],
+        "median_ms": 1177,
+        "min_ms": 1143,
+        "max_ms": 1205,
+        "nominal_million_calls_per_second": 1.699235344095157
+      },
+      "qlog_bqlog_throughput_ratio": 1.3239595050618673
+    },
+    {
+      "threads": 1,
+      "case": "Begin Test Compressed File Log CHINESE UTF16",
+      "qlog": {
+        "milliseconds": [
+          1015,
+          842,
+          802
+        ],
+        "median_ms": 842,
+        "min_ms": 802,
+        "max_ms": 1015,
+        "nominal_million_calls_per_second": 2.375296912114014
+      },
+      "bqlog": {
+        "milliseconds": [
+          1373,
+          1052,
+          992
+        ],
+        "median_ms": 1052,
+        "min_ms": 992,
+        "max_ms": 1373,
+        "nominal_million_calls_per_second": 1.9011406844106464
+      },
+      "qlog_bqlog_throughput_ratio": 1.2494061757719714
+    },
+    {
+      "threads": 1,
+      "case": "Begin Test Compressed File Log MIXED(ASCII + CHINESE) UTF16",
+      "qlog": {
+        "milliseconds": [
+          832,
+          975,
+          876
+        ],
+        "median_ms": 876,
+        "min_ms": 832,
+        "max_ms": 975,
+        "nominal_million_calls_per_second": 2.28310502283105
+      },
+      "bqlog": {
+        "milliseconds": [
+          1503,
+          1728,
+          2397
+        ],
+        "median_ms": 1728,
+        "min_ms": 1503,
+        "max_ms": 2397,
+        "nominal_million_calls_per_second": 1.1574074074074074
+      },
+      "qlog_bqlog_throughput_ratio": 1.9726027397260273
+    },
+    {
+      "threads": 1,
+      "case": "Begin Compressed File Log Test 1, 4 params========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          301,
+          256,
+          271
+        ],
+        "median_ms": 271,
+        "min_ms": 256,
+        "max_ms": 301,
+        "nominal_million_calls_per_second": 7.380073800738008
+      },
+      "bqlog": {
+        "milliseconds": [
+          180,
+          239,
+          169
+        ],
+        "median_ms": 180,
+        "min_ms": 169,
+        "max_ms": 239,
+        "nominal_million_calls_per_second": 11.11111111111111
+      },
+      "qlog_bqlog_throughput_ratio": 0.6642066420664207
+    },
+    {
+      "threads": 1,
+      "case": "Begin Encrypted Compressed File Log Test 1, 4 params========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          311,
+          293,
+          297
+        ],
+        "median_ms": 297,
+        "min_ms": 293,
+        "max_ms": 311,
+        "nominal_million_calls_per_second": 6.734006734006734
+      },
+      "bqlog": {
+        "milliseconds": [
+          269,
+          199,
+          196
+        ],
+        "median_ms": 199,
+        "min_ms": 196,
+        "max_ms": 269,
+        "nominal_million_calls_per_second": 10.050251256281406
+      },
+      "qlog_bqlog_throughput_ratio": 0.67003367003367
+    },
+    {
+      "threads": 1,
+      "case": "Begin Text File Log Test 2, 4 params============ (log.info)",
+      "qlog": {
+        "milliseconds": [
+          1121,
+          1062,
+          1324
+        ],
+        "median_ms": 1121,
+        "min_ms": 1062,
+        "max_ms": 1324,
+        "nominal_million_calls_per_second": 1.784121320249777
+      },
+      "bqlog": {
+        "milliseconds": [
+          712,
+          983,
+          686
+        ],
+        "median_ms": 712,
+        "min_ms": 686,
+        "max_ms": 983,
+        "nominal_million_calls_per_second": 2.8089887640449436
+      },
+      "qlog_bqlog_throughput_ratio": 0.6351471900089206
+    },
+    {
+      "threads": 1,
+      "case": "Begin Compressed File Log Test 3, no param========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          188,
+          183,
+          181
+        ],
+        "median_ms": 183,
+        "min_ms": 181,
+        "max_ms": 188,
+        "nominal_million_calls_per_second": 10.92896174863388
+      },
+      "bqlog": {
+        "milliseconds": [
+          110,
+          122,
+          107
+        ],
+        "median_ms": 110,
+        "min_ms": 107,
+        "max_ms": 122,
+        "nominal_million_calls_per_second": 18.18181818181818
+      },
+      "qlog_bqlog_throughput_ratio": 0.6010928961748634
+    },
+    {
+      "threads": 1,
+      "case": "Begin Encrypted Compressed File Log Test 3, no param========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          195,
+          184,
+          195
+        ],
+        "median_ms": 195,
+        "min_ms": 184,
+        "max_ms": 195,
+        "nominal_million_calls_per_second": 10.256410256410255
+      },
+      "bqlog": {
+        "milliseconds": [
+          141,
+          130,
+          105
+        ],
+        "median_ms": 130,
+        "min_ms": 105,
+        "max_ms": 141,
+        "nominal_million_calls_per_second": 15.384615384615385
+      },
+      "qlog_bqlog_throughput_ratio": 0.6666666666666666
+    },
+    {
+      "threads": 1,
+      "case": "Begin Text File Log Test 4, no param============ (log.info)",
+      "qlog": {
+        "milliseconds": [
+          453,
+          498,
+          438
+        ],
+        "median_ms": 453,
+        "min_ms": 438,
+        "max_ms": 498,
+        "nominal_million_calls_per_second": 4.415011037527593
+      },
+      "bqlog": {
+        "milliseconds": [
+          439,
+          348,
+          337
+        ],
+        "median_ms": 348,
+        "min_ms": 337,
+        "max_ms": 439,
+        "nominal_million_calls_per_second": 5.74712643678161
+      },
+      "qlog_bqlog_throughput_ratio": 0.7682119205298014
+    },
+    {
+      "threads": 1,
+      "case": "Begin Compressed Multi-Format Test: SINGLE template",
+      "qlog": {
+        "milliseconds": [
+          230,
+          225,
+          221
+        ],
+        "median_ms": 225,
+        "min_ms": 221,
+        "max_ms": 230,
+        "nominal_million_calls_per_second": 8.88888888888889
+      },
+      "bqlog": {
+        "milliseconds": [
+          192,
+          257,
+          191
+        ],
+        "median_ms": 192,
+        "min_ms": 191,
+        "max_ms": 257,
+        "nominal_million_calls_per_second": 10.416666666666666
+      },
+      "qlog_bqlog_throughput_ratio": 0.8533333333333334
+    },
+    {
+      "threads": 1,
+      "case": "Begin Compressed Multi-Format Test: ROUND-ROBIN (no locality)",
+      "qlog": {
+        "milliseconds": [
+          243,
+          241,
+          241
+        ],
+        "median_ms": 241,
+        "min_ms": 241,
+        "max_ms": 243,
+        "nominal_million_calls_per_second": 8.298755186721992
+      },
+      "bqlog": {
+        "milliseconds": [
+          248,
+          207,
+          166
+        ],
+        "median_ms": 207,
+        "min_ms": 166,
+        "max_ms": 248,
+        "nominal_million_calls_per_second": 9.66183574879227
+      },
+      "qlog_bqlog_throughput_ratio": 0.8589211618257261
+    },
+    {
+      "threads": 1,
+      "case": "Begin Compressed Multi-Format Test: HOT-WINDOW (locality)",
+      "qlog": {
+        "milliseconds": [
+          226,
+          234,
+          231
+        ],
+        "median_ms": 231,
+        "min_ms": 226,
+        "max_ms": 234,
+        "nominal_million_calls_per_second": 8.658008658008658
+      },
+      "bqlog": {
+        "milliseconds": [
+          249,
+          180,
+          144
+        ],
+        "median_ms": 180,
+        "min_ms": 144,
+        "max_ms": 249,
+        "nominal_million_calls_per_second": 11.11111111111111
+      },
+      "qlog_bqlog_throughput_ratio": 0.7792207792207793
+    },
+    {
+      "threads": 4,
+      "case": "Begin Test Compressed File Log ASCII UTF8",
+      "qlog": {
+        "milliseconds": [
+          820,
+          754,
+          846
+        ],
+        "median_ms": 820,
+        "min_ms": 754,
+        "max_ms": 846,
+        "nominal_million_calls_per_second": 9.75609756097561
+      },
+      "bqlog": {
+        "milliseconds": [
+          784,
+          871,
+          1034
+        ],
+        "median_ms": 871,
+        "min_ms": 784,
+        "max_ms": 1034,
+        "nominal_million_calls_per_second": 9.184845005740527
+      },
+      "qlog_bqlog_throughput_ratio": 1.0621951219512196
+    },
+    {
+      "threads": 4,
+      "case": "Begin Test Compressed File Log ASCII UTF16",
+      "qlog": {
+        "milliseconds": [
+          1143,
+          1029,
+          971
+        ],
+        "median_ms": 1029,
+        "min_ms": 971,
+        "max_ms": 1143,
+        "nominal_million_calls_per_second": 7.774538386783284
+      },
+      "bqlog": {
+        "milliseconds": [
+          1162,
+          946,
+          1092
+        ],
+        "median_ms": 1092,
+        "min_ms": 946,
+        "max_ms": 1162,
+        "nominal_million_calls_per_second": 7.326007326007326
+      },
+      "qlog_bqlog_throughput_ratio": 1.0612244897959184
+    },
+    {
+      "threads": 4,
+      "case": "Begin Test Compressed File Log CHINESE UTF16",
+      "qlog": {
+        "milliseconds": [
+          1197,
+          1136,
+          1086
+        ],
+        "median_ms": 1136,
+        "min_ms": 1086,
+        "max_ms": 1197,
+        "nominal_million_calls_per_second": 7.04225352112676
+      },
+      "bqlog": {
+        "milliseconds": [
+          1272,
+          1054,
+          1384
+        ],
+        "median_ms": 1272,
+        "min_ms": 1054,
+        "max_ms": 1384,
+        "nominal_million_calls_per_second": 6.289308176100628
+      },
+      "qlog_bqlog_throughput_ratio": 1.119718309859155
+    },
+    {
+      "threads": 4,
+      "case": "Begin Test Compressed File Log MIXED(ASCII + CHINESE) UTF16",
+      "qlog": {
+        "milliseconds": [
+          1215,
+          1208,
+          1254
+        ],
+        "median_ms": 1215,
+        "min_ms": 1208,
+        "max_ms": 1254,
+        "nominal_million_calls_per_second": 6.584362139917696
+      },
+      "bqlog": {
+        "milliseconds": [
+          1003,
+          1322,
+          1312
+        ],
+        "median_ms": 1312,
+        "min_ms": 1003,
+        "max_ms": 1322,
+        "nominal_million_calls_per_second": 6.097560975609756
+      },
+      "qlog_bqlog_throughput_ratio": 1.0798353909465022
+    },
+    {
+      "threads": 4,
+      "case": "Begin Compressed File Log Test 1, 4 params========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          703,
+          586,
+          662
+        ],
+        "median_ms": 662,
+        "min_ms": 586,
+        "max_ms": 703,
+        "nominal_million_calls_per_second": 12.084592145015105
+      },
+      "bqlog": {
+        "milliseconds": [
+          789,
+          703,
+          540
+        ],
+        "median_ms": 703,
+        "min_ms": 540,
+        "max_ms": 789,
+        "nominal_million_calls_per_second": 11.379800853485063
+      },
+      "qlog_bqlog_throughput_ratio": 1.0619335347432024
+    },
+    {
+      "threads": 4,
+      "case": "Begin Encrypted Compressed File Log Test 1, 4 params========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          809,
+          640,
+          709
+        ],
+        "median_ms": 709,
+        "min_ms": 640,
+        "max_ms": 809,
+        "nominal_million_calls_per_second": 11.283497884344145
+      },
+      "bqlog": {
+        "milliseconds": [
+          944,
+          681,
+          635
+        ],
+        "median_ms": 681,
+        "min_ms": 635,
+        "max_ms": 944,
+        "nominal_million_calls_per_second": 11.747430249632894
+      },
+      "qlog_bqlog_throughput_ratio": 0.9605077574047954
+    },
+    {
+      "threads": 4,
+      "case": "Begin Text File Log Test 2, 4 params============ (log.info)",
+      "qlog": {
+        "milliseconds": [
+          4682,
+          4526,
+          4208
+        ],
+        "median_ms": 4526,
+        "min_ms": 4208,
+        "max_ms": 4682,
+        "nominal_million_calls_per_second": 1.7675651789659743
+      },
+      "bqlog": {
+        "milliseconds": [
+          3294,
+          4442,
+          3141
+        ],
+        "median_ms": 3294,
+        "min_ms": 3141,
+        "max_ms": 4442,
+        "nominal_million_calls_per_second": 2.4286581663630846
+      },
+      "qlog_bqlog_throughput_ratio": 0.7277949624392399
+    },
+    {
+      "threads": 4,
+      "case": "Begin Compressed File Log Test 3, no param========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          387,
+          357,
+          371
+        ],
+        "median_ms": 371,
+        "min_ms": 357,
+        "max_ms": 387,
+        "nominal_million_calls_per_second": 21.5633423180593
+      },
+      "bqlog": {
+        "milliseconds": [
+          507,
+          511,
+          528
+        ],
+        "median_ms": 511,
+        "min_ms": 507,
+        "max_ms": 528,
+        "nominal_million_calls_per_second": 15.655577299412917
+      },
+      "qlog_bqlog_throughput_ratio": 1.3773584905660377
+    },
+    {
+      "threads": 4,
+      "case": "Begin Encrypted Compressed File Log Test 3, no param========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          542,
+          378,
+          370
+        ],
+        "median_ms": 378,
+        "min_ms": 370,
+        "max_ms": 542,
+        "nominal_million_calls_per_second": 21.164021164021165
+      },
+      "bqlog": {
+        "milliseconds": [
+          609,
+          355,
+          640
+        ],
+        "median_ms": 609,
+        "min_ms": 355,
+        "max_ms": 640,
+        "nominal_million_calls_per_second": 13.136288998357964
+      },
+      "qlog_bqlog_throughput_ratio": 1.6111111111111112
+    },
+    {
+      "threads": 4,
+      "case": "Begin Text File Log Test 4, no param============ (log.info)",
+      "qlog": {
+        "milliseconds": [
+          1549,
+          1809,
+          1372
+        ],
+        "median_ms": 1549,
+        "min_ms": 1372,
+        "max_ms": 1809,
+        "nominal_million_calls_per_second": 5.1646223369916076
+      },
+      "bqlog": {
+        "milliseconds": [
+          1434,
+          1399,
+          1252
+        ],
+        "median_ms": 1399,
+        "min_ms": 1252,
+        "max_ms": 1434,
+        "nominal_million_calls_per_second": 5.718370264474625
+      },
+      "qlog_bqlog_throughput_ratio": 0.9031633311814073
+    },
+    {
+      "threads": 4,
+      "case": "Begin Compressed Multi-Format Test: SINGLE template",
+      "qlog": {
+        "milliseconds": [
+          666,
+          472,
+          494
+        ],
+        "median_ms": 494,
+        "min_ms": 472,
+        "max_ms": 666,
+        "nominal_million_calls_per_second": 16.194331983805668
+      },
+      "bqlog": {
+        "milliseconds": [
+          1180,
+          947,
+          527
+        ],
+        "median_ms": 947,
+        "min_ms": 527,
+        "max_ms": 1180,
+        "nominal_million_calls_per_second": 8.447729672650475
+      },
+      "qlog_bqlog_throughput_ratio": 1.917004048582996
+    },
+    {
+      "threads": 4,
+      "case": "Begin Compressed Multi-Format Test: ROUND-ROBIN (no locality)",
+      "qlog": {
+        "milliseconds": [
+          722,
+          734,
+          610
+        ],
+        "median_ms": 722,
+        "min_ms": 610,
+        "max_ms": 734,
+        "nominal_million_calls_per_second": 11.0803324099723
+      },
+      "bqlog": {
+        "milliseconds": [
+          679,
+          816,
+          659
+        ],
+        "median_ms": 679,
+        "min_ms": 659,
+        "max_ms": 816,
+        "nominal_million_calls_per_second": 11.782032400589102
+      },
+      "qlog_bqlog_throughput_ratio": 0.9404432132963989
+    },
+    {
+      "threads": 4,
+      "case": "Begin Compressed Multi-Format Test: HOT-WINDOW (locality)",
+      "qlog": {
+        "milliseconds": [
+          570,
+          620,
+          534
+        ],
+        "median_ms": 570,
+        "min_ms": 534,
+        "max_ms": 620,
+        "nominal_million_calls_per_second": 14.035087719298247
+      },
+      "bqlog": {
+        "milliseconds": [
+          575,
+          587,
+          728
+        ],
+        "median_ms": 587,
+        "min_ms": 575,
+        "max_ms": 728,
+        "nominal_million_calls_per_second": 13.62862010221465
+      },
+      "qlog_bqlog_throughput_ratio": 1.0298245614035089
+    }
+  ],
+  "bqlog_fast_only": [
+    {
+      "threads": 1,
+      "case": "Begin Compressed File Log Test 1, 4 params========= (BQ_LOG_FAST_INFO)",
+      "label": "压缩，4 参数",
+      "milliseconds": [
+        155,
+        170,
+        135
+      ],
+      "median_ms": 155,
+      "min_ms": 135,
+      "max_ms": 170,
+      "nominal_million_calls_per_second": 12.903225806451612
+    },
+    {
+      "threads": 1,
+      "case": "Begin Encrypted Compressed File Log Test 1, 4 params========= (BQ_LOG_FAST_INFO)",
+      "label": "加密压缩，4 参数",
+      "milliseconds": [
+        160,
+        285,
+        140
+      ],
+      "median_ms": 160,
+      "min_ms": 140,
+      "max_ms": 285,
+      "nominal_million_calls_per_second": 12.5
+    },
+    {
+      "threads": 1,
+      "case": "Begin Text File Log Test 2, 4 params============ (BQ_LOG_FAST_INFO)",
+      "label": "Text，4 参数",
+      "milliseconds": [
+        825,
+        695,
+        698
+      ],
+      "median_ms": 698,
+      "min_ms": 695,
+      "max_ms": 825,
+      "nominal_million_calls_per_second": 2.865329512893983
+    },
+    {
+      "threads": 1,
+      "case": "Begin Compressed File Log Test 3, no param========= (BQ_LOG_FAST_INFO)",
+      "label": "压缩，无参数",
+      "milliseconds": [
+        93,
+        109,
+        80
+      ],
+      "median_ms": 93,
+      "min_ms": 80,
+      "max_ms": 109,
+      "nominal_million_calls_per_second": 21.50537634408602
+    },
+    {
+      "threads": 1,
+      "case": "Begin Encrypted Compressed File Log Test 3, no param========= (BQ_LOG_FAST_INFO)",
+      "label": "加密压缩，无参数",
+      "milliseconds": [
+        94,
+        115,
+        81
+      ],
+      "median_ms": 94,
+      "min_ms": 81,
+      "max_ms": 115,
+      "nominal_million_calls_per_second": 21.27659574468085
+    },
+    {
+      "threads": 1,
+      "case": "Begin Text File Log Test 4, no param============ (BQ_LOG_FAST_INFO)",
+      "label": "Text，无参数",
+      "milliseconds": [
+        499,
+        366,
+        406
+      ],
+      "median_ms": 406,
+      "min_ms": 366,
+      "max_ms": 499,
+      "nominal_million_calls_per_second": 4.926108374384237
+    },
+    {
+      "threads": 4,
+      "case": "Begin Compressed File Log Test 1, 4 params========= (BQ_LOG_FAST_INFO)",
+      "label": "压缩，4 参数",
+      "milliseconds": [
+        884,
+        606,
+        837
+      ],
+      "median_ms": 837,
+      "min_ms": 606,
+      "max_ms": 884,
+      "nominal_million_calls_per_second": 9.55794504181601
+    },
+    {
+      "threads": 4,
+      "case": "Begin Encrypted Compressed File Log Test 1, 4 params========= (BQ_LOG_FAST_INFO)",
+      "label": "加密压缩，4 参数",
+      "milliseconds": [
+        867,
+        551,
+        685
+      ],
+      "median_ms": 685,
+      "min_ms": 551,
+      "max_ms": 867,
+      "nominal_million_calls_per_second": 11.678832116788321
+    },
+    {
+      "threads": 4,
+      "case": "Begin Text File Log Test 2, 4 params============ (BQ_LOG_FAST_INFO)",
+      "label": "Text，4 参数",
+      "milliseconds": [
+        3265,
+        3361,
+        3286
+      ],
+      "median_ms": 3286,
+      "min_ms": 3265,
+      "max_ms": 3361,
+      "nominal_million_calls_per_second": 2.4345709068776626
+    },
+    {
+      "threads": 4,
+      "case": "Begin Compressed File Log Test 3, no param========= (BQ_LOG_FAST_INFO)",
+      "label": "压缩，无参数",
+      "milliseconds": [
+        464,
+        561,
+        566
+      ],
+      "median_ms": 561,
+      "min_ms": 464,
+      "max_ms": 566,
+      "nominal_million_calls_per_second": 14.260249554367201
+    },
+    {
+      "threads": 4,
+      "case": "Begin Encrypted Compressed File Log Test 3, no param========= (BQ_LOG_FAST_INFO)",
+      "label": "加密压缩，无参数",
+      "milliseconds": [
+        451,
+        532,
+        512
+      ],
+      "median_ms": 512,
+      "min_ms": 451,
+      "max_ms": 532,
+      "nominal_million_calls_per_second": 15.625
+    },
+    {
+      "threads": 4,
+      "case": "Begin Text File Log Test 4, no param============ (BQ_LOG_FAST_INFO)",
+      "label": "Text，无参数",
+      "milliseconds": [
+        3692,
+        1384,
+        1416
+      ],
+      "median_ms": 1416,
+      "min_ms": 1384,
+      "max_ms": 3692,
+      "nominal_million_calls_per_second": 5.649717514124294
+    }
+  ],
+  "batch_mean_latency": [
+    {
+      "backend": "qlog",
+      "threads": 1,
+      "mode": "normal",
+      "batch_mean_ns_per_log": {
+        "50th": 1128.5,
+        "75th": 1176.0,
+        "90th": 1244.5,
+        "95th": 1444.7,
+        "99th": 1793.0,
+        "99.9th": 2604.9,
+        "worst": 34722.2
+      }
+    },
+    {
+      "backend": "bqlog",
+      "threads": 1,
+      "mode": "normal",
+      "batch_mean_ns_per_log": {
+        "50th": 70.5,
+        "75th": 74.3,
+        "90th": 120.8,
+        "95th": 1141.8,
+        "99th": 1552.7,
+        "99.9th": 2212.2,
+        "worst": 16391.9
+      }
+    },
+    {
+      "backend": "bqlog",
+      "threads": 1,
+      "mode": "fast",
+      "batch_mean_ns_per_log": {
+        "50th": 74.9,
+        "75th": 75.5,
+        "90th": 80.4,
+        "95th": 85.4,
+        "99th": 135.9,
+        "99.9th": 492.6,
+        "worst": 7919.6
+      }
+    },
+    {
+      "backend": "qlog",
+      "threads": 4,
+      "mode": "normal",
+      "batch_mean_ns_per_log": {
+        "50th": 245.6,
+        "75th": 1304.4,
+        "90th": 1405.5,
+        "95th": 1447.2,
+        "99th": 1791.2,
+        "99.9th": 2604.8,
+        "worst": 34983.5
+      }
+    },
+    {
+      "backend": "bqlog",
+      "threads": 4,
+      "mode": "normal",
+      "batch_mean_ns_per_log": {
+        "50th": 110.7,
+        "75th": 120.8,
+        "90th": 125.9,
+        "95th": 130.9,
+        "99th": 1394.5,
+        "99.9th": 1692.1,
+        "worst": 12200.0
+      }
+    },
+    {
+      "backend": "bqlog",
+      "threads": 4,
+      "mode": "fast",
+      "batch_mean_ns_per_log": {
+        "50th": 85.6,
+        "75th": 120.9,
+        "90th": 126.0,
+        "95th": 130.9,
+        "99th": 156.1,
+        "99.9th": 811.7,
+        "worst": 32443.1
+      }
+    }
+  ],
+  "raw_evidence_directory": "/mnt/d/qq344/Documents/qlog-bqlog-benchmark-20261015-01/measured-final",
+  "native_verification": {
+    "exit_code": 0,
+    "throughput_cases": 13,
+    "latency_cases": 1,
+    "diagnostic_count": 0,
+    "elapsed_seconds": 27.0659716,
+    "exe_sha256": "352b634e5dda3207e802dd2a43e076fae3979140d0084184629df09259243afa",
+    "cwd": "D:\\qq344\\Documents\\qlog-bqlog-benchmark-20261015-01\\native-output",
+    "retained_files": 9,
+    "retained_bytes": 675519191.0,
+    "validation_only": true
+  },
+  "boundary": "Nominal calls, library flush included; retained files are not a whole-run loss count."
+}
