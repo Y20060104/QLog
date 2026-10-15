@@ -182,7 +182,7 @@ log_utils::vlq::get_vlq_decode_length(uint8_t prefix_byte) {
     /*
     if (prefix_byte == 0)
         return 9;
-#if defined(BQ_MSVC)
+#if defined(QLOG_MSVC)
     uint32_t zero_count = _lzcnt_u32(static_cast<uint32_t>(prefix_byte));
 #else
     uint32_t zero_count = __builtin_clz(static_cast<uint32_t>(prefix_byte));

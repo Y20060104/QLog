@@ -75,7 +75,7 @@ class log {
             get_id(), static_cast<std::uint8_t>(level), category_index,
             static_cast<std::uint8_t>(tag), static_cast<std::uint32_t>(total_format_data_size),
             format_data_ptr, static_cast<std::uint32_t>(args_size_seq.get_total()));
-        if (handle.result != buffer::BufferResult::success) {
+        if (handle.result != buffer::enum_buffer_result_code::success) {
             return false;
         }
         if (!format_data_ptr) {

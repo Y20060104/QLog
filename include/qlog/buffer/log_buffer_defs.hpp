@@ -12,7 +12,7 @@ namespace qlog::buffer {
     static_cast<std::size_t>((reinterpret_cast<std::uintptr_t>(&(((Type*)0x10000)->Field))) - \
                              static_cast<std::uintptr_t>(0x10000))
 
-enum class BufferResult {
+enum class enum_buffer_result_code {
     success = 0,
     err_empty_log_buffer,
     err_not_enough_space,
@@ -24,25 +24,25 @@ enum class BufferResult {
     result_code_count,
 };
 
-struct LogBufferWriteHandle {
+struct log_buffer_write_handle {
     std::uint8_t* data_addr;
-    BufferResult result = BufferResult::err_empty_log_buffer;
+    enum_buffer_result_code result = enum_buffer_result_code::err_empty_log_buffer;
     bool low_space_flag = false;
 };
 
-struct LogBufferReadHandle {
+struct log_buffer_read_handle {
     std::uint8_t* data_addr;
-    BufferResult result = BufferResult::err_empty_log_buffer;
+    enum_buffer_result_code result = enum_buffer_result_code::err_empty_log_buffer;
     std::uint32_t data_size;
 };
 
-enum class MemoryMapBufferState {
+enum class memory_map_buffer_state {
     init_with_memory,
     recover_from_memory_map,
     init_with_memmap,
 };
 
-enum class LogMemoryPolicy {
+enum class log_memory_policy {
     discard_when_full,
     block_when_full,
     auto_expand_when_full,
@@ -71,25 +71,25 @@ class scoped_log_buffer_handle {
 
    private:
     BUFFER_TYPE* buffer_;
-    LogBufferReadHandle read_handle_;
-    LogBufferWriteHandle write_handle_;
+    log_buffer_read_handle read_handle_;
+    log_buffer_write_handle write_handle_;
     destruction_type destruction_type_;
 
    public:
     scoped_log_buffer_handle() = delete;
 
-    scoped_log_buffer_handle(BUFFER_TYPE& buffer, const LogBufferReadHandle& handle);
+    scoped_log_buffer_handle(BUFFER_TYPE& buffer, const log_buffer_read_handle& handle);
 
-    scoped_log_buffer_handle(BUFFER_TYPE& buffer, const LogBufferWriteHandle& handle);
+    scoped_log_buffer_handle(BUFFER_TYPE& buffer, const log_buffer_write_handle& handle);
 
     ~scoped_log_buffer_handle();
 };
 
 template <typename BUFFER_TYPE>
 scoped_log_buffer_handle<BUFFER_TYPE>::scoped_log_buffer_handle(BUFFER_TYPE& buffer,
-                                                                const LogBufferWriteHandle& handle)
+                                                                const log_buffer_write_handle& handle)
     : buffer_(&buffer),
-      read_handle_(LogBufferReadHandle()),
+      read_handle_(log_buffer_read_handle()),
       write_handle_(handle),
       destruction_type_(destruction_type::commit_chunk) {
     (void)read_handle_;
@@ -111,10 +111,10 @@ scoped_log_buffer_handle<BUFFER_TYPE>::~scoped_log_buffer_handle() {
 
 template <typename BUFFER_TYPE>
 scoped_log_buffer_handle<BUFFER_TYPE>::scoped_log_buffer_handle(BUFFER_TYPE& buffer,
-                                                                const LogBufferReadHandle& handle)
+                                                                const log_buffer_read_handle& handle)
     : buffer_(&buffer),
       read_handle_(handle),
-      write_handle_(LogBufferWriteHandle()),
+      write_handle_(log_buffer_write_handle()),
       destruction_type_(destruction_type::return_chunk) {
     (void)write_handle_;
 }

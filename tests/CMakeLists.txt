@@ -76,3 +76,13 @@ foreach(group IN ITEMS primitives scalars sync async independent cache_reset reu
     add_test(NAME qlog.compressed.${group} COMMAND qlog_compressed_file_test ${group})
     set_tests_properties(qlog.compressed.${group} PROPERTIES TIMEOUT 90 LABELS "compressed;integration")
 endforeach()
+
+# Fused copy/hash bytes and original BQLog SW/HW vectors, then actual Record writing.
+add_executable(qlog_copy_hash_test copy_hash_test.cpp)
+target_link_libraries(qlog_copy_hash_test PRIVATE QLog::qlog)
+target_include_directories(qlog_copy_hash_test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../src")
+qlog_enable_warnings(qlog_copy_hash_test)
+add_test(NAME qlog.utility.copy_hash COMMAND qlog_copy_hash_test utility)
+set_tests_properties(qlog.utility.copy_hash PROPERTIES LABELS "utility;hash")
+add_test(NAME qlog.runtime.format_copy_hash COMMAND qlog_copy_hash_test writer)
+set_tests_properties(qlog.runtime.format_copy_hash PROPERTIES TIMEOUT 30 LABELS "runtime;hash")

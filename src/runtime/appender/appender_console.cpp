@@ -10,7 +10,7 @@
  */
 #include "qlog/runtime/appender/appender_console.hpp"
 
-#include "qlog/buffer/spsc_ring_buffer.hpp"
+#include "qlog/buffer/siso_ring_buffer.hpp"
 #include "qlog/global/log_vars.hpp"
 #include "qlog/runtime/log_imp.hpp"
 #include "qlog/runtime/log_types.hpp"

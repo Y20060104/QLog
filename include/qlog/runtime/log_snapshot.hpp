@@ -12,7 +12,7 @@
 
 // this class is not thread safe.
 // write_data() and take_snapshot() can not be called in the same time
-#include "qlog/buffer/spsc_ring_buffer.hpp"
+#include "qlog/buffer/siso_ring_buffer.hpp"
 #include "qlog/layout/layout.hpp"
 #include "qlog/runtime/log_level_bitmap.hpp"
 #include "qlog/runtime/log_types.hpp"

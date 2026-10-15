@@ -2,6 +2,14 @@
 
 #include "qlog/platform/atomic/atomic.hpp"
 
+#if defined(QLOG_GCC) || defined(QLOG_CLANG)
+#define QLOG_RESTRICT __restrict__
+#elif defined(QLOG_MSVC)
+#define QLOG_RESTRICT __restrict
+#else
+#define QLOG_RESTRICT
+#endif
+
 #if defined(QLOG_MSVC)
 
 #define QLOG_PACK_BEGIN __pragma(pack(push, 1))

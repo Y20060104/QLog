@@ -91,8 +91,8 @@ class alignas(qlog::utility::QLOG_CACHE_LINE_SIZE) miso_ring_buffer {
     static_assert(sizeof(cursors_set) == qlog::utility::QLOG_CACHE_LINE_SIZE * 2,
                   "invalid cursors_set size");
 
-    LogBufferConfig config_;
-    MemoryMapBufferState mmap_buffer_state_;
+    log_buffer_config config_;
+    memory_map_buffer_state mmap_buffer_state_;
     cursors_set cursors_;
 
     head* head_;
@@ -108,7 +108,7 @@ class alignas(qlog::utility::QLOG_CACHE_LINE_SIZE) miso_ring_buffer {
     qlog::platform::thread_id read_thread_id_ = 0;
 
     qlog::platform::atomic<std::uint32_t>
-        result_code_statistics_[(std::int32_t)BufferResult::result_code_count];
+        result_code_statistics_[(std::int32_t)enum_buffer_result_code::result_code_count];
 
     qlog::platform::atomic<std::uint64_t> total_write_bytes_;
     qlog::platform::atomic<std::uint64_t> total_read_bytes_;
@@ -119,23 +119,23 @@ class alignas(qlog::utility::QLOG_CACHE_LINE_SIZE) miso_ring_buffer {
    public:
     miso_ring_buffer() = delete;
 
-    miso_ring_buffer(const LogBufferConfig& config);
+    miso_ring_buffer(const log_buffer_config& config);
 
     miso_ring_buffer(const miso_ring_buffer& rhs) = delete;
 
     ~miso_ring_buffer();
 
-    LogBufferWriteHandle alloc_write_chunk(std::uint32_t size);
+    log_buffer_write_handle alloc_write_chunk(std::uint32_t size);
 
-    void commit_write_chunk(const LogBufferWriteHandle& handle);
+    void commit_write_chunk(const log_buffer_write_handle& handle);
 
-    LogBufferReadHandle read_chunk();
+    log_buffer_read_handle read_chunk();
 
-    LogBufferReadHandle read_an_empty_chunk();
+    log_buffer_read_handle read_an_empty_chunk();
 
-    void discard_read_chunk(LogBufferReadHandle& handle);
+    void discard_read_chunk(log_buffer_read_handle& handle);
 
-    void return_read_chunk(const LogBufferReadHandle& handle);
+    void return_read_chunk(const log_buffer_read_handle& handle);
 
     void data_traverse(void (*in_callback)(std::uint8_t* data, std::uint32_t size, void* user_data),
                        void* in_user_data);  // in_user_data和传入的user_data有什么区别
@@ -144,11 +144,11 @@ class alignas(qlog::utility::QLOG_CACHE_LINE_SIZE) miso_ring_buffer {
 
     bool is_thread_check_enable() const;
 
-    qlog_forceinline const LogBufferConfig& get_config() const {
+    qlog_forceinline const log_buffer_config& get_config() const {
         return config_;
     }
 
-    qlog_forceinline MemoryMapBufferState get_memory_map_buffer_state() const {
+    qlog_forceinline memory_map_buffer_state get_memory_map_buffer_state() const {
         return mmap_buffer_state_;
     }
 

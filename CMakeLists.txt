@@ -25,7 +25,7 @@ add_library(qlog STATIC
     src/version.cpp
     src/log.cpp
     src/runtime/record_writer.cpp
-    src/buffer/spsc_ring_buffer.cpp
+    src/buffer/siso_ring_buffer.cpp
     src/buffer/log_buffer_config.cpp
     src/buffer/normal_buffer.cpp
     src/buffer/miso_ring_buffer.cpp

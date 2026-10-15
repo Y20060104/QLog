@@ -87,7 +87,7 @@ log_buffer::log_tls_info::~log_tls_info() {
                         scoped_log_buffer_handle<miso_ring_buffer> scoped_handle(
                             pair.value()->buffer_->lp_buffer_, finish_mark_handle);
 
-                        if (finish_mark_handle.result == BufferResult::success) {
+                        if (finish_mark_handle.result == enum_buffer_result_code::success) {
                             auto* context =
                                 reinterpret_cast<context_head*>(finish_mark_handle.data_addr);
 
@@ -427,7 +427,7 @@ void log_buffer::clear_recovery_data() {
     }
 }
 
-log_buffer::log_buffer(LogBufferConfig& config)
+log_buffer::log_buffer(log_buffer_config& config)
     : config_(config),
       hp_buffer_(config_, BLOCKS_PER_GROUP_NODE),
       lp_buffer_(config_),
@@ -441,7 +441,7 @@ log_buffer::log_buffer(LogBufferConfig& config)
 
     id_ = id_generator.add_fetch_relaxed(1);
 
-    const_cast<LogBufferConfig&>(config_).default_buffer_size =
+    const_cast<log_buffer_config&>(config_).default_buffer_size =
         std::max((std::uint32_t)(16 * qlog::utility::QLOG_CACHE_LINE_SIZE),
                  qlog::utility::roundup_pow_of_two(config_.default_buffer_size));
 
@@ -500,7 +500,7 @@ block_node_head* log_buffer::alloc_new_hp_block() {
     return new_node;
 }
 
-LogBufferWriteHandle log_buffer::wt_alloc_oversize_write_chunk(std::uint32_t size,
+log_buffer_write_handle log_buffer::wt_alloc_oversize_write_chunk(std::uint32_t size,
                                                                std::uint64_t current_epoch_ms) {
     auto& tls_buffer = log_tls_info__get_direct().get_buffer_info(this);
 
@@ -513,11 +513,11 @@ LogBufferWriteHandle log_buffer::wt_alloc_oversize_write_chunk(std::uint32_t siz
 
     auto parent_result = lp_buffer_.alloc_write_chunk(sizeof(context_head));
 
-    if (BufferResult::success != parent_result.result) {
-        if ((config_.policy == LogMemoryPolicy::auto_expand_when_full ||
-             config_.policy == LogMemoryPolicy::block_when_full) &&
-            parent_result.result == BufferResult::err_not_enough_space) {
-            parent_result.result = BufferResult::err_wait_and_retry;
+    if (enum_buffer_result_code::success != parent_result.result) {
+        if ((config_.policy == log_memory_policy::auto_expand_when_full ||
+             config_.policy == log_memory_policy::block_when_full) &&
+            parent_result.result == enum_buffer_result_code::err_not_enough_space) {
+            parent_result.result = enum_buffer_result_code::err_wait_and_retry;
         }
 
         return parent_result;
@@ -554,7 +554,7 @@ LogBufferWriteHandle log_buffer::wt_alloc_oversize_write_chunk(std::uint32_t siz
             over_size_handle = over_size_buffer->buffer_.alloc_write_chunk(
                 size + static_cast<std::uint32_t>(sizeof(context_head)));
 
-            if (BufferResult::success == over_size_handle.result) {
+            if (enum_buffer_result_code::success == over_size_handle.result) {
                 over_size_buffer->last_used_epoch_ms_ = current_epoch_ms;
 
                 tls_buffer.oversize_target_buffer_ = over_size_buffer.operator->();
@@ -566,7 +566,7 @@ LogBufferWriteHandle log_buffer::wt_alloc_oversize_write_chunk(std::uint32_t siz
         }
     }
 
-    if (BufferResult::success != over_size_handle.result) {
+    if (enum_buffer_result_code::success != over_size_handle.result) {
         std::uint32_t default_buffer_size = (size < (UINT32_MAX >> 1)) ? (size << 1) : UINT32_MAX;
 
         std::string abs_recovery_file_path;
@@ -608,7 +608,7 @@ LogBufferWriteHandle log_buffer::wt_alloc_oversize_write_chunk(std::uint32_t siz
             over_size_handle = new_buffer->buffer_.alloc_write_chunk(
                 size + static_cast<std::uint32_t>(sizeof(context_head)));
 
-            if (BufferResult::success == over_size_handle.result) {
+            if (enum_buffer_result_code::success == over_size_handle.result) {
                 new_buffer->last_used_epoch_ms_ = current_epoch_ms;
 
                 tls_buffer.oversize_target_buffer_ = new_buffer.operator->();
@@ -619,15 +619,15 @@ LogBufferWriteHandle log_buffer::wt_alloc_oversize_write_chunk(std::uint32_t siz
         }
     }
 
-    if (BufferResult::success != over_size_handle.result) {
+    if (enum_buffer_result_code::success != over_size_handle.result) {
         --tls_buffer.wt_data_.current_write_seq_;
 
         parent_context->version_ = static_cast<std::uint16_t>(version_ + 1);
 
         lp_buffer_.commit_write_chunk(parent_result);
 
-        LogBufferWriteHandle fail;
-        fail.result = BufferResult::err_io_failure_drop;
+        log_buffer_write_handle fail;
+        fail.result = enum_buffer_result_code::err_io_failure_drop;
         return fail;
     }
 
@@ -646,7 +646,7 @@ LogBufferWriteHandle log_buffer::wt_alloc_oversize_write_chunk(std::uint32_t siz
     return over_size_handle;
 }
 
-void log_buffer::wt_commit_oversize_write_chunk(const LogBufferWriteHandle& oversize_handle) {
+void log_buffer::wt_commit_oversize_write_chunk(const log_buffer_write_handle& oversize_handle) {
     auto& tls_buffer_info = log_tls_info__get_direct().get_buffer_info_directly(this);
 
     tls_buffer_info.oversize_target_buffer_->buffer_.commit_write_chunk(oversize_handle);
@@ -658,7 +658,7 @@ void log_buffer::wt_commit_oversize_write_chunk(const LogBufferWriteHandle& over
     lp_buffer_.commit_write_chunk(tls_buffer_info.oversize_parent_handle_);
 }
 
-LogBufferWriteHandle log_buffer::alloc_write_chunk(std::uint32_t size,
+log_buffer_write_handle log_buffer::alloc_write_chunk(std::uint32_t size,
                                                    std::uint64_t current_epoch_ms) {
     auto& tls_buffer = log_tls_info__get_direct().get_buffer_info(this);
 
@@ -686,7 +686,7 @@ LogBufferWriteHandle log_buffer::alloc_write_chunk(std::uint32_t size,
         thread_update_times = 0;
     }
 
-    LogBufferWriteHandle result;
+    log_buffer_write_handle result;
 
     bool is_invalid_hp_size = is_high_frequency && (size > hp_buffer_max_alloc_size_);
 
@@ -702,9 +702,9 @@ LogBufferWriteHandle log_buffer::alloc_write_chunk(std::uint32_t size,
 
             result = block_cache->get_buffer().alloc_write_chunk(size);
 
-            if (BufferResult::err_not_enough_space == result.result) {
+            if (enum_buffer_result_code::err_not_enough_space == result.result) {
                 switch (config_.policy) {
-                    case LogMemoryPolicy::auto_expand_when_full:
+                    case log_memory_policy::auto_expand_when_full:
                         block_cache->get_buffer().commit_write_chunk(result);
 
                         mark_block_removed(block_cache, true);
@@ -712,8 +712,8 @@ LogBufferWriteHandle log_buffer::alloc_write_chunk(std::uint32_t size,
                         continue;
                         break;
 
-                    case LogMemoryPolicy::block_when_full:
-                        result.result = BufferResult::err_wait_and_retry;
+                    case log_memory_policy::block_when_full:
+                        result.result = enum_buffer_result_code::err_wait_and_retry;
                         break;
 
                     default:
@@ -726,7 +726,7 @@ LogBufferWriteHandle log_buffer::alloc_write_chunk(std::uint32_t size,
             result = lp_buffer_.alloc_write_chunk(size +
                                                   static_cast<std::uint32_t>(sizeof(context_head)));
 
-            if (BufferResult::success == result.result) {
+            if (enum_buffer_result_code::success == result.result) {
                 auto* context = reinterpret_cast<context_head*>(result.data_addr);
 
                 context->version_ = version_;
@@ -736,9 +736,9 @@ LogBufferWriteHandle log_buffer::alloc_write_chunk(std::uint32_t size,
                 context->set_tls_info(&tls_buffer);
 
                 result.data_addr += sizeof(context_head);
-            } else if (BufferResult::err_not_enough_space == result.result) {
+            } else if (enum_buffer_result_code::err_not_enough_space == result.result) {
                 switch (config_.policy) {
-                    case LogMemoryPolicy::auto_expand_when_full:
+                    case log_memory_policy::auto_expand_when_full:
                         is_high_frequency = true;
                         thread_last_update_epoch_ms = current_epoch_ms;
                         thread_update_times = 0;
@@ -747,8 +747,8 @@ LogBufferWriteHandle log_buffer::alloc_write_chunk(std::uint32_t size,
                         continue;
                         break;
 
-                    case LogMemoryPolicy::block_when_full:
-                        result.result = BufferResult::err_wait_and_retry;
+                    case log_memory_policy::block_when_full:
+                        result.result = enum_buffer_result_code::err_wait_and_retry;
                         break;
 
                     default:
@@ -766,14 +766,14 @@ LogBufferWriteHandle log_buffer::alloc_write_chunk(std::uint32_t size,
     }
 
     QLOG_UNLIKELY_IF(
-        (is_invalid_hp_size || BufferResult::err_alloc_size_invalid == result.result) && size > 0) {
+        (is_invalid_hp_size || enum_buffer_result_code::err_alloc_size_invalid == result.result) && size > 0) {
         return wt_alloc_oversize_write_chunk(size, current_epoch_ms);
     }
 
     return result;
 }
 
-void log_buffer::commit_write_chunk(const LogBufferWriteHandle& handle) {
+void log_buffer::commit_write_chunk(const log_buffer_write_handle& handle) {
     auto& tls_buffer_info = log_tls_info__get_direct().get_buffer_info_directly(this);
 
     block_node_head*& block_cache = tls_buffer_info.cur_block_;
@@ -783,15 +783,15 @@ void log_buffer::commit_write_chunk(const LogBufferWriteHandle& handle) {
     if (is_high_frequency) {
         block_cache->get_buffer().commit_write_chunk(handle);
     } else {
-        if (handle.result == BufferResult::success) {
-            LogBufferWriteHandle handle_copy = handle;
+        if (handle.result == enum_buffer_result_code::success) {
+            log_buffer_write_handle handle_copy = handle;
 
             handle_copy.data_addr -= sizeof(context_head);
 
             auto* context = reinterpret_cast<context_head*>(handle_copy.data_addr);
 
             bool is_external_ref_ =
-                context->is_external_ref_ && handle.result == BufferResult::success;
+                context->is_external_ref_ && handle.result == enum_buffer_result_code::success;
 
             QLOG_UNLIKELY_IF(is_external_ref_) {
                 wt_commit_oversize_write_chunk(handle_copy);
@@ -1158,11 +1158,11 @@ bool log_buffer::rt_try_traverse_to_next_group() {
     return next_group;
 }
 
-QLOG_TLS_NON_POD(LogBufferReadHandle, rt_oversize_parent_handle_)
+QLOG_TLS_NON_POD(log_buffer_read_handle, rt_oversize_parent_handle_)
 QLOG_TLS void* rt_oversize_target_buffer_;
 
-bool log_buffer::rt_read_oversize_chunk(const LogBufferReadHandle& parent_handle,
-                                        LogBufferReadHandle& out_oversize_handle) {
+bool log_buffer::rt_read_oversize_chunk(const log_buffer_read_handle& parent_handle,
+                                        log_buffer_read_handle& out_oversize_handle) {
     rt_oversize_parent_handle_.get() = parent_handle;
 
     const auto& parent_context = *reinterpret_cast<const context_head*>(parent_handle.data_addr);
@@ -1182,7 +1182,7 @@ bool log_buffer::rt_read_oversize_chunk(const LogBufferReadHandle& parent_handle
         while (!read_done) {
             auto read_handle = buffer->buffer_.read_chunk();
 
-            if (BufferResult::success == read_handle.result) {
+            if (enum_buffer_result_code::success == read_handle.result) {
                 const auto& oversize_context =
                     *reinterpret_cast<const context_head*>(read_handle.data_addr);
 
@@ -1232,7 +1232,7 @@ bool log_buffer::rt_read_oversize_chunk(const LogBufferReadHandle& parent_handle
     return false;
 }
 
-void log_buffer::rt_return_oversize_read_chunk(const LogBufferReadHandle& oversize_handle) {
+void log_buffer::rt_return_oversize_read_chunk(const log_buffer_read_handle& oversize_handle) {
     auto oversize_buffer = ((oversize_buffer_obj_def*)rt_oversize_target_buffer_);
 
     oversize_buffer->buffer_.return_read_chunk(oversize_handle);
@@ -1294,13 +1294,13 @@ void log_buffer::rt_recycle_oversize_buffers() {
                         while (!loop_finished) {
                             auto read_handle = oversize_buffer.buffer_.read_chunk();
 
-                            if (read_handle.result == BufferResult::err_empty_log_buffer) {
+                            if (read_handle.result == enum_buffer_result_code::err_empty_log_buffer) {
                                 oversize_buffer.buffer_.return_read_chunk(read_handle);
 
                                 is_empty = true;
                                 loop_finished = true;
                                 break;
-                            } else if (read_handle.result == BufferResult::success) {
+                            } else if (read_handle.result == enum_buffer_result_code::success) {
                                 const auto& context =
                                     *reinterpret_cast<const context_head*>(read_handle.data_addr);
 
@@ -1361,11 +1361,11 @@ void log_buffer::rt_recycle_oversize_buffers() {
     }
 }
 
-bool log_buffer::rt_read_from_lp_buffer(LogBufferReadHandle& out_handle) {
+bool log_buffer::rt_read_from_lp_buffer(log_buffer_read_handle& out_handle) {
     while (true) {
         auto read_handle = lp_buffer_.read_chunk();
 
-        if (BufferResult::success == read_handle.result) {
+        if (enum_buffer_result_code::success == read_handle.result) {
             const auto& context = *reinterpret_cast<const context_head*>(read_handle.data_addr);
 
             auto verify_result = verify_context(context);
@@ -1412,10 +1412,10 @@ bool log_buffer::rt_read_from_lp_buffer(LogBufferReadHandle& out_handle) {
     }
 }
 
-LogBufferReadHandle log_buffer::read_chunk_full_impl() {
+log_buffer_read_handle log_buffer::read_chunk_full_impl() {
     auto& rt_reading = rt_cache_.current_reading_;
 
-    LogBufferReadHandle read_handle;
+    log_buffer_read_handle read_handle;
 
     context_verify_result verify_result = context_verify_result::version_invalid;
 
@@ -1443,7 +1443,7 @@ LogBufferReadHandle log_buffer::read_chunk_full_impl() {
             case read_state::hp_block_reading:
                 rt_reading.hp_handle_cache_ = rt_reading.cur_block_->get_buffer().batch_read();
 
-                if (BufferResult::success == rt_reading.hp_handle_cache_.result) {
+                if (enum_buffer_result_code::success == rt_reading.hp_handle_cache_.result) {
                     read_handle = rt_reading.hp_handle_cache_.next();
 
                     loop_finished = true;
@@ -1543,12 +1543,12 @@ LogBufferReadHandle log_buffer::read_chunk_full_impl() {
     return read_handle;
 }
 
-void log_buffer::return_read_chunk_full_impl(const LogBufferReadHandle& handle) {
+void log_buffer::return_read_chunk_full_impl(const log_buffer_read_handle& handle) {
     if (rt_cache_.current_reading_.cur_block_) {
         rt_cache_.current_reading_.cur_block_->get_buffer().return_batch_read_chunks(
             rt_cache_.current_reading_.hp_handle_cache_);
-    } else if (BufferResult::success == handle.result) {
-        LogBufferReadHandle handle_cpy = handle;
+    } else if (enum_buffer_result_code::success == handle.result) {
+        log_buffer_read_handle handle_cpy = handle;
 
         handle_cpy.data_addr -= sizeof(context_head);
         handle_cpy.data_size += (std::uint32_t)sizeof(context_head);

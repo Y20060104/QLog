@@ -90,7 +90,7 @@ group_data_head::group_data_head(std::uint16_t max_blocks_count, std::uint8_t* g
     }
 }
 
-std::size_t group_node::get_group_meta_size(const LogBufferConfig& config) {
+std::size_t group_node::get_group_meta_size(const log_buffer_config& config) {
     static_assert(
         sizeof(decltype(config.calculate_check_sum())) <= qlog::utility::QLOG_CACHE_LINE_SIZE,
         "group meta data size overflow");
@@ -98,11 +98,11 @@ std::size_t group_node::get_group_meta_size(const LogBufferConfig& config) {
     return qlog::utility::QLOG_CACHE_LINE_SIZE;
 }  // config没有用？
 
-std::size_t group_node::get_group_data_size(const LogBufferConfig& config,
+std::size_t group_node::get_group_data_size(const log_buffer_config& config,
                                             std::uint16_t max_block_count_per_group) {
     std::size_t data_per_block =
         static_cast<std::size_t>(block_node_head::get_buffer_data_offset()) +
-        SpscRingBuffer::calculate_min_size_of_memory(config.default_buffer_size);
+        siso_ring_buffer::calculate_min_size_of_memory(config.default_buffer_size);
 
     std::size_t total_size_of_block_datas =
         data_per_block * max_block_count_per_group + sizeof(group_data_head);
@@ -110,7 +110,7 @@ std::size_t group_node::get_group_data_size(const LogBufferConfig& config,
     return total_size_of_block_datas;
 }
 
-create_memory_map_result group_node::create_memory_map(const LogBufferConfig& config,
+create_memory_map_result group_node::create_memory_map(const log_buffer_config& config,
                                                        std::uint16_t max_block_count_per_group,
                                                        std::uint64_t index) {
     char tmp[32];
@@ -129,7 +129,7 @@ create_memory_map_result group_node::create_memory_map(const LogBufferConfig& co
     return buffer_entity_->get_mmap_result();
 }
 
-bool group_node::try_recover_from_memory_map(const LogBufferConfig& config,
+bool group_node::try_recover_from_memory_map(const log_buffer_config& config,
                                              std::uint16_t max_block_count_per_group) {
     std::size_t meta_size = get_group_meta_size(config);
     std::size_t data_size = get_group_data_size(config, max_block_count_per_group);
@@ -154,7 +154,7 @@ bool group_node::try_recover_from_memory_map(const LogBufferConfig& config,
     return true;
 }
 
-void group_node::init_memory_map(const LogBufferConfig& config,
+void group_node::init_memory_map(const log_buffer_config& config,
                                  std::uint16_t max_block_count_per_group) {
     std::size_t meta_size = get_group_meta_size(config);
     std::size_t data_size = get_group_data_size(config, max_block_count_per_group);
@@ -172,7 +172,7 @@ void group_node::init_memory_map(const LogBufferConfig& config,
     head_ptr_ = reinterpret_cast<group_data_head*>(mapped_data_addr + meta_size);
 }
 
-void group_node::init_memory(const LogBufferConfig& config,
+void group_node::init_memory(const log_buffer_config& config,
                              std::uint16_t max_block_count_per_group) {
     std::size_t desired_size = get_group_data_size(config, max_block_count_per_group);
 
@@ -207,7 +207,7 @@ group_node::~group_node() {
     head_ptr_ = nullptr;
 }
 
-group_list::group_list(const LogBufferConfig& config, std::uint16_t max_block_count_per_group)
+group_list::group_list(const log_buffer_config& config, std::uint16_t max_block_count_per_group)
     : config_(config),
       max_block_count_per_group_(max_block_count_per_group),
       current_group_index_(0) {

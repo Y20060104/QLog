@@ -6,7 +6,7 @@
 
 #include "qlog/buffer/log_buffer_defs.hpp"
 #include "qlog/buffer/normal_buffer.hpp"
-#include "qlog/buffer/spsc_ring_buffer.hpp"
+#include "qlog/buffer/siso_ring_buffer.hpp"
 #include "qlog/utility/utility_types.hpp"
 
 namespace qlog::buffer {
@@ -15,7 +15,7 @@ class oversize_buffer : public normal_buffer {
    private:
     static constexpr std::size_t HEAD_SIZE = qlog::utility::QLOG_CACHE_LINE_SIZE;
 
-    alignas(8) char siso_buffer_obj_[sizeof(SpscRingBuffer)];
+    alignas(8) char siso_buffer_obj_[sizeof(siso_ring_buffer)];
 
    public:
     oversize_buffer(std::uint32_t required_siso_buffer_size, const std::string& mmap_file_abs_path,
@@ -31,35 +31,35 @@ class oversize_buffer : public normal_buffer {
 
     static std::uint32_t calculate_size_of_memory(std::uint32_t required_siso_buffer_size);
 
-    qlog_forceinline LogBufferWriteHandle alloc_write_chunk(std::uint32_t size) {
+    qlog_forceinline log_buffer_write_handle alloc_write_chunk(std::uint32_t size) {
         return get_buffer().alloc_write_chunk(size);
     }
 
-    qlog_forceinline void commit_write_chunk(const LogBufferWriteHandle& handle) {
+    qlog_forceinline void commit_write_chunk(const log_buffer_write_handle& handle) {
         get_buffer().commit_write_chunk(handle);
     }
 
-    qlog_forceinline LogBufferReadHandle read_chunk() {
+    qlog_forceinline log_buffer_read_handle read_chunk() {
         return get_buffer().read_chunk();
     }
 
-    qlog_forceinline LogBufferReadHandle read_an_empty_chunk() {
+    qlog_forceinline log_buffer_read_handle read_an_empty_chunk() {
         return get_buffer().read_an_empty_chunk();
     }
 
-    qlog_forceinline void discard_read_chunk(LogBufferReadHandle& handle) {
+    qlog_forceinline void discard_read_chunk(log_buffer_read_handle& handle) {
         get_buffer().discard_read_chunk(handle);
     }
 
-    qlog_forceinline void return_read_chunk(const LogBufferReadHandle& handle) {
+    qlog_forceinline void return_read_chunk(const log_buffer_read_handle& handle) {
         get_buffer().return_read_chunk(handle);
     }
 
-    qlog_forceinline SpscRingBuffer::BatchReadHandle batch_read() {
+    qlog_forceinline siso_ring_buffer::siso_buffer_batch_read_handle batch_read() {
         return get_buffer().batch_read();
     }
 
-    qlog_forceinline void return_batch_read_chunks(const SpscRingBuffer::BatchReadHandle& handle) {
+    qlog_forceinline void return_batch_read_chunks(const siso_ring_buffer::siso_buffer_batch_read_handle& handle) {
         get_buffer().return_batch_read_chunks(handle);
     }
 
@@ -76,12 +76,12 @@ class oversize_buffer : public normal_buffer {
     }
 
    private:
-    qlog_forceinline SpscRingBuffer& get_buffer() {
-        return *(SpscRingBuffer*)siso_buffer_obj_;
+    qlog_forceinline siso_ring_buffer& get_buffer() {
+        return *(siso_ring_buffer*)siso_buffer_obj_;
     }
 
-    qlog_forceinline const SpscRingBuffer& get_buffer() const {
-        return *(const SpscRingBuffer*)siso_buffer_obj_;
+    qlog_forceinline const siso_ring_buffer& get_buffer() const {
+        return *(const siso_ring_buffer*)siso_buffer_obj_;
     }
 
     bool try_recover_from_exist_memory_map();

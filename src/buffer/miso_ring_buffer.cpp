@@ -61,13 +61,13 @@ struct miso_tls_info {
 };
 QLOG_TLS_NON_POD(miso_tls_info, miso_tls_info_)
 
-miso_ring_buffer::miso_ring_buffer(const LogBufferConfig& config)
+miso_ring_buffer::miso_ring_buffer(const log_buffer_config& config)
     : config_(config), head_(nullptr), aligned_blocks_(nullptr), aligned_blocks_count_(0) {
     assert((QLOG_POD_RUNTIME_OFFSET_OF(block::chunk_head_def, data) % 8 == 0) &&
            "invalid chunk_head size, it must be a multiple of 8 "
            "to ensure the `data` is 8 bytes aligned");  // 为什么计算出offset 要-0x10000
 
-    const_cast<LogBufferConfig&>(config_).default_buffer_size =
+    const_cast<log_buffer_config&>(config_).default_buffer_size =
         (std::max)((std::uint32_t)(16 * qlog::utility::QLOG_CACHE_LINE_SIZE),
                    qlog::utility::round_pow_of_two(config_.default_buffer_size));
 
@@ -110,7 +110,7 @@ miso_ring_buffer::miso_ring_buffer(const LogBufferConfig& config)
     total_write_bytes_ = 0;
     total_read_bytes_ = 0;
 
-    for (std::int32_t i = 0; i < (std::int32_t)BufferResult::result_code_count; ++i) {
+    for (std::int32_t i = 0; i < (std::int32_t)enum_buffer_result_code::result_code_count; ++i) {
         result_code_statistics_[i].store_release(0);
     }
 #endif
@@ -149,7 +149,7 @@ void miso_ring_buffer::init_with_memory_map() {
     cursors_.write_cursor_.store_release(0);
     cursors_.read_cursor_.store_release(0);
 
-    mmap_buffer_state_ = MemoryMapBufferState::init_with_memory;  // 不是init with mmap吗？
+    mmap_buffer_state_ = memory_map_buffer_state::init_with_memory;  // 不是init with mmap吗？
 }
 
 bool miso_ring_buffer::try_recover_from_exist_memory_map() {
@@ -242,7 +242,7 @@ bool miso_ring_buffer::try_recover_from_exist_memory_map() {
             .store_release(block_status::unused);
     }
 
-    mmap_buffer_state_ = MemoryMapBufferState::recover_from_memory_map;
+    mmap_buffer_state_ = memory_map_buffer_state::recover_from_memory_map;
 
     return true;
 }
@@ -261,7 +261,7 @@ void miso_ring_buffer::init_with_memory() {
     cursors_.write_cursor_.store_release(0);
     cursors_.read_cursor_.store_release(0);
 
-    mmap_buffer_state_ = MemoryMapBufferState::init_with_memory;
+    mmap_buffer_state_ = memory_map_buffer_state::init_with_memory;
 }
 void miso_ring_buffer::set_thread_check_enable(bool in_enable) {
 #if defined(QLOG_DEBUG)
@@ -283,8 +283,8 @@ bool miso_ring_buffer::is_thread_check_enable() const {
 #endif
 }
 
-LogBufferWriteHandle miso_ring_buffer::alloc_write_chunk(std::uint32_t size) {
-    LogBufferWriteHandle handle;
+log_buffer_write_handle miso_ring_buffer::alloc_write_chunk(std::uint32_t size) {
+    log_buffer_write_handle handle;
 
     std::uint32_t size_required = size + (std::uint32_t)data_block_offset;
 
@@ -295,9 +295,9 @@ LogBufferWriteHandle miso_ring_buffer::alloc_write_chunk(std::uint32_t size) {
     if (need_block_count_tmp > aligned_blocks_count_ || need_block_count_tmp == 0 ||
         need_block_count_tmp > block::MAX_BLOCK_NUM_PER_CHUNK) {
 #if defined(QLOG_DEBUG)
-        ++result_code_statistics_[(std::uint32_t)BufferResult::err_alloc_size_invalid];
+        ++result_code_statistics_[(std::uint32_t)enum_buffer_result_code::err_alloc_size_invalid];
 #endif
-        handle.result = BufferResult::err_alloc_size_invalid;
+        handle.result = enum_buffer_result_code::err_alloc_size_invalid;
         return handle;
     }
 
@@ -337,18 +337,18 @@ LogBufferWriteHandle miso_ring_buffer::alloc_write_chunk(std::uint32_t size) {
             if (static_cast<std::uint32_t>(new_cursor - read_cursor_ref) > aligned_blocks_count_) {
                 QLOG_UNLIKELY_IF((need_block_count << 1) > aligned_blocks_count_) {
 #if defined(QLOG_DEBUG)
-                    ++result_code_statistics_[(std::uint32_t)BufferResult::err_alloc_size_invalid];
+                    ++result_code_statistics_[(std::uint32_t)enum_buffer_result_code::err_alloc_size_invalid];
 #endif
 
-                    handle.result = BufferResult::err_alloc_size_invalid;
+                    handle.result = enum_buffer_result_code::err_alloc_size_invalid;
                     return handle;
                 }
 
 #if defined(QLOG_DEBUG)
-                ++result_code_statistics_[(std::int32_t)BufferResult::err_not_enough_space];
+                ++result_code_statistics_[(std::int32_t)enum_buffer_result_code::err_not_enough_space];
 #endif
 
-                handle.result = BufferResult::err_not_enough_space;
+                handle.result = enum_buffer_result_code::err_not_enough_space;
                 return handle;
             }
         }
@@ -373,18 +373,18 @@ LogBufferWriteHandle miso_ring_buffer::alloc_write_chunk(std::uint32_t size) {
                         QLOG_UNLIKELY_IF((need_block_count << 1) > aligned_blocks_count_) {
 #if defined(QLOG_DEBUG)
                             ++result_code_statistics_[(
-                                std::uint32_t)BufferResult::err_alloc_size_invalid];
+                                std::uint32_t)enum_buffer_result_code::err_alloc_size_invalid];
 #endif
 
-                            handle.result = BufferResult::err_alloc_size_invalid;
+                            handle.result = enum_buffer_result_code::err_alloc_size_invalid;
                             return handle;
                         }
 
 #if defined(QLOG_DEBUG)
-                        ++result_code_statistics_[(std::int32_t)BufferResult::err_not_enough_space];
+                        ++result_code_statistics_[(std::int32_t)enum_buffer_result_code::err_not_enough_space];
 #endif
 
-                        handle.result = BufferResult::err_not_enough_space;
+                        handle.result = enum_buffer_result_code::err_not_enough_space;
                         return handle;
                     }
                 }
@@ -396,10 +396,10 @@ LogBufferWriteHandle miso_ring_buffer::alloc_write_chunk(std::uint32_t size) {
 
         if ((current_write_cursor & (aligned_blocks_count_ - 1)) + need_block_count >
             aligned_blocks_count_) {
-            handle.result = BufferResult::err_data_not_contiguous;
+            handle.result = enum_buffer_result_code::err_data_not_contiguous;
 
 #if defined(QLOG_DEBUG)
-            ++result_code_statistics_[(std::int32_t)BufferResult::err_data_not_contiguous];
+            ++result_code_statistics_[(std::int32_t)enum_buffer_result_code::err_data_not_contiguous];
 #endif
 
             BUFFER_ATOMIC_CAST_IGNORE_ALIGNMENT(new_block.chunk_head.status, block_status)
@@ -410,7 +410,7 @@ LogBufferWriteHandle miso_ring_buffer::alloc_write_chunk(std::uint32_t size) {
 
         new_block.chunk_head.data_size = size;
 
-        handle.result = BufferResult::success;
+        handle.result = enum_buffer_result_code::success;
         handle.data_addr = new_block.chunk_head.data;
 
         used_blocks_count += need_block_count;
@@ -428,7 +428,7 @@ LogBufferWriteHandle miso_ring_buffer::alloc_write_chunk(std::uint32_t size) {
         }
 
 #if defined(QLOG_DEBUG)
-        ++result_code_statistics_[(std::int32_t)BufferResult::success];
+        ++result_code_statistics_[(std::int32_t)enum_buffer_result_code::success];
 #endif
 
         return handle;
@@ -452,8 +452,8 @@ std::uint32_t& read_cursor_ref = *read_cursor_ptr;
 
 问：为什么 不能都>=?*/
 
-void miso_ring_buffer::commit_write_chunk(const LogBufferWriteHandle& handle) {
-    if (handle.result != BufferResult::success) {
+void miso_ring_buffer::commit_write_chunk(const log_buffer_write_handle& handle) {
+    if (handle.result != enum_buffer_result_code::success) {
         return;
     }
 
@@ -467,7 +467,7 @@ void miso_ring_buffer::commit_write_chunk(const LogBufferWriteHandle& handle) {
 #endif
 }
 
-LogBufferReadHandle miso_ring_buffer::read_chunk() {
+log_buffer_read_handle miso_ring_buffer::read_chunk() {
 #if defined(QLOG_DEBUG)
     assert(!is_read_chunk_waiting_for_return_ &&
            "You cant read a chunk before you returning last chunk back");
@@ -485,7 +485,7 @@ LogBufferReadHandle miso_ring_buffer::read_chunk() {
     is_read_chunk_waiting_for_return_ = true;
 #endif
 
-    LogBufferReadHandle handle;
+    log_buffer_read_handle handle;
 
     while (true) {
         block& block_ref = cursor_to_block(head_->read_cursor_cache_);
@@ -510,7 +510,7 @@ LogBufferReadHandle miso_ring_buffer::read_chunk() {
                 break;
 
             case block_status::unused:
-                handle.result = BufferResult::err_empty_log_buffer;
+                handle.result = enum_buffer_result_code::err_empty_log_buffer;
                 break;
 
             case block_status::used:
@@ -519,7 +519,7 @@ LogBufferReadHandle miso_ring_buffer::read_chunk() {
                        aligned_blocks_count_);
 #endif
 
-                handle.result = BufferResult::success;
+                handle.result = enum_buffer_result_code::success;
                 handle.data_addr = block_ref.chunk_head.data;
                 handle.data_size = block_ref.chunk_head.data_size;
                 break;
@@ -538,7 +538,7 @@ LogBufferReadHandle miso_ring_buffer::read_chunk() {
     return handle;
 }
 
-LogBufferReadHandle miso_ring_buffer::read_an_empty_chunk() {
+log_buffer_read_handle miso_ring_buffer::read_an_empty_chunk() {
 #if defined(QLOG_DEBUG)
     assert(!is_read_chunk_waiting_for_return_ &&
            "You cant read a chunk before you returning last chunk back");
@@ -553,13 +553,13 @@ LogBufferReadHandle miso_ring_buffer::read_an_empty_chunk() {
     is_read_chunk_waiting_for_return_ = true;
 #endif
 
-    LogBufferReadHandle handle;
-    handle.result = BufferResult::err_empty_log_buffer;
+    log_buffer_read_handle handle;
+    handle.result = enum_buffer_result_code::err_empty_log_buffer;
 
     return handle;
 }
 
-void miso_ring_buffer::discard_read_chunk(LogBufferReadHandle& handle) {
+void miso_ring_buffer::discard_read_chunk(log_buffer_read_handle& handle) {
 #if defined(QLOG_DEBUG)
     assert(is_read_chunk_waiting_for_return_ && "You cant discard a chunk has not been read yet");
 
@@ -573,10 +573,10 @@ void miso_ring_buffer::discard_read_chunk(LogBufferReadHandle& handle) {
     }
 #endif
 
-    handle.result = BufferResult::err_empty_log_buffer;
+    handle.result = enum_buffer_result_code::err_empty_log_buffer;
 }
 
-void miso_ring_buffer::return_read_chunk(const LogBufferReadHandle& handle) {
+void miso_ring_buffer::return_read_chunk(const log_buffer_read_handle& handle) {
 #if defined(QLOG_DEBUG)
     assert(is_read_chunk_waiting_for_return_ && "You cant return a chunk has not been read yet");
 
@@ -591,7 +591,7 @@ void miso_ring_buffer::return_read_chunk(const LogBufferReadHandle& handle) {
                "only single thread reading is supported for miso_ring_buffer!");
     }
 
-    if (handle.result == BufferResult::success) {
+    if (handle.result == enum_buffer_result_code::success) {
         assert((handle.data_addr <= (std::uint8_t*)(aligned_blocks_ + aligned_blocks_count_)) &&
                (handle.data_addr >= (std::uint8_t*)aligned_blocks_) &&
                "please don't return a read handle not belongs to this miso_ring_buffer");
@@ -601,9 +601,9 @@ void miso_ring_buffer::return_read_chunk(const LogBufferReadHandle& handle) {
     bool need_flush = false;
     std::uint32_t start_cursor = head_->read_cursor_start_cache_;
 
-    if (handle.result == BufferResult::err_empty_log_buffer) {
+    if (handle.result == enum_buffer_result_code::err_empty_log_buffer) {
         need_flush = true;
-    } else if (handle.result == BufferResult::success) {
+    } else if (handle.result == enum_buffer_result_code::success) {
         head_->read_cursor_cache_ +=
             cursor_to_block(head_->read_cursor_cache_).chunk_head.get_block_num();
 

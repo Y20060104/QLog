@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <thread>
 
-#include "qlog/buffer/spsc_ring_buffer.hpp"
+#include "qlog/buffer/siso_ring_buffer.hpp"
 #include "qlog/global/log_vars.hpp"
 #include "qlog/platform/aligned_memory.hpp"
 #include "qlog/utility/utility_types.hpp"
@@ -28,12 +28,12 @@ int main() {
 #endif
         auto& globals = qlog::log_global_vars::get();
         check(globals.is_thread_check_enabled() == initially_enabled, "initial global policy");
-        const auto memory_size = qlog::buffer::SpscRingBuffer::calculate_min_size_of_memory(128);
+        const auto memory_size = qlog::buffer::siso_ring_buffer::calculate_min_size_of_memory(128);
         std::unique_ptr<void, decltype(&qlog::platform::aligned_free)> memory(
             qlog::platform::aligned_alloc(qlog::utility::QLOG_CACHE_LINE_SIZE, memory_size),
             &qlog::platform::aligned_free);
         check(memory != nullptr, "128-byte aligned SISO fixture");
-        qlog::buffer::SpscRingBuffer ring(memory.get(), memory_size, false);
+        qlog::buffer::siso_ring_buffer ring(memory.get(), memory_size, false);
         check(ring.is_thread_check_enable() == initially_enabled, "SISO initial policy");
         {
             qlog::scoped_thread_check_disable outer;

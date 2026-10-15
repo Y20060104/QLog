@@ -1,4 +1,4 @@
-#include "qlog/buffer/spsc_ring_buffer.hpp"
+#include "qlog/buffer/siso_ring_buffer.hpp"
 
 #include <cassert>
 #include <cstring>
@@ -22,17 +22,17 @@ void store_u32(void* address, std::uint32_t value) noexcept {
 }
 }  // namespace
 
-std::uint32_t SpscRingBuffer::calculate_min_size_of_memory(std::uint32_t expected_buffer_size) {
+std::uint32_t siso_ring_buffer::calculate_min_size_of_memory(std::uint32_t expected_buffer_size) {
     assert(expected_buffer_size <= (std::uint32_t{1} << 30));
 
     std::uint32_t rounded = qlog::utility::round_pow_of_two(expected_buffer_size);
 
-    const std::uint64_t total_size = std::uint64_t{rounded} + sizeof(Head) + CACHE_LINE_SIZE;
+    const std::uint64_t total_size = std::uint64_t{rounded} + sizeof(head) + CACHE_LINE_SIZE;
     assert(total_size <= std::numeric_limits<std::uint32_t>::max());
     return static_cast<std::uint32_t>(total_size);
 }
 
-void SpscRingBuffer::init_cursors() {
+void siso_ring_buffer::init_cursors() {
     head_->rt_reading_cursor_cache_ = 0;
     head_->rt_writing_cursor_cache_ = 0;
     head_->wt_reading_cursor_cache_ = 0;
@@ -42,13 +42,13 @@ void SpscRingBuffer::init_cursors() {
     head_->writing_cursor_.store(0, std::memory_order_release);
 }
 
-void SpscRingBuffer::init_with_memory(void* buffer, std::size_t buffer_size) {
+void siso_ring_buffer::init_with_memory(void* buffer, std::size_t buffer_size) {
     assert(buffer != nullptr);
 
     assert(reinterpret_cast<std::uintptr_t>(buffer) % CACHE_LINE_SIZE == 0);
 
-    assert(buffer_size >= sizeof(Head) + 2 * sizeof(Block));
-    const std::size_t max_blocks = (buffer_size - sizeof(Head)) / sizeof(Block);
+    assert(buffer_size >= sizeof(head) + 2 * sizeof(block));
+    const std::size_t max_blocks = (buffer_size - sizeof(head)) / sizeof(block);
     // CR: 这样循环计算 开销如何？BQLog怎么做的？
     std::size_t count = 1;
     while (count <= max_blocks / 2) {
@@ -56,25 +56,25 @@ void SpscRingBuffer::init_with_memory(void* buffer, std::size_t buffer_size) {
     }
 
     assert(count <=
-           static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()) / sizeof(Block));
+           static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()) / sizeof(block));
 
     aligned_blocks_count_ = static_cast<std::uint32_t>(count);
 
     static_assert(std::is_same_v<std::uint8_t, unsigned char>);
 
     auto* storage = ::new (buffer) unsigned char[buffer_size];
-    data_bytes_ = storage + sizeof(Head);
+    data_bytes_ = storage + sizeof(head);
 
-    aligned_blocks_ = ::new (static_cast<void*>(data_bytes_)) Block[aligned_blocks_count_];
+    aligned_blocks_ = ::new (static_cast<void*>(data_bytes_)) block[aligned_blocks_count_];
 
-    head_ = ::new (buffer) Head;
+    head_ = ::new (buffer) head;
     head_->aligned_blocks_count_cache_ = aligned_blocks_count_;
 
     init_cursors();
-    mmap_buffer_state_ = MemoryMapBufferState::init_with_memory;
+    mmap_buffer_state_ = memory_map_buffer_state::init_with_memory;
 }
 
-SpscRingBuffer::SpscRingBuffer(void* buffer, std::size_t buffer_size, bool is_memory_recovery)
+siso_ring_buffer::siso_ring_buffer(void* buffer, std::size_t buffer_size, bool is_memory_recovery)
     : is_memory_recovery_(is_memory_recovery) {
     if (is_memory_recovery == false) {
         init_with_memory(buffer, buffer_size);
@@ -85,9 +85,9 @@ SpscRingBuffer::SpscRingBuffer(void* buffer, std::size_t buffer_size, bool is_me
     }
 }
 
-SpscRingBuffer::~SpscRingBuffer() {}
+siso_ring_buffer::~siso_ring_buffer() {}
 
-void SpscRingBuffer::renew() {
+void siso_ring_buffer::renew() {
     init_cursors();
 #ifdef QLOG_DEBUG
     if (check_thread_) {
@@ -97,14 +97,14 @@ void SpscRingBuffer::renew() {
 #endif
 }
 
-std::uint32_t SpscRingBuffer::get_max_alloc_size() const {
+std::uint32_t siso_ring_buffer::get_max_alloc_size() const {
     return aligned_blocks_count_ * static_cast<std::uint32_t>(BLOCK_SIZE) -
-           static_cast<std::uint32_t>(offsetof(ChunkHead, data));
+           static_cast<std::uint32_t>(offsetof(chunk_head_def, data));
 }
 
-std::uint8_t* SpscRingBuffer::get_block_data_addr(Block& block) {
-    const auto index = static_cast<std::uint32_t>(&block - aligned_blocks_);
-    std::size_t data_size = load_u32(block.bytes + 4);
+std::uint8_t* siso_ring_buffer::get_block_data_addr(block& current_block) {
+    const auto index = static_cast<std::uint32_t>(&current_block - aligned_blocks_);
+    std::size_t data_size = load_u32(current_block.padding + 4);
 
     const auto tail_bytes = std::uint64_t{aligned_blocks_count_ - index} * BLOCK_SIZE;
 
@@ -115,11 +115,11 @@ std::uint8_t* SpscRingBuffer::get_block_data_addr(Block& block) {
     return data_bytes_ + static_cast<std::size_t>(index) * BLOCK_SIZE + 8U;
 }
 
-LogBufferWriteHandle SpscRingBuffer::alloc_write_chunk(std::uint32_t size) {
+log_buffer_write_handle siso_ring_buffer::alloc_write_chunk(std::uint32_t size) {
 #ifdef QLOG_DEBUG
     debug_check_write_thread();
 #endif
-    LogBufferWriteHandle handle{};
+    log_buffer_write_handle handle{};
     const auto block_count = aligned_blocks_count_;
     const auto index = head_->wt_writing_cursor_cache_ & (block_count - 1U);
     const auto tail = block_count - index;
@@ -128,7 +128,7 @@ LogBufferWriteHandle SpscRingBuffer::alloc_write_chunk(std::uint32_t size) {
 
     if (normal > block_count || normal == 0 ||
         (normal > tail && normal + tail - 1U > block_count)) {
-        handle.result = BufferResult::err_alloc_size_invalid;
+        handle.result = enum_buffer_result_code::err_alloc_size_invalid;
         return handle;
     }
     // 如果尾部不足放下整个payload 那么从头部开始放 尾部空间计入本次占用块数
@@ -152,14 +152,14 @@ LogBufferWriteHandle SpscRingBuffer::alloc_write_chunk(std::uint32_t size) {
     }
 
     if (free_blocks < chunk_blocks) {
-        handle.result = BufferResult::err_not_enough_space;
+        handle.result = enum_buffer_result_code::err_not_enough_space;
         return handle;
     }
     // CR:BQLog 也只刷新一次，不循环等待？
 
-    auto& block = cursor_to_block(head_->wt_writing_cursor_cache_);
-    store_u32(block.bytes, chunk_blocks);
-    store_u32(block.bytes + 4, size);
+    auto& current_block = cursor_to_block(head_->wt_writing_cursor_cache_);
+    store_u32(current_block.padding, chunk_blocks);
+    store_u32(current_block.padding + 4, size);
 
     handle.data_addr = normal > tail
                            ? data_bytes_
@@ -167,12 +167,12 @@ LogBufferWriteHandle SpscRingBuffer::alloc_write_chunk(std::uint32_t size) {
 
     handle.low_space_flag = std::uint64_t{block_count - free_blocks} * 2U >= block_count;
 
-    handle.result = BufferResult::success;
+    handle.result = enum_buffer_result_code::success;
     return handle;
 }
 
-void SpscRingBuffer::commit_write_chunk(const LogBufferWriteHandle& handle) {
-    if (handle.result != BufferResult::success) {
+void siso_ring_buffer::commit_write_chunk(const log_buffer_write_handle& handle) {
+    if (handle.result != enum_buffer_result_code::success) {
         return;
     }
 
@@ -180,12 +180,12 @@ void SpscRingBuffer::commit_write_chunk(const LogBufferWriteHandle& handle) {
     debug_check_write_thread();
 #endif
 
-    auto& block = cursor_to_block(head_->wt_writing_cursor_cache_);
+    auto& current_block = cursor_to_block(head_->wt_writing_cursor_cache_);
 #ifdef QLOG_DEBUG
-    assert(handle.data_addr == get_block_data_addr(block));
+    assert(handle.data_addr == get_block_data_addr(current_block));
 #endif
 
-    const auto chunk_blocks = load_u32(block.bytes);
+    const auto chunk_blocks = load_u32(current_block.padding);
 
     assert(chunk_blocks > 0U && chunk_blocks <= aligned_blocks_count_);
 
@@ -197,27 +197,27 @@ void SpscRingBuffer::commit_write_chunk(const LogBufferWriteHandle& handle) {
     // 写句柄的有效调用协议内，二者定位同一块；不会修改有效调用的行为。”是什么意思？
 }
 
-LogBufferReadHandle SpscRingBuffer::read_chunk() {
+log_buffer_read_handle siso_ring_buffer::read_chunk() {
 #ifdef QLOG_DEBUG
     assert(!is_read_chunk_waiting_for_return_);
     debug_check_read_thread();
     is_read_chunk_waiting_for_return_ = true;
 #endif
 
-    LogBufferReadHandle handle{};
+    log_buffer_read_handle handle{};
     if (std::uint32_t(head_->rt_writing_cursor_cache_ - head_->rt_reading_cursor_cache_) == 0U) {
         head_->rt_writing_cursor_cache_ = head_->writing_cursor_.load(std::memory_order_acquire);
         if (std::uint32_t(head_->rt_writing_cursor_cache_ - head_->rt_reading_cursor_cache_) ==
             0U) {
-            handle.result = BufferResult::err_empty_log_buffer;
+            handle.result = enum_buffer_result_code::err_empty_log_buffer;
             return handle;
         }
     }
-    auto& block = cursor_to_block(head_->rt_reading_cursor_cache_);
-    std::uint32_t data_size = load_u32(block.bytes + 4);
+    auto& current_block = cursor_to_block(head_->rt_reading_cursor_cache_);
+    std::uint32_t data_size = load_u32(current_block.padding + 4);
 
 #ifdef QLOG_DEBUG
-    const auto block_count = load_u32(block.bytes);
+    const auto block_count = load_u32(current_block.padding);
     assert(block_count > 0);
     assert(block_count <=
            std::uint32_t(head_->rt_writing_cursor_cache_ - head_->rt_reading_cursor_cache_));
@@ -227,55 +227,55 @@ LogBufferReadHandle SpscRingBuffer::read_chunk() {
 #endif
 
     handle.data_size = data_size;
-    handle.data_addr = get_block_data_addr(block);
-    handle.result = BufferResult::success;
+    handle.data_addr = get_block_data_addr(current_block);
+    handle.result = enum_buffer_result_code::success;
     return handle;
 }
 
-void SpscRingBuffer::return_read_chunk(const LogBufferReadHandle& handle) {
+void siso_ring_buffer::return_read_chunk(const log_buffer_read_handle& handle) {
 #ifdef QLOG_DEBUG
     assert(is_read_chunk_waiting_for_return_);
     debug_check_read_thread();
     is_read_chunk_waiting_for_return_ = false;
 #endif
 
-    if (handle.result != BufferResult::success) {
+    if (handle.result != enum_buffer_result_code::success) {
         return;
     }
-    auto& block = cursor_to_block(head_->rt_reading_cursor_cache_);
+    auto& current_block = cursor_to_block(head_->rt_reading_cursor_cache_);
 
 #ifdef QLOG_DEBUG
-    assert(handle.data_addr == get_block_data_addr(block));
+    assert(handle.data_addr == get_block_data_addr(current_block));
 #endif
 
-    std::uint32_t block_num = load_u32(block.bytes);
+    std::uint32_t block_num = load_u32(current_block.padding);
 
     head_->rt_reading_cursor_cache_ += block_num;
     head_->reading_cursor_.store(head_->rt_reading_cursor_cache_, std::memory_order_release);
 }
 
-void SpscRingBuffer::discard_read_chunk(LogBufferReadHandle& handle) {
+void siso_ring_buffer::discard_read_chunk(log_buffer_read_handle& handle) {
 #ifdef QLOG_DEBUG
     assert(is_read_chunk_waiting_for_return_);
     debug_check_read_thread();
     is_read_chunk_waiting_for_return_ = false;
 #endif
 
-    handle.result = BufferResult::err_empty_log_buffer;
+    handle.result = enum_buffer_result_code::err_empty_log_buffer;
 }
 
-LogBufferReadHandle SpscRingBuffer::read_an_empty_chunk() {
-    LogBufferReadHandle handle{};
+log_buffer_read_handle siso_ring_buffer::read_an_empty_chunk() {
+    log_buffer_read_handle handle{};
 #ifdef QLOG_DEBUG
     assert(!is_read_chunk_waiting_for_return_);
     debug_check_read_thread();
     is_read_chunk_waiting_for_return_ = true;
 #endif
-    handle.result = BufferResult::err_empty_log_buffer;
+    handle.result = enum_buffer_result_code::err_empty_log_buffer;
     return handle;
 }
 
-SpscRingBuffer::BatchReadHandle SpscRingBuffer::batch_read() {
+siso_ring_buffer::siso_buffer_batch_read_handle siso_ring_buffer::batch_read() {
 #ifdef QLOG_DEBUG
     assert(!is_read_chunk_waiting_for_return_);
     debug_check_read_thread();
@@ -285,39 +285,39 @@ SpscRingBuffer::BatchReadHandle SpscRingBuffer::batch_read() {
     if (head_->rt_writing_cursor_cache_ == head_->rt_reading_cursor_cache_) {
         head_->rt_writing_cursor_cache_ = head_->writing_cursor_.load(std::memory_order_acquire);
     }
-    BatchReadHandle handle;
+    siso_buffer_batch_read_handle handle;
     handle.parent_ = this;
     handle.start_cursor_ = head_->rt_reading_cursor_cache_;
     handle.current_cursor_ = head_->rt_reading_cursor_cache_;
     handle.end_cursor_ = head_->rt_writing_cursor_cache_;
 
     if (handle.start_cursor_ == handle.end_cursor_) {
-        handle.result = BufferResult::err_empty_log_buffer;
+        handle.result = enum_buffer_result_code::err_empty_log_buffer;
         return handle;
     }
 
-    handle.result = BufferResult::success;
+    handle.result = enum_buffer_result_code::success;
     return handle;
 }
 
-LogBufferReadHandle SpscRingBuffer::BatchReadHandle::next() {
+log_buffer_read_handle siso_ring_buffer::siso_buffer_batch_read_handle::next() {
 #ifdef QLOG_DEBUG
-    assert(result == BufferResult::success);
+    assert(result == enum_buffer_result_code::success);
     assert(has_next());
 #endif
 
     std::uint32_t current_cursor = current_cursor_;
-    Block& block = parent_->cursor_to_block(current_cursor);
-    std::uint32_t block_num = load_u32(block.bytes);
-    std::uint32_t data_size = load_u32(block.bytes + 4);
+    block& current_block = parent_->cursor_to_block(current_cursor);
+    std::uint32_t block_num = load_u32(current_block.padding);
+    std::uint32_t data_size = load_u32(current_block.padding + 4);
 
 #ifdef QLOG_DEBUG
     assert(block_num > 0 && block_num <= std::uint32_t(end_cursor_ - current_cursor_));
 #endif
 
-    LogBufferReadHandle handle{};
+    log_buffer_read_handle handle{};
     handle.result = result;
-    handle.data_addr = parent_->get_block_data_addr(block);
+    handle.data_addr = parent_->get_block_data_addr(current_block);
     handle.data_size = data_size;
 
 #ifdef QLOG_DEBUG
@@ -329,7 +329,7 @@ LogBufferReadHandle SpscRingBuffer::BatchReadHandle::next() {
     return handle;
 }
 
-void SpscRingBuffer::return_batch_read_chunks(const BatchReadHandle& handle) {
+void siso_ring_buffer::return_batch_read_chunks(const siso_buffer_batch_read_handle& handle) {
 #ifdef QLOG_DEBUG
 
     assert(is_read_chunk_waiting_for_return_);
@@ -337,7 +337,7 @@ void SpscRingBuffer::return_batch_read_chunks(const BatchReadHandle& handle) {
     is_read_chunk_waiting_for_return_ = false;
 #endif
 
-    if (handle.result != BufferResult::success) {
+    if (handle.result != enum_buffer_result_code::success) {
         return;
     }
 
@@ -353,16 +353,16 @@ void SpscRingBuffer::return_batch_read_chunks(const BatchReadHandle& handle) {
 }
 
 #ifdef QLOG_DEBUG
-bool SpscRingBuffer::BatchReadHandle::verify_chunk(const LogBufferReadHandle& handle) const {
-    if (result != BufferResult::success) {
+bool siso_ring_buffer::siso_buffer_batch_read_handle::verify_chunk(const log_buffer_read_handle& handle) const {
+    if (result != enum_buffer_result_code::success) {
         return false;
     }
-    auto& block = parent_->cursor_to_block(last_cursor_);
-    return handle.data_addr == parent_->get_block_data_addr(block);
+    auto& current_block = parent_->cursor_to_block(last_cursor_);
+    return handle.data_addr == parent_->get_block_data_addr(current_block);
 }
 #endif
 
-void SpscRingBuffer::data_traverse(void (*callback)(std::uint8_t*, std::uint32_t, void*),
+void siso_ring_buffer::data_traverse(void (*callback)(std::uint8_t*, std::uint32_t, void*),
                                    void* user_data) {
 #ifdef QLOG_DEBUG
     debug_check_read_thread();
@@ -378,41 +378,41 @@ void SpscRingBuffer::data_traverse(void (*callback)(std::uint8_t*, std::uint32_t
                 return;
             }
         }
-        Block& block = cursor_to_block(cursor);
-        std::uint32_t block_num = load_u32(block.bytes);
-        std::uint32_t data_size = load_u32(block.bytes + 4);
+        block& current_block = cursor_to_block(cursor);
+        std::uint32_t block_num = load_u32(current_block.padding);
+        std::uint32_t data_size = load_u32(current_block.padding + 4);
 
 #ifdef QLOG_DEBUG
         assert(block_num > 0);
         assert(block_num <= static_cast<std::uint32_t>(head_->rt_writing_cursor_cache_ - cursor));
 #endif
-        callback(get_block_data_addr(block), data_size, user_data);
+        callback(get_block_data_addr(current_block), data_size, user_data);
         cursor += block_num;
     }
 }
 
-bool SpscRingBuffer::try_recover_from_exist_memory_map(void* buffer, std::size_t buffer_size) {
+bool siso_ring_buffer::try_recover_from_exist_memory_map(void* buffer, std::size_t buffer_size) {
     // Storage validity is a caller precondition; invalid snapshot content returns false.
     assert(buffer != nullptr);
     assert(reinterpret_cast<std::uintptr_t>(buffer) % CACHE_LINE_SIZE == 0);
-    assert(buffer_size >= sizeof(Head) + 2 * sizeof(Block));
+    assert(buffer_size >= sizeof(head) + 2 * sizeof(block));
 
-    const auto max_blocks = (buffer_size - sizeof(Head)) / sizeof(Block);
+    const auto max_blocks = (buffer_size - sizeof(head)) / sizeof(block);
     std::size_t count = 1;
     while (count <= max_blocks / 2) {
         count *= 2;
     }
     assert(count <=
-           static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()) / sizeof(Block));
+           static_cast<std::size_t>(std::numeric_limits<std::int32_t>::max()) / sizeof(block));
     const auto blockcount = static_cast<std::uint32_t>(count);
 
-    // Default initialization preserves the mapped bytes. Do not construct Head yet:
+    // Default initialization preserves the mapped bytes. Do not construct head yet:
     // its atomic constructors must not run before the snapshot has been validated.
     auto* storage = ::new (buffer) unsigned char[buffer_size];
-    auto* data = storage + sizeof(Head);
-    const auto saved_blockcount = load_u32(storage + offsetof(Head, aligned_blocks_count_cache_));
-    const auto saved_read = load_u32(storage + offsetof(Head, rt_reading_cursor_cache_));
-    const auto saved_write = load_u32(storage + offsetof(Head, wt_writing_cursor_cache_));
+    auto* data = storage + sizeof(head);
+    const auto saved_blockcount = load_u32(storage + offsetof(head, aligned_blocks_count_cache_));
+    const auto saved_read = load_u32(storage + offsetof(head, rt_reading_cursor_cache_));
+    const auto saved_write = load_u32(storage + offsetof(head, wt_writing_cursor_cache_));
 
     if (saved_blockcount != blockcount) {
         return false;
@@ -455,8 +455,8 @@ bool SpscRingBuffer::try_recover_from_exist_memory_map(void* buffer, std::size_t
     // Establish runtime objects only after validation; never restore atomic bytes.
     aligned_blocks_count_ = blockcount;
     data_bytes_ = data;
-    aligned_blocks_ = ::new (static_cast<void*>(data_bytes_)) Block[blockcount];
-    head_ = ::new (buffer) Head;
+    aligned_blocks_ = ::new (static_cast<void*>(data_bytes_)) block[blockcount];
+    head_ = ::new (buffer) head;
     head_->aligned_blocks_count_cache_ = blockcount;
     head_->rt_reading_cursor_cache_ = saved_read;
     head_->rt_writing_cursor_cache_ = saved_write;
@@ -464,16 +464,16 @@ bool SpscRingBuffer::try_recover_from_exist_memory_map(void* buffer, std::size_t
     head_->wt_writing_cursor_cache_ = saved_write;
     head_->reading_cursor_.store(saved_read, std::memory_order_release);
     head_->writing_cursor_.store(saved_write, std::memory_order_release);
-    mmap_buffer_state_ = MemoryMapBufferState::recover_from_memory_map;
+    mmap_buffer_state_ = memory_map_buffer_state::recover_from_memory_map;
     return true;
 }
 
-void SpscRingBuffer::init_with_memory_map(void* buffer, std::size_t buffer_size) {
+void siso_ring_buffer::init_with_memory_map(void* buffer, std::size_t buffer_size) {
     init_with_memory(buffer, buffer_size);
-    mmap_buffer_state_ = MemoryMapBufferState::init_with_memmap;
+    mmap_buffer_state_ = memory_map_buffer_state::init_with_memmap;
 }
 #ifdef QLOG_DEBUG
-void SpscRingBuffer::debug_check_write_thread() {
+void siso_ring_buffer::debug_check_write_thread() {
     if (!is_thread_check_enable()) {
         return;
     }
@@ -484,7 +484,7 @@ void SpscRingBuffer::debug_check_write_thread() {
         assert(id == write_thread_id_);
     }
 }
-void SpscRingBuffer::debug_check_read_thread() {
+void siso_ring_buffer::debug_check_read_thread() {
     if (!is_thread_check_enable()) {
         return;
     }
@@ -498,7 +498,7 @@ void SpscRingBuffer::debug_check_read_thread() {
 
 #endif
 
-bool SpscRingBuffer::is_thread_check_enable() const {
+bool siso_ring_buffer::is_thread_check_enable() const {
 #ifdef QLOG_DEBUG
     return check_thread_ && qlog::log_global_vars::get().is_thread_check_enabled();
 #else
@@ -506,7 +506,7 @@ bool SpscRingBuffer::is_thread_check_enable() const {
 #endif
 }
 
-void SpscRingBuffer::set_thread_check_enable(bool enabled) {
+void siso_ring_buffer::set_thread_check_enable(bool enabled) {
 #ifdef QLOG_DEBUG
     check_thread_ = enabled;
     if (!check_thread_) {

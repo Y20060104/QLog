@@ -45,21 +45,21 @@ class group_node : public memory_pool_obj_base<group_node, true> {
     };
 
    private:
-    std::size_t get_group_meta_size(const LogBufferConfig& config);
+    std::size_t get_group_meta_size(const log_buffer_config& config);
 
-    std::size_t get_group_data_size(const LogBufferConfig& config,
+    std::size_t get_group_data_size(const log_buffer_config& config,
                                     std::uint16_t max_block_count_per_group);
 
-    create_memory_map_result create_memory_map(const LogBufferConfig& config,
+    create_memory_map_result create_memory_map(const log_buffer_config& config,
                                                std::uint16_t max_block_count_per_group,
                                                std::uint64_t index);
 
-    bool try_recover_from_memory_map(const LogBufferConfig& config,
+    bool try_recover_from_memory_map(const log_buffer_config& config,
                                      std::uint16_t max_block_count_per_group);
 
-    void init_memory_map(const LogBufferConfig& config, std::uint16_t max_block_count_per_group);
+    void init_memory_map(const log_buffer_config& config, std::uint16_t max_block_count_per_group);
 
-    void init_memory(const LogBufferConfig& config, std::uint16_t max_block_count_per_group);
+    void init_memory(const log_buffer_config& config, std::uint16_t max_block_count_per_group);
 
    private:
     pointer_type next_;
@@ -145,7 +145,7 @@ class group_list {
     static constexpr std::uint64_t GROUP_NODE_GC_LIFE_TIME_MS = 1000;
 
    public:
-    group_list(const LogBufferConfig& config, std::uint16_t max_block_count_per_group);
+    group_list(const log_buffer_config& config, std::uint16_t max_block_count_per_group);
 
     ~group_list();
 
@@ -285,12 +285,12 @@ class group_list {
 #endif
     }
 
-    qlog_forceinline const LogBufferConfig& get_config() const {
+    qlog_forceinline const log_buffer_config& get_config() const {
         return config_;
     }
 
    private:
-    const LogBufferConfig& config_;
+    const log_buffer_config& config_;
     std::uint16_t max_block_count_per_group_;
 
 #if defined(QLOG_UNIT_TEST)

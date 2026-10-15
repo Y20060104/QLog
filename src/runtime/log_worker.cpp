@@ -14,7 +14,7 @@
 #include "qlog/runtime/log_manager.hpp"
 #include "qlog/runtime/log_types.hpp"
 #if !defined(_WIN32)
-#ifndef BQ_PS
+#ifndef QLOG_PS
 #include <signal.h>
 #endif
 #endif
@@ -38,11 +38,11 @@ void log_worker::init(log_thread_mode thead_mode, log_imp* log_target) {
         log_target_ = log_target;
     }
     if (thread_mode_ == log_thread_mode::async) {
-        set_thread_name("BqLogW_Pub");
+        set_thread_name("QLogW_Pub");
     } else {
         int32_t name_seq = log_worker_name_seq.fetch_add_relaxed(1);
         char name_tmp[16];
-        snprintf(name_tmp, sizeof(name_tmp), "BqLogW_%" PRId32, name_seq);
+        snprintf(name_tmp, sizeof(name_tmp), "QLogW_%" PRId32, name_seq);
         set_thread_name(name_tmp);
     }
 }

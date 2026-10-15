@@ -5,10 +5,10 @@
 #include "qlog/utility/string_utils.hpp"
 
 namespace qlog::config {
-qlog::buffer::LogBufferConfig get_log_buffer_config_by_config(
+qlog::buffer::log_buffer_config get_log_buffer_config_by_config(
     const std::string& log_name, const std::vector<std::string>& log_categories_name,
     const PropertyValue& log_config, bool memory_map_supported) {
-    qlog::buffer::LogBufferConfig buffer_config;
+    qlog::buffer::log_buffer_config buffer_config;
     buffer_config.log_name = log_name;
     buffer_config.log_categories_name = log_categories_name;
 
@@ -30,11 +30,11 @@ qlog::buffer::LogBufferConfig get_log_buffer_config_by_config(
                 static_cast<std::string>(log_config["buffer_policy_when_full"]);
 
             if (qlog::utility::equals_ignore_case(policy_config, "discard")) {
-                buffer_config.policy = qlog::buffer::LogMemoryPolicy::discard_when_full;
+                buffer_config.policy = qlog::buffer::log_memory_policy::discard_when_full;
             } else if (qlog::utility::equals_ignore_case(policy_config, "block")) {
-                buffer_config.policy = qlog::buffer::LogMemoryPolicy::block_when_full;
+                buffer_config.policy = qlog::buffer::log_memory_policy::block_when_full;
             } else if (qlog::utility::equals_ignore_case(policy_config, "expand")) {
-                buffer_config.policy = qlog::buffer::LogMemoryPolicy::auto_expand_when_full;
+                buffer_config.policy = qlog::buffer::log_memory_policy::auto_expand_when_full;
             }
         }
 

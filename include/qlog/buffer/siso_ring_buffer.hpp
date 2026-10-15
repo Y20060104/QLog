@@ -9,31 +9,31 @@
 #include "qlog/utility/utility_types.hpp"
 
 namespace qlog::buffer {
-class SpscRingBuffer {
+class siso_ring_buffer {
    private:
     static constexpr std::size_t BLOCK_SIZE = 8;
     static constexpr std::size_t BLOCK_SIZE_LOG2 = 3;
     static constexpr std::size_t CACHE_LINE_SIZE = qlog::utility::QLOG_CACHE_LINE_SIZE;
 
-    struct alignas(4) ChunkHead {
+    struct alignas(4) chunk_head_def {
         std::uint32_t block_num;
         std::uint32_t data_size;
         std::uint8_t data[1];
         std::uint8_t padding[3];
     };
 
-    static_assert(sizeof(ChunkHead) == 12);
-    static_assert(alignof(ChunkHead) == 4);
-    static_assert(offsetof(ChunkHead, block_num) == 0);
-    static_assert(offsetof(ChunkHead, data_size) == 4);
-    static_assert(offsetof(ChunkHead, data) == 8);
+    static_assert(sizeof(chunk_head_def) == 12);
+    static_assert(alignof(chunk_head_def) == 4);
+    static_assert(offsetof(chunk_head_def, block_num) == 0);
+    static_assert(offsetof(chunk_head_def, data_size) == 4);
+    static_assert(offsetof(chunk_head_def, data) == 8);
 
-    struct Block {
-        std::uint8_t bytes[BLOCK_SIZE];
+    struct block {
+        std::uint8_t padding[BLOCK_SIZE];
     };
-    static_assert(sizeof(Block) == BLOCK_SIZE);
+    static_assert(sizeof(block) == BLOCK_SIZE);
 
-    struct alignas(CACHE_LINE_SIZE) Head {
+    struct alignas(CACHE_LINE_SIZE) head {
         // CR: 补alignas()?
         std::uint32_t aligned_blocks_count_cache_;  // 初始化/恢复的容量快照
         std::uint32_t rt_reading_cursor_cache_;
@@ -45,42 +45,42 @@ class SpscRingBuffer {
         alignas(CACHE_LINE_SIZE) std::atomic<std::uint32_t> reading_cursor_;
         alignas(CACHE_LINE_SIZE) std::atomic<std::uint32_t> writing_cursor_;
     };
-    // CR: 为什么说后续不要照搬 Block::to_chunk_head() 的类型重解释来访问外部字节；两个 u32 用 cpp
-    // 内的 memcpy 辅助函数访问。payload 固定从 8 字节后开始，不能使用 sizeof(ChunkHead)
+    // CR: 为什么说后续不要照搬 block::to_chunk_head() 的类型重解释来访问外部字节；两个 u32 用 cpp
+    // 内的 memcpy 辅助函数访问。payload 固定从 8 字节后开始，不能使用 sizeof(chunk_head_def)
     // 计算头开销，也不能整体写入 12 字节覆盖 payload。两种处理方式 BQLog性能更好
     // 还是QLog性能更好呢？
 
-    static_assert(std::is_standard_layout_v<Head>);
+    static_assert(std::is_standard_layout_v<head>);
     static_assert(sizeof(std::atomic<std::uint32_t>) == 4);
     static_assert(std::atomic<std::uint32_t>::is_always_lock_free);
-    static_assert(alignof(Head) == CACHE_LINE_SIZE);
-    static_assert(sizeof(Head) == 4 * CACHE_LINE_SIZE);
+    static_assert(alignof(head) == CACHE_LINE_SIZE);
+    static_assert(sizeof(head) == 4 * CACHE_LINE_SIZE);
 
-    static_assert(offsetof(Head, aligned_blocks_count_cache_) == 0);
-    static_assert(offsetof(Head, rt_reading_cursor_cache_) == 4);
-    static_assert(offsetof(Head, rt_writing_cursor_cache_) == 8);
-    static_assert(offsetof(Head, wt_reading_cursor_cache_) == CACHE_LINE_SIZE);
-    static_assert(offsetof(Head, wt_writing_cursor_cache_) == CACHE_LINE_SIZE + 4);
-    static_assert(offsetof(Head, reading_cursor_) == 2 * CACHE_LINE_SIZE);
-    static_assert(offsetof(Head, writing_cursor_) == 3 * CACHE_LINE_SIZE);
+    static_assert(offsetof(head, aligned_blocks_count_cache_) == 0);
+    static_assert(offsetof(head, rt_reading_cursor_cache_) == 4);
+    static_assert(offsetof(head, rt_writing_cursor_cache_) == 8);
+    static_assert(offsetof(head, wt_reading_cursor_cache_) == CACHE_LINE_SIZE);
+    static_assert(offsetof(head, wt_writing_cursor_cache_) == CACHE_LINE_SIZE + 4);
+    static_assert(offsetof(head, reading_cursor_) == 2 * CACHE_LINE_SIZE);
+    static_assert(offsetof(head, writing_cursor_) == 3 * CACHE_LINE_SIZE);
 
    public:
-    struct BatchReadHandle {
-        BufferResult result = BufferResult::err_empty_log_buffer;
+    struct siso_buffer_batch_read_handle {
+        enum_buffer_result_code result = enum_buffer_result_code::err_empty_log_buffer;
 
         bool has_next() const {
             return current_cursor_ != end_cursor_;
         }
 
-        LogBufferReadHandle next();
+        log_buffer_read_handle next();
 #ifdef QLOG_DEBUG
-        bool verify_chunk(const LogBufferReadHandle& handle) const;
+        bool verify_chunk(const log_buffer_read_handle& handle) const;
 #endif
 
        private:
-        friend class SpscRingBuffer;
+        friend class siso_ring_buffer;
 
-        SpscRingBuffer* parent_;
+        siso_ring_buffer* parent_;
         std::uint32_t start_cursor_;
         std::uint32_t current_cursor_;
         std::uint32_t end_cursor_;
@@ -89,26 +89,26 @@ class SpscRingBuffer {
 #endif
     };
 
-    SpscRingBuffer() = delete;
-    SpscRingBuffer(void* buffer, std::size_t buffer_size, bool is_memory_recovery);
+    siso_ring_buffer() = delete;
+    siso_ring_buffer(void* buffer, std::size_t buffer_size, bool is_memory_recovery);
 
-    SpscRingBuffer(const SpscRingBuffer&) = delete;
-    SpscRingBuffer& operator=(const SpscRingBuffer&) = delete;
+    siso_ring_buffer(const siso_ring_buffer&) = delete;
+    siso_ring_buffer& operator=(const siso_ring_buffer&) = delete;
 
-    ~SpscRingBuffer();
+    ~siso_ring_buffer();
 
     void renew();
 
-    LogBufferWriteHandle alloc_write_chunk(std::uint32_t size);
-    void commit_write_chunk(const LogBufferWriteHandle& handle);
+    log_buffer_write_handle alloc_write_chunk(std::uint32_t size);
+    void commit_write_chunk(const log_buffer_write_handle& handle);
 
-    LogBufferReadHandle read_chunk();
-    LogBufferReadHandle read_an_empty_chunk();
-    void discard_read_chunk(LogBufferReadHandle& handle);
-    void return_read_chunk(const LogBufferReadHandle& handle);
+    log_buffer_read_handle read_chunk();
+    log_buffer_read_handle read_an_empty_chunk();
+    void discard_read_chunk(log_buffer_read_handle& handle);
+    void return_read_chunk(const log_buffer_read_handle& handle);
 
-    BatchReadHandle batch_read();
-    void return_batch_read_chunks(const BatchReadHandle& handle);
+    siso_buffer_batch_read_handle batch_read();
+    void return_batch_read_chunks(const siso_buffer_batch_read_handle& handle);
 
     void data_traverse(void (*callback)(std::uint8_t*, std::uint32_t, void*), void* user_data);
 
@@ -119,7 +119,7 @@ class SpscRingBuffer {
 
     std::uint32_t get_max_alloc_size() const;
 
-    MemoryMapBufferState get_memory_map_buffer_state() const {
+    memory_map_buffer_state get_memory_map_buffer_state() const {
         return mmap_buffer_state_;
     }
 
@@ -140,11 +140,11 @@ class SpscRingBuffer {
     }
 
    private:
-    Block& cursor_to_block(std::uint32_t cursor) {
+    block& cursor_to_block(std::uint32_t cursor) {
         return aligned_blocks_[cursor & (aligned_blocks_count_ - 1U)];
     }
 
-    std::uint8_t* get_block_data_addr(Block& block);
+    std::uint8_t* get_block_data_addr(block& current_block);
 
     bool try_recover_from_exist_memory_map(void* buffer, std::size_t buffer_size);
 
@@ -154,11 +154,11 @@ class SpscRingBuffer {
 
     void init_cursors();
 
-    Head* head_;
-    Block* aligned_blocks_;
+    head* head_;
+    block* aligned_blocks_;
     std::uint32_t aligned_blocks_count_;
     bool is_memory_recovery_;
-    MemoryMapBufferState mmap_buffer_state_;
+    memory_map_buffer_state mmap_buffer_state_;
     std::uint8_t* data_bytes_;
 #ifdef QLOG_DEBUG
     bool check_thread_ = true;

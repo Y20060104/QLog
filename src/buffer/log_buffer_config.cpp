@@ -1,7 +1,7 @@
 #include "qlog/buffer/log_buffer_config.hpp"
 
 namespace qlog::buffer {
-std::uint64_t LogBufferConfig::calculate_check_sum() const {
+std::uint64_t log_buffer_config::calculate_check_sum() const {
     std::string verify_str = log_name + "/";
 
     for (const auto& category_name : log_categories_name) {

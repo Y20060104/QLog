@@ -8,7 +8,7 @@
 #include <new>
 
 #include "qlog/buffer/log_buffer_defs.hpp"
-#include "qlog/buffer/spsc_ring_buffer.hpp"
+#include "qlog/buffer/siso_ring_buffer.hpp"
 #include "qlog/platform/macros.hpp"
 #include "qlog/utility/diagnostics.hpp"
 #include "qlog/utility/utility_types.hpp"
@@ -70,7 +70,7 @@ class alignas(8) block_node_head {
     char padding_[8 - sizeof(next_) - sizeof(type_)];
 
     alignas(8) char misc_data_[qlog::utility::QLOG_CACHE_LINE_SIZE - 8];
-    char buffer_[sizeof(SpscRingBuffer)];
+    char buffer_[sizeof(siso_ring_buffer)];
 
    public:
     block_node_head(block_list_type type, void* buffer, std::size_t buffer_size,
@@ -88,8 +88,8 @@ class alignas(8) block_node_head {
 
     void set_misc_data(const void* data_src, std::size_t data_size);
 
-    qlog_forceinline SpscRingBuffer& get_buffer() {
-        return *reinterpret_cast<SpscRingBuffer*>(buffer_);
+    qlog_forceinline siso_ring_buffer& get_buffer() {
+        return *reinterpret_cast<siso_ring_buffer*>(buffer_);
     }
 
     qlog_forceinline void renew() {

@@ -18,7 +18,7 @@ block_node_head::block_node_head(block_list_type type, void* buffer, std::size_t
         std::memset(misc_data_, 0, sizeof(misc_data_));
     }
 
-    new (static_cast<void*>(&get_buffer()), qlog::utility::enum_new_dummy::dummy) SpscRingBuffer(
+    new (static_cast<void*>(&get_buffer()), qlog::utility::enum_new_dummy::dummy) siso_ring_buffer(
         buffer, buffer_size, is_memory_recovery);  // 这是在buffer原地址 进行构造函数的调用嘛
 
     [[maybe_unused]] std::size_t min_size =
@@ -29,21 +29,21 @@ block_node_head::block_node_head(block_list_type type, void* buffer, std::size_t
     assert(reinterpret_cast<std::uintptr_t>(static_cast<void*>(buffer_)) %
                    qlog::utility::QLOG_CACHE_LINE_SIZE ==
                0 &&
-           "SpscRingBuffer is not properly aligned!");
+           "siso_ring_buffer is not properly aligned!");
 
     assert((reinterpret_cast<std::uintptr_t>(static_cast<void*>(buffer_)) -
             reinterpret_cast<std::uintptr_t>(static_cast<void*>(&next_))) ==
                qlog::utility::QLOG_CACHE_LINE_SIZE &&
-           "SpscRingBuffer is not properly aligned!");
+           "siso_ring_buffer is not properly aligned!");
 
     assert(static_cast<std::size_t>(get_buffer().get_block_size() *
                                     get_buffer().get_total_blocks_count()) == min_size &&
-           "SpscRingBuffer usable size is unexpected, please check "
+           "siso_ring_buffer usable size is unexpected, please check "
            "calculation as memory alignment");
 }
 
 block_node_head::~block_node_head() {
-    get_buffer().~SpscRingBuffer();
+    get_buffer().~siso_ring_buffer();
 }
 
 void block_node_head::alignment_assert() {

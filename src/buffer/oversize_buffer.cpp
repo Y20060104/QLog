@@ -18,8 +18,8 @@ oversize_buffer::oversize_buffer(std::uint32_t required_siso_buffer_size,
 
     switch (mmap_result) {
         case create_memory_map_result::failed:
-            qlog::utility::object_constructor<SpscRingBuffer>::construct(
-                reinterpret_cast<SpscRingBuffer*>(siso_buffer_obj_),
+            qlog::utility::object_constructor<siso_ring_buffer>::construct(
+                reinterpret_cast<siso_ring_buffer*>(siso_buffer_obj_),
                 static_cast<std::uint8_t*>(data()) + static_cast<std::ptrdiff_t>(HEAD_SIZE),
                 calculate_size_of_memory(required_siso_buffer_size) -
                     static_cast<std::uint32_t>(HEAD_SIZE),
@@ -29,8 +29,8 @@ oversize_buffer::oversize_buffer(std::uint32_t required_siso_buffer_size,
             break;
 
         case create_memory_map_result::use_existed:
-            qlog::utility::object_constructor<SpscRingBuffer>::construct(
-                reinterpret_cast<SpscRingBuffer*>(siso_buffer_obj_),
+            qlog::utility::object_constructor<siso_ring_buffer>::construct(
+                reinterpret_cast<siso_ring_buffer*>(siso_buffer_obj_),
                 static_cast<std::uint8_t*>(data()) + static_cast<std::ptrdiff_t>(HEAD_SIZE),
                 calculate_size_of_memory(required_siso_buffer_size) -
                     static_cast<std::uint32_t>(HEAD_SIZE),
@@ -42,8 +42,8 @@ oversize_buffer::oversize_buffer(std::uint32_t required_siso_buffer_size,
             break;
 
         case create_memory_map_result::new_created:
-            qlog::utility::object_constructor<SpscRingBuffer>::construct(
-                reinterpret_cast<SpscRingBuffer*>(siso_buffer_obj_),
+            qlog::utility::object_constructor<siso_ring_buffer>::construct(
+                reinterpret_cast<siso_ring_buffer*>(siso_buffer_obj_),
                 static_cast<std::uint8_t*>(data()) + static_cast<std::ptrdiff_t>(HEAD_SIZE),
                 calculate_size_of_memory(required_siso_buffer_size) -
                     static_cast<std::uint32_t>(HEAD_SIZE),
@@ -64,17 +64,17 @@ oversize_buffer::~oversize_buffer() {
         return;
     }  // 为什么跳过了sisoplacement new？
 
-    qlog::utility::object_destructor<SpscRingBuffer>::destruct(&get_buffer());
+    qlog::utility::object_destructor<siso_ring_buffer>::destruct(&get_buffer());
 }
 
 std::uint32_t oversize_buffer::calculate_size_of_memory(std::uint32_t required_siso_buffer_size) {
-    return SpscRingBuffer::calculate_min_size_of_memory(required_siso_buffer_size) +
+    return siso_ring_buffer::calculate_min_size_of_memory(required_siso_buffer_size) +
            static_cast<std::uint32_t>(HEAD_SIZE);
 }
 
 bool oversize_buffer::try_recover_from_exist_memory_map() {
     if (get_buffer().get_memory_map_buffer_state() !=
-        MemoryMapBufferState::recover_from_memory_map) {
+        memory_map_buffer_state::recover_from_memory_map) {
         return false;
     }
 

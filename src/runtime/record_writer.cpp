@@ -81,8 +81,8 @@ record_write_handle log_write_begin(std::uint64_t log_id, std::uint8_t log_level
     head->log_format_data_len = format_str_bytes_len;
     head->format_hash = 0;
     if (format_str_data) {
-        std::memcpy(handle.format_data_addr, format_str_data, format_str_bytes_len);
-        head->format_hash = qlog::utility::get_hash_64(format_str_data, format_str_bytes_len);
+        head->format_hash = qlog::utility::qlog_memcpy_with_hash(
+            handle.format_data_addr, format_str_data, format_str_bytes_len);
     }
     return handle;
 }
@@ -106,7 +106,7 @@ void log_write_finish(std::uint64_t log_id, record_write_handle write_handle) {
     if (log->get_thread_mode() == log_thread_mode::sync) {
         log->sync_process(true);
     } else {
-        qlog::buffer::LogBufferWriteHandle handle;
+        qlog::buffer::log_buffer_write_handle handle;
         handle.data_addr = chunk_data_ptr;
         handle.result = write_handle.result;
         log->get_buffer().commit_write_chunk(handle);

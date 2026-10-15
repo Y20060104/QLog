@@ -12,7 +12,7 @@
 #include "qlog/buffer/log_buffer_defs.hpp"
 #include "qlog/buffer/miso_ring_buffer.hpp"
 #include "qlog/buffer/oversize_buffer.hpp"
-#include "qlog/buffer/spsc_ring_buffer.hpp"
+#include "qlog/buffer/siso_ring_buffer.hpp"
 #include "qlog/platform/atomic/atomic.hpp"
 #include "qlog/platform/macros.hpp"
 #include "qlog/platform/spin_lock.hpp"
@@ -72,7 +72,7 @@ class alignas(qlog::utility::QLOG_CACHE_LINE_SIZE) log_buffer {
         block_node_head* cur_block_ = nullptr;
         log_buffer* buffer_ = nullptr;
 
-        LogBufferWriteHandle oversize_parent_handle_;
+        log_buffer_write_handle oversize_parent_handle_;
         oversize_buffer_obj_def* oversize_target_buffer_;
 
         qlog::utility::shared_ptr<destruction_mark> destruction_mark_;
@@ -163,16 +163,16 @@ class alignas(qlog::utility::QLOG_CACHE_LINE_SIZE) log_buffer {
                       "invalid block_misc_data size");
 
    public:
-    log_buffer(LogBufferConfig& config);
+    log_buffer(log_buffer_config& config);
     ~log_buffer();
 
-    LogBufferWriteHandle alloc_write_chunk(std::uint32_t size, std::uint64_t current_epoch_ms);
+    log_buffer_write_handle alloc_write_chunk(std::uint32_t size, std::uint64_t current_epoch_ms);
 
-    void commit_write_chunk(const LogBufferWriteHandle& handle);
+    void commit_write_chunk(const log_buffer_write_handle& handle);
 
-    qlog_forceinline LogBufferReadHandle read_chunk();
+    qlog_forceinline log_buffer_read_handle read_chunk();
 
-    qlog_forceinline void return_read_chunk(const LogBufferReadHandle& handle);
+    qlog_forceinline void return_read_chunk(const log_buffer_read_handle& handle);
 
     qlog_forceinline std::uint16_t get_version() const {
         return version_;
@@ -186,7 +186,7 @@ class alignas(qlog::utility::QLOG_CACHE_LINE_SIZE) log_buffer {
         return rt_cache_.current_reading_.is_in_recovery_reading_;
     }
 
-    qlog_forceinline const LogBufferConfig& get_config() const {
+    qlog_forceinline const log_buffer_config& get_config() const {
         return config_;
     }
 
@@ -239,11 +239,11 @@ class alignas(qlog::utility::QLOG_CACHE_LINE_SIZE) log_buffer {
     void prepare_and_fix_recovery_data();
     void clear_recovery_data();
 
-    bool rt_read_from_lp_buffer(LogBufferReadHandle& out_handle);
+    bool rt_read_from_lp_buffer(log_buffer_read_handle& out_handle);
 
-    LogBufferReadHandle read_chunk_full_impl();
+    log_buffer_read_handle read_chunk_full_impl();
 
-    void return_read_chunk_full_impl(const LogBufferReadHandle& handle);
+    void return_read_chunk_full_impl(const log_buffer_read_handle& handle);
 
 #if defined(QLOG_DEBUG)
     void debug_check_read_thread();
@@ -255,22 +255,22 @@ class alignas(qlog::utility::QLOG_CACHE_LINE_SIZE) log_buffer {
     void rt_try_traverse_to_next_version();
     void refresh_traverse_end_mark();
 
-    LogBufferWriteHandle wt_alloc_oversize_write_chunk(std::uint32_t size,
+    log_buffer_write_handle wt_alloc_oversize_write_chunk(std::uint32_t size,
                                                        std::uint64_t current_epoch_ms);
 
-    void wt_commit_oversize_write_chunk(const LogBufferWriteHandle& oversize_handle);
+    void wt_commit_oversize_write_chunk(const log_buffer_write_handle& oversize_handle);
 
-    bool rt_read_oversize_chunk(const LogBufferReadHandle& parent_handle,
-                                LogBufferReadHandle& out_oversize_handle);
+    bool rt_read_oversize_chunk(const log_buffer_read_handle& parent_handle,
+                                log_buffer_read_handle& out_oversize_handle);
 
-    void rt_return_oversize_read_chunk(const LogBufferReadHandle& oversize_handle);
+    void rt_return_oversize_read_chunk(const log_buffer_read_handle& oversize_handle);
 
     void rt_recycle_oversize_buffers();
 
    private:
     friend struct log_tls_info;
 
-    LogBufferConfig config_;
+    log_buffer_config config_;
     std::uint64_t id_;
     group_list hp_buffer_;
     miso_ring_buffer lp_buffer_;
@@ -308,8 +308,8 @@ class alignas(qlog::utility::QLOG_CACHE_LINE_SIZE) log_buffer {
             bool traverse_end_block_is_working_ = false;
             block_node_head* traverse_end_block_ = nullptr;
 
-            SpscRingBuffer::BatchReadHandle hp_handle_cache_;
-            LogBufferReadHandle rt_oversize_parent_handle_;
+            siso_ring_buffer::siso_buffer_batch_read_handle hp_handle_cache_;
+            log_buffer_read_handle rt_oversize_parent_handle_;
             oversize_buffer_obj_def* rt_oversize_target_buffer_ = nullptr;
         } current_reading_;
 
@@ -395,32 +395,32 @@ const context_head& oversize_context);
 // cur_block_非空指的是block list中的block嘛？
 // 为什么要用scoped_handle，这里传入的finishmarkhandle就是writehandle，为什么还需要包含readhandle/writehandle的scopredhandle？
 
-qlog_forceinline LogBufferReadHandle log_buffer::read_chunk() {
+qlog_forceinline log_buffer_read_handle log_buffer::read_chunk() {
 #if defined(QLOG_DEBUG)
     debug_check_read_thread();
 #endif
 
     auto& hp_handle = rt_cache_.current_reading_.hp_handle_cache_;
 
-    QLOG_LIKELY_IF(hp_handle.result == BufferResult::success) {
+    QLOG_LIKELY_IF(hp_handle.result == enum_buffer_result_code::success) {
         if (hp_handle.has_next()) {
             return hp_handle.next();
         }
 
-        hp_handle.result = BufferResult::err_empty_log_buffer;
+        hp_handle.result = enum_buffer_result_code::err_empty_log_buffer;
     }
 
     return read_chunk_full_impl();
 }
 
-qlog_forceinline void log_buffer::return_read_chunk(const LogBufferReadHandle& handle) {
+qlog_forceinline void log_buffer::return_read_chunk(const log_buffer_read_handle& handle) {
 #if defined(QLOG_DEBUG)
     debug_check_read_thread();
 #endif
 
     auto& rt_reading = rt_cache_.current_reading_;
 
-    QLOG_LIKELY_IF(rt_reading.hp_handle_cache_.result == BufferResult::success) {
+    QLOG_LIKELY_IF(rt_reading.hp_handle_cache_.result == enum_buffer_result_code::success) {
 #if defined(QLOG_DEBUG)
         assert(rt_reading.hp_handle_cache_.verify_chunk(handle) &&
                "log_buffer::return_read_chunk hp chunk return verify failed");
