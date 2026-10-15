@@ -23,6 +23,8 @@ endfunction()
 
 add_library(qlog STATIC
     src/version.cpp
+    src/log.cpp
+    src/runtime/record_writer.cpp
     src/buffer/spsc_ring_buffer.cpp
     src/buffer/log_buffer_config.cpp
     src/buffer/normal_buffer.cpp
@@ -36,6 +38,21 @@ add_library(qlog STATIC
     src/config/filter_config.cpp
     src/config/buffer_config.cpp
     src/runtime/log_level_bitmap.cpp
+    src/runtime/log_imp.cpp
+    src/runtime/log_manager.cpp
+    src/runtime/log_worker.cpp
+    src/runtime/log_snapshot.cpp
+    src/runtime/appender/appender_base.cpp
+    src/runtime/appender/appender_console.cpp
+    src/runtime/appender/appender_file_base.cpp
+    src/runtime/appender/appender_file_text.cpp
+    src/runtime/appender/appender_file_binary.cpp
+    src/runtime/appender/appender_file_compressed.cpp
+    src/encryption/aes.cpp
+    src/encryption/rsa.cpp
+    src/encryption/vernam.cpp
+    src/utility/random.cpp
+    src/utility/utf_mixed.cpp
     src/record/log_entry_handle.cpp
     src/layout/time_zone.cpp
     src/layout/layout.cpp
@@ -48,6 +65,7 @@ add_library(qlog STATIC
     src/global/common_vars.cpp
     src/global/log_vars.cpp
     src/io/file_manager.cpp
+    src/platform/thread.cpp
     src/platform/file_defs.cpp
     src/platform/file_path.cpp
     src/utility/diagnostics.cpp
@@ -67,16 +85,21 @@ if(WIN32)
         src/platform/windows/file_io.cpp
         src/platform/windows/file_path.cpp
         src/platform/windows/thread_ops.cpp
+        src/platform/windows/stack_trace.cpp
+        src/platform/windows/condition_variable.cpp
         src/platform/windows/time_ops.cpp
         src/platform/windows/mutex_win64.cpp
         src/platform/windows/system_api.cpp
     )
+    target_link_libraries(qlog PRIVATE dbghelp)
 else()
     target_sources(qlog PRIVATE
         src/platform/posix/aligned_memory.cpp
         src/platform/posix/file_io.cpp
         src/platform/posix/file_path.cpp
         src/platform/posix/thread_ops.cpp
+        src/platform/posix/stack_trace.cpp
+        src/platform/posix/condition_variable.cpp
         src/platform/posix/time_ops.cpp
         src/platform/posix/mutex_posix.cpp
     )
@@ -129,4 +152,16 @@ include(CTest)
 
 if(BUILD_TESTING)
     add_subdirectory(tests)
+endif()
+
+option(QLOG_BUILD_RUNTIME_BENCHMARK "Build current V1 public logging benchmark" OFF)
+if(QLOG_BUILD_RUNTIME_BENCHMARK)
+    add_executable(qlog_runtime_benchmark benchmarks/runtime_benchmark.cpp)
+    target_link_libraries(qlog_runtime_benchmark PRIVATE QLog::qlog)
+    qlog_enable_warnings(qlog_runtime_benchmark)
+endif()
+
+option(QLOG_BUILD_BQLOG_BENCHMARK "Build the benchmark aligned with upstream BQLog" OFF)
+if(QLOG_BUILD_BQLOG_BENCHMARK)
+    add_subdirectory(benchmark/cpp)
 endif()
