@@ -5,11 +5,23 @@
 #include "qlog/global/common_vars.hpp"
 #include "qlog/global/global_vars.hpp"
 #include "qlog/platform/atomic/atomic.hpp"
+#include "qlog/runtime/appender/appender_console.hpp"
+#include "qlog/runtime/log_manager.hpp"
 
 namespace qlog {
-// The original log_global_vars is migrated in stages; this is its Debug dependency.
+// BQLog V1 runtime globals; Decoder/foreign-language globals are outside this module.
 struct log_global_vars : public global_vars_base<log_global_vars, common_global_vars> {
     friend struct scoped_thread_check_disable;
+    const char* log_appender_type_names_[4] = {"console", "text_file", "raw_file",
+                                               "compressed_file"};
+    const char* log_recover_start_str_ =
+        "/************************************* BQLOG RECOVER START "
+        "*************************************/";
+    const char* log_recover_end_str_ =
+        "/************************************* BQLOG RECOVER END "
+        "*************************************/";
+    qlog::runtime::appender_console::console_static_misc console_static_misc_;
+    qlog::runtime::log_manager log_manager_inst_;
 
    private:
 #if defined(QLOG_DEBUG)
