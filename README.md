@@ -91,30 +91,32 @@ BQLog 使用官方 `BQ_LOG_FAST_INFO` 路径。QLog 当前尚无对应接口。
 
 ## 构建与复现
 
-将 BQLog 放在 QLog 同级的独立参考目录，并固定版本：
+以下命令均在 QLog 项目根目录执行；参考源码、构建目录及运行产物统一放在项目内的 `build/benchmark-repro` 目录，并固定 BQLog 版本：
 
 ```bash
-git clone --filter=blob:none --sparse https://github.com/Tencent/BqLog.git /home/qq344/BqLog-benchmark-20261015
-git -C /home/qq344/BqLog-benchmark-20261015 sparse-checkout set src include benchmark
-git -C /home/qq344/BqLog-benchmark-20261015 checkout 086f2fd831af86fcfa40e90015f89626d498d3d7
+mkdir -p build/benchmark-repro
+BQLOG_SOURCE=build/benchmark-repro/BqLog
+git clone --filter=blob:none --sparse https://github.com/Tencent/BqLog.git "$BQLOG_SOURCE"
+git -C "$BQLOG_SOURCE" sparse-checkout set src include benchmark
+git -C "$BQLOG_SOURCE" checkout 086f2fd831af86fcfa40e90015f89626d498d3d7
 
-QLOG_BENCH_BUILD=/mnt/d/qq344/Documents/qlog-benchmark-repro/qlog-release
-BQLOG_BENCH_BUILD=/mnt/d/qq344/Documents/qlog-benchmark-repro/bqlog-release
-cmake -S /home/qq344/QLog -B "$QLOG_BENCH_BUILD" -G Ninja \
+QLOG_BENCH_BUILD=build/benchmark-repro/qlog-release
+BQLOG_BENCH_BUILD=build/benchmark-repro/bqlog-release
+cmake -S . -B "$QLOG_BENCH_BUILD" -G Ninja \
   -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON \
   -DQLOG_BUILD_BQLOG_BENCHMARK=ON -DCMAKE_CXX_FLAGS=-Werror
 cmake --build "$QLOG_BENCH_BUILD" --parallel 4
 ctest --test-dir "$QLOG_BENCH_BUILD" --output-on-failure
-cmake -S /home/qq344/BqLog-benchmark-20261015/benchmark/cpp \
+cmake -S "$BQLOG_SOURCE/benchmark/cpp" \
   -B "$BQLOG_BENCH_BUILD" -G Ninja -DCMAKE_BUILD_TYPE=Release \
   -DTARGET_PLATFORM=linux
 cmake --build "$BQLOG_BENCH_BUILD" --parallel 4
-python3 /home/qq344/QLog/benchmark/cpp/run_benchmark.py \
+python3 benchmark/cpp/run_benchmark.py \
   --qlog-exe "$QLOG_BENCH_BUILD/benchmark/cpp/QLogBenchmark" \
-  --bqlog-exe /home/qq344/BqLog-benchmark-20261015/artifacts/benchmark/linux/Release/BqLogBenchmark \
-  --bqlog-source /home/qq344/BqLog-benchmark-20261015 \
-  --data-root /home/qq344/QLogBenchmarkData-repro \
-  --evidence-dir /mnt/d/qq344/Documents/qlog-benchmark-repro/measured \
+  --bqlog-exe "$BQLOG_SOURCE/artifacts/benchmark/linux/Release/BqLogBenchmark" \
+  --bqlog-source "$BQLOG_SOURCE" \
+  --data-root build/benchmark-repro/data \
+  --evidence-dir build/benchmark-repro/measured \
   --threads 1 4 --repeats 3 --min-host-free-gib 20
 ```
 
@@ -122,7 +124,7 @@ python3 /home/qq344/QLog/benchmark/cpp/run_benchmark.py \
 
 ## 结果与源码说明
 
-- [本轮机器结果](/home/qq344/QLog/docs/validation/BQLOG_BENCHMARK_20261015_RERUN_RESULTS.json)
-- [构建、测试与测量记录](/home/qq344/QLog/docs/validation/BQLOG_NAMING_RSA_BENCHMARK_20261015_CHS.md)
-- [生产实现对齐现状](/home/qq344/QLog/docs/decisions/BQLOG_ALIGNMENT_GAPS_20261015_CHS.md)
-- [BQLog 来源与许可](/home/qq344/QLog/NOTICE-BQLog.md)
+- [本轮机器结果](docs/validation/BQLOG_BENCHMARK_20261015_RERUN_RESULTS.json)
+- [构建、测试与测量记录](docs/validation/BQLOG_NAMING_RSA_BENCHMARK_20261015_CHS.md)
+- [生产实现对齐现状](docs/decisions/BQLOG_ALIGNMENT_GAPS_20261015_CHS.md)
+- [BQLog 来源与许可](NOTICE-BQLog.md)
