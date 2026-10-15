@@ -6,7 +6,7 @@
 
 用户明确“SPSC 对齐参考128”，并要求完整 group_data_head、group_node、遍历、分配、回收和恢复指导，新模块将由用户从 memory_pool 开始填写。助手只修正已写 SPSC：使用公共 QLOG_CACHE_LINE_SIZE=128，同步四个游标 offsetof 断言；Head=512，writer缓存偏移128/132，read/write原子偏移256/384。cpp原容量公式自动成为 roundup(expected)+640，不改其函数体。原CR保留，不重写标准原子/块字段memcpy适配，也不宣称整套对象布局或旧64映射格式兼容。
 
-199原生产/测试/CMake保护核对，仅include/qlog/buffer/spsc_ring_buffer.hpp变化，其余198不变；CMake已接SPSC/BlockList，不注册尚未填写的新GroupList/时钟源。
+199原生产/测试/CMake保护核对，仅include/qlog/buffer/siso_ring_buffer.hpp变化，其余198不变；CMake已接SPSC/BlockList，不注册尚未填写的新GroupList/时钟源。
 
 ## 对齐基准与新模块边界
 

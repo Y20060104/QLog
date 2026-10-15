@@ -16,11 +16,11 @@ QLog 权威目录 `/home/qq344/QLog`，分支 `feat/spsc-ring-opt`，HEAD `a1ba6
 
 ## 下一模块与依赖顺序
 
-下一模块为 qlog::buffer::block_node_head / block_list：include/qlog/buffer/block_list.hpp 与 src/buffer/block_list.cpp。块头内 placement 构造现有 SpscRingBuffer，固定索引链表承接 HP 路径；名称、成员布局、128 字节块头保留区、32 位 index/aba_mark、原 push/pop 与两个 thread_unsafe 接口、默认参数/断言/内存序按 BQLog。
+下一模块为 qlog::buffer::block_node_head / block_list：include/qlog/buffer/block_list.hpp 与 src/buffer/block_list.cpp。块头内 placement 构造现有 siso_ring_buffer，固定索引链表承接 HP 路径；名称、成员布局、128 字节块头保留区、32 位 index/aba_mark、原 push/pop 与两个 thread_unsafe 接口、默认参数/断言/内存序按 BQLog。
 
 依赖只补原 block_list_type 枚举、原模板 roundup_pow_of_two 和原 maybe-uninitialized 警告作用域宏。枚举归 buffer/log_buffer_defs.hpp；泛型工具归 utility/type_tools.hpp；警告宏归 platform/macros.hpp。已有 uint32 round_pow_of_two 不改，不把 size_t 输入缩窄到 uint32，也不增加 Manager 或存储包装类。bq::launder 使用 C++20 已有 std::launder；原 enum_new_dummy placement new 和现有诊断入口复用。
 
-当前 SpscRingBuffer 内部 CACHE_LINE_SIZE 仍为 64（旧 SISO 指南的既有实现），提交版 BQLog SISO 使用公共 128；它们的对象大小、Head 与最小申请长度不应宣称逐字节一致。本组 BlockList/块头前缀使用公共 128，并按 sizeof(SpscRingBuffer) 与其真实 calculate_min_size_of_memory 计算外部数据偏移，复用现有 SISO 接口；未扩展到整套 SISO 重写，不保证两项目映射文件互读。旧 SISO 文档中的“当前常见目标64”不能作为 BQLog 当前源码事实。
+当前 siso_ring_buffer 内部 CACHE_LINE_SIZE 仍为 64（旧 SISO 指南的既有实现），提交版 BQLog SISO 使用公共 128；它们的对象大小、Head 与最小申请长度不应宣称逐字节一致。本组 BlockList/块头前缀使用公共 128，并按 sizeof(siso_ring_buffer) 与其真实 calculate_min_size_of_memory 计算外部数据偏移，复用现有 SISO 接口；未扩展到整套 SISO 重写，不保证两项目映射文件互读。旧 SISO 文档中的“当前常见目标64”不能作为 BQLog 当前源码事实。
 
 原构造的 min_size 只在 assert 中使用，候选使用 [[maybe_unused]] 兼容 Release 的严格警告检查；不改变正常流程或断言。BQLog 的 packed typed-pointer 对象访问、恢复数据/断链检查边界和 16 位 ABA 标记回绕均保留并说明。CAS success release / failure acquire 原接口及 GNU 后端映射继续保留，已有 GCC 失败内存序合同边界不变。
 

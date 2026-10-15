@@ -17,8 +17,8 @@
 |---|---|
 | include/qlog/utility/utility.hpp | inline round_pow_of_two已有定义，原位保留 |
 | include/qlog/buffer/log_buffer_defs.hpp | bool low_space_flag、recover_from_memory_map已修正 |
-| include/qlog/buffer/spsc_ring_buffer.hpp | 类、Head字段对齐与偏移断言已建立；第三、四批所需批句柄Debug补充尚待完成 |
-| src/buffer/spsc_ring_buffer.cpp | 第一、二批初始化与单条读写已有实现；本轮补齐重复变量、块数断言、读借用配对及转换遗漏 |
+| include/qlog/buffer/siso_ring_buffer.hpp | 类、Head字段对齐与偏移断言已建立；第三、四批所需批句柄Debug补充尚待完成 |
+| src/buffer/siso_ring_buffer.cpp | 第一、二批初始化与单条读写已有实现；本轮补齐重复变量、块数断言、读借用配对及转换遗漏 |
 | CMakeLists.txt | 库仍只编译version.cpp；Ring尚未链接验收 |
 
 第三批=batch/next/return_batch、traverse；第四批=恢复、线程检查与开关收尾，用户尚未完成。不得把第一、二批语法检查或历史smoke当作完整Ring验收。
@@ -60,16 +60,16 @@ tests/
 
 ## 0.2 迁移完成，保护当前草稿
 
-权威文件为include/qlog/buffer/log_buffer_defs.hpp、include/qlog/buffer/spsc_ring_buffer.hpp、src/buffer/spsc_ring_buffer.cpp。旧detail路径只代表历史位置，不应重新创建兼容副本，也不能按旧清理列表删除新草稿。后续Record/Layout的目标目录见补全指南；目标位置不代表已有文件被迁移。
+权威文件为include/qlog/buffer/log_buffer_defs.hpp、include/qlog/buffer/siso_ring_buffer.hpp、src/buffer/siso_ring_buffer.cpp。旧detail路径只代表历史位置，不应重新创建兼容副本，也不能按旧清理列表删除新草稿。后续Record/Layout的目标目录见补全指南；目标位置不代表已有文件被迁移。
 
 ## 0.3 每一类声明/定义具体放哪里
 
 | 项目 | 头文件位置 | cpp位置/规则 |
 |---|---|---|
-| BufferResult、MemoryMapBufferState、LogBufferWriteHandle、LogBufferReadHandle | buffer/log_buffer_defs.hpp，namespace qlog::buffer；完整类型定义 | 无cpp，不建空log_buffer_defs.cpp |
+| enum_buffer_result_code、memory_map_buffer_state、log_buffer_write_handle、log_buffer_read_handle | buffer/log_buffer_defs.hpp，namespace qlog::buffer；完整类型定义 | 无cpp，不建空log_buffer_defs.cpp |
 | BLOCK_SIZE/BLOCK_SIZE_LOG2、ChunkHead、Block、Head、布局断言 | buffer/spsc_ring_buffer.hpp，SpscRingBuffer的private；类型必须在使用它的成员声明前完整定义 | 不在cpp再定义第二套结构 |
 | BatchReadHandle类型与字段 | 同头，SpscRingBuffer的public嵌套类型；自己的游标字段private | has_next可在类内一行定义；next和Debug verify_chunk在cpp定义 |
-| Ring构造、析构、renew | 类的public只写声明 | src/buffer/spsc_ring_buffer.cpp，namespace qlog::buffer写带SpscRingBuffer::的定义 |
+| Ring构造、析构、renew | 类的public只写声明 | src/buffer/siso_ring_buffer.cpp，namespace qlog::buffer写带SpscRingBuffer::的定义 |
 | alloc/commit/read/read_an_empty/discard/return | public声明 | 全部在上述cpp实现 |
 | batch_read/return_batch/data_traverse | public声明 | 全部在上述cpp实现 |
 | calculate_min_size_of_memory | public static声明 | cpp实现，调用qlog::utility::round_pow_of_two；static不要求定义在头里 |
@@ -95,11 +95,11 @@ tests/
 cpp开头应为：
 
 ```cpp
-#include "qlog/buffer/spsc_ring_buffer.hpp"
+#include "qlog/buffer/siso_ring_buffer.hpp"
 #include "qlog/utility/utility.hpp"
 
 namespace qlog::buffer {
-// uint32_t SpscRingBuffer::calculate_min_size_of_memory(...) 等定义。
+// uint32_t siso_ring_buffer::calculate_min_size_of_memory(...) 等定义。
 // 调用：qlog::utility::round_pow_of_two(expected_buffer_size)
 }
 ```
@@ -112,12 +112,12 @@ namespace qlog::buffer {
 2. 完成class、Head布局断言和所有声明；暂不声称算法已实现。
 3. 在cpp写calculate_min_size、init_cursors、init_with_memory、构造/析构与查询；覆盖容量/对齐前置条件。
 4. 按正文顺序补alloc/commit/read/return，再补batch/traverse/recovery与Debug。
-5. cpp产生实际定义后，CMake显式加入`src/buffer/spsc_ring_buffer.cpp`；定义不完整时可做对象编译检查，但必须明确未完成外部链接。
+5. cpp产生实际定义后，CMake显式加入`src/buffer/siso_ring_buffer.cpp`；定义不完整时可做对象编译检查，但必须明确未完成外部链接。
 6. 在tests/buffer中建立新Ring测试；单独编译头、链接真实库，之后再做行为差分/并发验证。
 
 ```cmake
 target_sources(qlog PRIVATE
-    src/buffer/spsc_ring_buffer.cpp
+    src/buffer/siso_ring_buffer.cpp
 )
 ```
 
@@ -129,7 +129,7 @@ target_sources(qlog PRIVATE
 | 层 | BQLog 单位/职责 | 本轮处理 |
 |---|---|---|
 | siso_ring_buffer | 一个 block=8字节；单生产者、单消费者；32位block游标 | 本篇完整实现指导 |
-| miso_ring_buffer | 一个 block=BQ_CACHE_LINE_SIZE；当前常见目标64字节；多生产者，有块状态和并发分配 | 后续独立指南，不把SISO改成64字节就认为支持MPSC |
+| miso_ring_buffer | 一个 block=qlog::utility::QLOG_CACHE_LINE_SIZE；当前固定参考及QLog为128字节；多生产者，有块状态和并发分配 | 后续独立指南，不把SISO改成64字节就认为支持MPSC |
 | log_buffer | TLS、LP/HP路由、队列块/节点生命周期、满策略、等待重试、oversize | 管理SISO/MISO，不能由SISO自行实现所有策略 |
 
 当前旧QLog虽然把帧补齐到8字节，游标和frame_bytes仍以字节计数。对齐BQLog需要同时改单位、字段宽度、外部内存归属、句柄、返回值和回收时机，不是将原算法中的8换个名字。
@@ -145,7 +145,7 @@ target_sources(qlog PRIVATE
 新SISO构造接口直接对应参考：
 
 ```cpp
-SpscRingBuffer(void* buffer, std::size_t buffer_size, bool is_memory_recovery);
+siso_ring_buffer(void* buffer, std::size_t buffer_size, bool is_memory_recovery);
 ```
 
 buffer是外部分配的整块内存，buffer_size是整块字节数（包含head）；Ring借用它，不在析构时释放它。不得再包一个SisoRingConfig恢复旧配置层。
@@ -163,7 +163,7 @@ roundup参考在`include/bq_common/types/type_tools.h`的roundup_pow_of_two；QL
 ## 4. 共用枚举和句柄先写
 
 ```cpp
-enum class BufferResult {
+enum class enum_buffer_result_code {
     success = 0,
     err_empty_log_buffer,
     err_not_enough_space,
@@ -174,17 +174,17 @@ enum class BufferResult {
     err_io_failure_drop,
     result_code_count,
 };
-struct LogBufferWriteHandle {
+struct log_buffer_write_handle {
     std::uint8_t* data_addr;
-    BufferResult result = BufferResult::err_empty_log_buffer;
+    enum_buffer_result_code result = enum_buffer_result_code::err_empty_log_buffer;
     bool low_space_flag = false;
 };
-struct LogBufferReadHandle {
+struct log_buffer_read_handle {
     std::uint8_t* data_addr;
-    BufferResult result = BufferResult::err_empty_log_buffer;
+    enum_buffer_result_code result = enum_buffer_result_code::err_empty_log_buffer;
     std::uint32_t data_size;
 };
-enum class MemoryMapBufferState {
+enum class memory_map_buffer_state {
     init_with_memory,
     recover_from_memory_map,
     init_with_memmap,
@@ -286,7 +286,7 @@ normal = ceil((P + 8) / 8)
 
 wrap时chunk头仍在原tail起点，payload整体移到ring起点；tail剩余空间纳入同一个chunk的block_num，不创建单独padding/invalid块。MISO的invalid状态不能移植到SISO这里。
 
-### alloc_write_chunk(uint32_t size) -> LogBufferWriteHandle
+### alloc_write_chunk(uint32_t size) -> log_buffer_write_handle
 
 按参考顺序：
 
@@ -306,7 +306,7 @@ auto index = head_->wt_writing_cursor_cache_ & (N - 1U);
 auto tail = N - index;
 if (normal > N || normal == 0 ||
     (normal > tail && normal + tail - 1U > N)) {
-    handle.result = BufferResult::err_alloc_size_invalid;
+    handle.result = enum_buffer_result_code::err_alloc_size_invalid;
     return handle;
 }
 auto count = normal > tail
@@ -331,25 +331,25 @@ get_max_alloc_size返回N*8-8，只保证在合适位置（renew后起点）能�
 
 ## 8. commit/read/return与内存顺序
 
-### commit_write_chunk(const LogBufferWriteHandle&) -> void
+### commit_write_chunk(const log_buffer_write_handle&) -> void
 
 非success直接return。若data_addr==blocks起点，chunk头取当前W所指块；否则chunk头=data_addr-8。读取block_num，W+=block_num；writing_cursor.store(W,release)。发布前调用方必须已写完payload和chunk头。
 
 不能根据handle地址反向访问起点前8字节：wrap分支必须用当前逻辑W定位尾部chunk头。不能在alloc时提前推进W，commit以后再次使用同一句柄属于调用协议错误。
 
-### read_chunk() -> LogBufferReadHandle
+### read_chunk() -> log_buffer_read_handle
 
 Debug标记本次借用开始（空结果也需要归还）。若uint32_t(cachedW-localR)==0，刷新writing_cursor.load(acquire)；仍为0返回empty。否则读localR处的chunk头，设置data_size；判断`8+data_size > tail*8`则payload在blocks起点，否则在当前块+8；result=success。read本身不推进R。
 
 比较使用整数长度而不是先构造超过对象边界的指针，以保持同样wrap判定并规避越界指针算术。只有acquire观察到生产者提交后才读取payload。
 
-### return_read_chunk(const LogBufferReadHandle&) -> void
+### return_read_chunk(const log_buffer_read_handle&) -> void
 
 Debug清借用标记；非success不推进任何游标。成功时按与commit同样的“起点payload特殊分支”找到头，localR+=block_num，然后reading_cursor.store(localR,release)。这使前面已读完的字节可被生产者acquire后覆盖。
 
 普通单条return每次发布；撤销旧QLog累计条数/字节阈值再publish的设计。若要批量发布，使用参考batch接口，不加另一个策略配置。
 
-### discard_read_chunk(LogBufferReadHandle&) -> void
+### discard_read_chunk(log_buffer_read_handle&) -> void
 
 清Debug借用标记，将handle.result置empty，不推进localR也不发布。下次read仍得到同一条。不要清除/释放payload。read_an_empty_chunk仅返回empty并进入对应Debug借用状态，用于上层特殊调度，也需配对return/discard。
 
@@ -357,13 +357,13 @@ Debug清借用标记；非success不推进任何游标。成功时按与commit�
 
 ```cpp
 auto wh = ring.alloc_write_chunk(bytes);
-if (wh.result == BufferResult::success) {
+if (wh.result == enum_buffer_result_code::success) {
     // 写恰好bytes字节，不能访问超过payload的空间。
 }
 ring.commit_write_chunk(wh);
 
 auto rh = ring.read_chunk();
-if (rh.result == BufferResult::success) {
+if (rh.result == enum_buffer_result_code::success) {
     // 此处可构造LogEntryHandle(rh.data_addr, rh.data_size)。
 }
 ring.return_read_chunk(rh);
@@ -435,7 +435,7 @@ RecordHeader不保存Ring block_num；chunk.data_size才是Record总字节数。
 
 测试至少包含：P=0/1/7/8/9，恰好尾端，wrap，空ring但当前位置不能分配最大条目，满空间刷新一次read后成功，commit前不可见，return前不可覆盖，discard重复读取，空读配对，批读遍历完后才发布，read/write游标接近UINT32_MAX再跨界，renew归零，traverse不消费，错误恢复快照。不要直接沿用旧47项测试的契约与统计口径。
 
-实现后CMake显式加入src/buffer/spsc_ring_buffer.cpp，测试用全新构建目录。建议测试名qlog_siso_ring_buffer_test；依赖GoogleTest时再恢复对应FetchContent，不为仅version smoke保留旧依赖。新比较基准以真实SISO接口重写，不用旧QLog句柄适配后冒充协议已经一致。
+实现后CMake显式加入src/buffer/siso_ring_buffer.cpp，测试用全新构建目录。建议测试名qlog_siso_ring_buffer_test；依赖GoogleTest时再恢复对应FetchContent，不为仅version smoke保留旧依赖。新比较基准以真实SISO接口重写，不用旧QLog句柄适配后冒充协议已经一致。
 
 ## 14. 第三、四批之后如何接续
 
@@ -449,39 +449,39 @@ RecordHeader不保存Ring block_num；chunk.data_size才是Record总字节数。
 
 ## 附录A：头文件声明清单，避免边写边新增接口
 
-下面放入include/qlog/buffer/spsc_ring_buffer.hpp，namespace qlog::buffer。共用BufferResult/句柄来自qlog/buffer/log_buffer_defs.hpp；块和头定义在class私有区。具体函数实现按前面各节，不额外添加旧API兼容层。
+下面放入include/qlog/buffer/siso_ring_buffer.hpp，namespace qlog::buffer。共用BufferResult/句柄来自qlog/buffer/log_buffer_defs.hpp；块和头定义在class私有区。具体函数实现按前面各节，不额外添加旧API兼容层。
 
 ```cpp
-class SpscRingBuffer {
+class siso_ring_buffer {
 public:
-    struct BatchReadHandle {
-        BufferResult result = BufferResult::err_empty_log_buffer;
+    struct siso_buffer_batch_read_handle {
+        enum_buffer_result_code result = enum_buffer_result_code::err_empty_log_buffer;
         bool has_next() const;
-        LogBufferReadHandle next();
+        log_buffer_read_handle next();
     private:
-        friend class SpscRingBuffer;
-        SpscRingBuffer* parent_;
+        friend class siso_ring_buffer;
+        siso_ring_buffer* parent_;
         std::uint32_t start_cursor_;
         std::uint32_t current_cursor_;
         std::uint32_t end_cursor_;
         // Debug另有last_cursor_用于verify_chunk。
     };
 
-    SpscRingBuffer() = delete;
-    SpscRingBuffer(void* buffer, std::size_t size, bool is_memory_recovery);
-    SpscRingBuffer(const SpscRingBuffer&) = delete;
-    SpscRingBuffer& operator=(const SpscRingBuffer&) = delete;
-    ~SpscRingBuffer();
+    siso_ring_buffer() = delete;
+    siso_ring_buffer(void* buffer, std::size_t size, bool is_memory_recovery);
+    siso_ring_buffer(const siso_ring_buffer&) = delete;
+    siso_ring_buffer& operator=(const siso_ring_buffer&) = delete;
+    ~siso_ring_buffer();
 
     void renew();
-    LogBufferWriteHandle alloc_write_chunk(std::uint32_t size);
-    void commit_write_chunk(const LogBufferWriteHandle& handle);
-    LogBufferReadHandle read_chunk();
-    LogBufferReadHandle read_an_empty_chunk();
-    void discard_read_chunk(LogBufferReadHandle& handle);
-    void return_read_chunk(const LogBufferReadHandle& handle);
-    BatchReadHandle batch_read();
-    void return_batch_read_chunks(const BatchReadHandle& handle);
+    log_buffer_write_handle alloc_write_chunk(std::uint32_t size);
+    void commit_write_chunk(const log_buffer_write_handle& handle);
+    log_buffer_read_handle read_chunk();
+    log_buffer_read_handle read_an_empty_chunk();
+    void discard_read_chunk(log_buffer_read_handle& handle);
+    void return_read_chunk(const log_buffer_read_handle& handle);
+    siso_buffer_batch_read_handle batch_read();
+    void return_batch_read_chunks(const siso_buffer_batch_read_handle& handle);
     void data_traverse(void (*callback)(std::uint8_t*, std::uint32_t, void*),
                        void* user_data);
 
@@ -489,7 +489,7 @@ public:
     void set_thread_check_enable(bool enabled);
     bool is_thread_check_enable() const;
     std::uint32_t get_max_alloc_size() const;
-    MemoryMapBufferState get_memory_map_buffer_state() const;
+    memory_map_buffer_state get_memory_map_buffer_state() const;
     const std::uint8_t* get_buffer_addr() const;
     std::uint32_t get_block_size() const;
     std::uint32_t get_total_blocks_count() const;
@@ -508,7 +508,7 @@ private:
     Block* aligned_blocks_;
     std::uint32_t aligned_blocks_count_;
     bool is_memory_recovery_;
-    MemoryMapBufferState mmap_buffer_state_;
+    memory_map_buffer_state mmap_buffer_state_;
     std::uint8_t* data_bytes_; // 非拥有字节视图，payload地址从整片存储计算
     // Debug线程身份、借用标记和统计另按参考条件编译，不参与Release协议。
 };

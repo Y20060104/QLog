@@ -133,7 +133,7 @@ static_assert(sizeof(RecordExtHeader) == 1);
 | call_gate.hpp: CallGate | 新增详细分类结果不对应参考 is_enable_for bool | R1/R2，改为对应过滤接口 |
 | filter_state.hpp: FilterState | 现有独立冻结配置/发布模型不能替代参考 merged level/category mask 所属与更新 | R1/R3，与 Logger/Appender 配置一起迁移 |
 | producer_policy/producer_result_map | 旧 gate→measure→reserve→encode→result 映射 | R2，随旧结果层一起退出 |
-| SpscRingBuffer、ReserveStatus/ReadStatus、读写 Handle、FrameHeader/FrameLayout | 仅已验收为 QLog 原 SPSC，不是已经对齐 BQLog SISO/MISO/LogBuffer 的证明 | R2 前逐字段/状态核查，不能原样冻结，也不能只凭“BQLog 也有 SPSC”认定可直接用 |
+| siso_ring_buffer、ReserveStatus/ReadStatus、读写 Handle、FrameHeader/FrameLayout | 仅已验收为 QLog 原 SPSC，不是已经对齐 BQLog SISO/MISO/LogBuffer 的证明 | R2 前逐字段/状态核查，不能原样冻结，也不能只凭“BQLog 也有 SPSC”认定可直接用 |
 
 Appender 枚举按参考建完整取值不表示 raw/compressed 已实现；未支持的类型不能映射为 text_file。新增 MemoryPolicy 和 ThreadMode 按参考 `discard/block/expand`、`sync/async/independent`；不要复用旧非阻塞失败枚举表达等待重试。
 

@@ -12,8 +12,8 @@
 
 本组把已有配置树转换成之后创建 Buffer 所需的数据，建立恢复文件的身份校验值。仍不创建 LoggerImpl/Manager/Worker/Appender/LogBuffer 或 LP/HP/TLS 对象。
 
-- LogMemoryPolicy 放现有 include/qlog/buffer/log_buffer_defs.hpp，namespace qlog::buffer；对应 include/bq_log/misc/bq_log_def.h:33，顺序 discard/block/expand，默认枚举底层类型与参考一样，不额外指定 uint8。
-- LogBufferConfig 位于 include/qlog/buffer/log_buffer_config.hpp / src/buffer/log_buffer_config.cpp，namespace qlog::buffer；对应 src/bq_log/types/buffer/log_buffer_defs.h:76-116。struct 的字段与 calculate_check_sum 都 public，没有 private 状态或自定义构造，使用成员默认值；普通成员定义写 cpp。
+- log_memory_policy 放现有 include/qlog/buffer/log_buffer_defs.hpp，namespace qlog::buffer；对应 include/bq_log/misc/bq_log_def.h:33，顺序 discard/block/expand，默认枚举底层类型与参考一样，不额外指定 uint8。
+- log_buffer_config 位于 include/qlog/buffer/log_buffer_config.hpp / src/buffer/log_buffer_config.cpp，namespace qlog::buffer；对应 src/bq_log/types/buffer/log_buffer_defs.h:76-116。struct 的字段与 calculate_check_sum 都 public，没有 private 状态或自定义构造，使用成员默认值；普通成员定义写 cpp。
 - get_log_buffer_config_by_config 位于 include/qlog/config/buffer_config.hpp / src/config/buffer_config.cpp，namespace qlog::config。本函数是 log_imp::init:162-188 那一段转换的组织性抽取，不是 BQLog 已有的同名 helper，不改变字段、分支、默认与转换规则。
 - equals_ignore_case 提升到已有 utility/string_utils，runtime 和 config 共用；保留原有 CR。这里只迁移已写比较过程，不建立 detail/Manager/拥有型包装。
 
@@ -25,7 +25,7 @@ memory_map_supported 参数是平台能力事实，对应 memory_map::is_platfor
 
 字段名字与顺序保留 BQLog：log_name、log_categories_name、default_buffer_size、need_recovery、policy、high_frequency_threshold_per_second。名称/类别为值拷贝，保持原类别顺序，不排序、不插入默认类别。运行态将类别索引对应记录 category_idx，顺序同时参与恢复校验。配置对象不是 Ring 外部存储拥有者；真实 Buffer 创建后其运行配置必须按后续生命周期规则保持稳定。
 
-default_buffer_size 是请求字节数，不保证等于最终所有存储之和或每个内部块的实际容量。此层不调用 round_pow_of_two 或 SpscRingBuffer::calculate_min_size。BQLog log_buffer.cpp:138 在 Buffer 构造阶段做 max(16*BQ_CACHE_LINE_SIZE, roundup_pow_of_two(...))；LP/HP成员先在初始化列表构造，进入实际 Buffer 模块时要保留它们的真实顺序，不提前把这个动作搬入解析器。
+default_buffer_size 是请求字节数，不保证等于最终所有存储之和或每个内部块的实际容量。此层不调用 round_pow_of_two 或 siso_ring_buffer::calculate_min_size。参考见 BQLog log_buffer.cpp:138；QLog 对应的 Buffer 构造表达式为 max(16*qlog::utility::QLOG_CACHE_LINE_SIZE, roundup_pow_of_two(...))；LP/HP成员先在初始化列表构造，进入实际 Buffer 模块时要保留它们的真实顺序，不提前把这个动作搬入解析器。
 
 非 object 的 log_config 仍返回名称/类别已填写的默认配置。整数 buffer_size 转 uint32，布尔 recovery 做请求&&平台能力，策略字符串完整忽略大小写匹配 discard/block/expand、不trim、未知保持block；频率字段按 int64→uint64，0转UINT64_MAX。错误类型忽略、不新增通用拒绝协议或范围clamp。负整数转换成无符号属于定义良好的模转换；文本 -1 在当前实际解析器会先成为字符串，此层忽略它，不能把“程序构造负整数节点”与“负数文本”混淆。当前数值溢出备选合同仍暂不选定。
 
@@ -76,10 +76,10 @@ bool equals_ignore_case(const std::string& value, std::string_view expected) {
 
 runtime cpp 包含 qlog/utility/string_utils.hpp，移除旧匿名 helper，七处调用改成 qlog::utility::equals_ignore_case；保留所有 CR。移除已不用的 cctype/string_view include，不修改其他函数规则。已有缺失 clear 仍需按审查补定义。
 
-log_buffer_defs.hpp 在 namespace qlog::buffer 内加入下列 enum；现有 Result/Handle/MemoryMapBufferState 原样保留：
+log_buffer_defs.hpp 在 namespace qlog::buffer 内加入下列 enum；现有 Result/Handle/memory_map_buffer_state 原样保留：
 
 ```cpp
-enum class LogMemoryPolicy {
+enum class log_memory_policy {
     discard_when_full,
     block_when_full,
     auto_expand_when_full,
@@ -96,12 +96,12 @@ enum class LogMemoryPolicy {
 #include "qlog/buffer/log_buffer_defs.hpp"
 
 namespace qlog::buffer {
-struct LogBufferConfig {
+struct log_buffer_config {
     std::string log_name;
     std::vector<std::string> log_categories_name;
     std::uint32_t default_buffer_size = 1024U * 64U;
     bool need_recovery = false;
-    LogMemoryPolicy policy = LogMemoryPolicy::block_when_full;
+    log_memory_policy policy = log_memory_policy::block_when_full;
     std::uint64_t high_frequency_threshold_per_second = 1000;
     std::uint64_t calculate_check_sum() const;
 };
@@ -114,7 +114,7 @@ struct LogBufferConfig {
 #include "qlog/buffer/log_buffer_config.hpp"
 
 namespace qlog::buffer {
-std::uint64_t LogBufferConfig::calculate_check_sum() const {
+std::uint64_t log_buffer_config::calculate_check_sum() const {
     std::string verify_str = log_name + "/";
     for (const auto& category_name : log_categories_name) {
         verify_str += category_name + "/";
@@ -140,7 +140,7 @@ std::uint64_t LogBufferConfig::calculate_check_sum() const {
 #include "qlog/config/property_value.hpp"
 
 namespace qlog::config {
-qlog::buffer::LogBufferConfig get_log_buffer_config_by_config(
+qlog::buffer::log_buffer_config get_log_buffer_config_by_config(
     const std::string& log_name,
     const std::vector<std::string>& log_categories_name,
     const PropertyValue& log_config,
@@ -156,12 +156,12 @@ qlog::buffer::LogBufferConfig get_log_buffer_config_by_config(
 #include "qlog/utility/string_utils.hpp"
 
 namespace qlog::config {
-qlog::buffer::LogBufferConfig get_log_buffer_config_by_config(
+qlog::buffer::log_buffer_config get_log_buffer_config_by_config(
     const std::string& log_name,
     const std::vector<std::string>& log_categories_name,
     const PropertyValue& log_config,
     bool memory_map_supported) {
-    qlog::buffer::LogBufferConfig buffer_config;
+    qlog::buffer::log_buffer_config buffer_config;
     buffer_config.log_name = log_name;
     buffer_config.log_categories_name = log_categories_name;
     if (log_config.is_object()) {
@@ -177,11 +177,11 @@ qlog::buffer::LogBufferConfig get_log_buffer_config_by_config(
             const auto policy_config =
                 static_cast<std::string>(log_config["buffer_policy_when_full"]);
             if (qlog::utility::equals_ignore_case(policy_config, "discard")) {
-                buffer_config.policy = qlog::buffer::LogMemoryPolicy::discard_when_full;
+                buffer_config.policy = qlog::buffer::log_memory_policy::discard_when_full;
             } else if (qlog::utility::equals_ignore_case(policy_config, "block")) {
-                buffer_config.policy = qlog::buffer::LogMemoryPolicy::block_when_full;
+                buffer_config.policy = qlog::buffer::log_memory_policy::block_when_full;
             } else if (qlog::utility::equals_ignore_case(policy_config, "expand")) {
-                buffer_config.policy = qlog::buffer::LogMemoryPolicy::auto_expand_when_full;
+                buffer_config.policy = qlog::buffer::log_memory_policy::auto_expand_when_full;
             }
         }
         if (log_config["high_perform_mode_freq_threshold_per_second"].is_integral()) {

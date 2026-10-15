@@ -14,7 +14,7 @@ HP保持原batch缓存：逐条next/verify，最后一条才return_batch发布�
 
 原遍历末标记与五状态保留；当前位置会被移除时停用末标记，当前代际seq_pending也停用以继续查找。旧版本完整遍历后清其map并推进代际；当前完整遍历才返回底层read_an_empty_chunk，失败/空handle仍配对return。无额外扫描预算、有界重试或公平机制，不保证read调用始终有界。
 
-实际参考消费者Oversize使用cpp线程局部槽：QLOG_TLS_NON_POD(LogBufferReadHandle,rt_oversize_parent_handle_)与QLOG_TLS void* rt_oversize_target_buffer_。头中原有同名current_reading字段此版本未用，保持声明/布局，不擅自切换为实例成员；函数原get()/raw void*及归还后不清target保留。缓存是消费线程共享槽，跨Buffer交错未归还的Oversize读会覆盖槽；不能声称支持此用法。原sticky target会让回收跳过最近目标，不能静默清空。
+实际参考消费者Oversize使用cpp线程局部槽：QLOG_TLS_NON_POD(log_buffer_read_handle,rt_oversize_parent_handle_)与QLOG_TLS void* rt_oversize_target_buffer_。头中原有同名current_reading字段此版本未用，保持声明/布局，不擅自切换为实例成员；函数原get()/raw void*及归还后不清target保留。缓存是消费线程共享槽，跨Buffer交错未归还的Oversize读会覆盖槽；不能声称支持此用法。原sticky target会让回收跳过最近目标，不能静默清空。
 
 std::vector既有适配保持BQ array::erase_replace语义：index范围断言来自array_impl.h:535（不是新防御），非末项将back移动赋给index，然后pop_back；保留O(1)及末项替换顺序，不用erase移动全尾部、不建新helper类。读取路径数组read锁；GC保持外层try read/try write和对象try write，先排除TLS当前目标、检查内部项invalid才消费、valid/pending保留；确认empty后销毁对象再删除映射文件。
 

@@ -19,7 +19,7 @@
 - record已有RecordHeader、ArgumentTag、LogEntryHandle、参数序列化。通用工具保留qlog::utility归属。
 - 自定义协议采用log_format_str_size/log_format_str_chars/log_custom_format，保留成员/ADL方式和CR注释。
 - 普通UTF-32字符串参数转UTF-16，参数tag为string_utf16_type；单个char32_t是char32_type。custom四字节字符仍显式static_assert阻止，不能宣称全编码已对齐。
-- CMake已编译version.cpp、src/buffer/spsc_ring_buffer.cpp、src/record/log_entry_handle.cpp。序列化是模板头，不建空cpp。
+- CMake已编译version.cpp、src/buffer/siso_ring_buffer.cpp、src/record/log_entry_handle.cpp。序列化是模板头，不建空cpp。
 - QLOG_DEBUG通过target_compile_definitions(qlog PUBLIC $<$<CONFIG:Debug>:QLOG_DEBUG>)传播。仅Debug定义，其他配置不定义；不能QLOG_DEBUG=0，也不能在调用方单独改变宏。标准assert仍由NDEBUG控制。
 - Debug/Release库及临时真实调用方链接通过，宏传播已检查；现有version smoke各1/1通过。序列化已通过Debug/Release严格模板实例化语法检查。
 - 没有完成Ring/Record行为、并发、恢复、BQLog差分或性能验收。旧47项测试属于删除前历史。保留固定memcpy性能CR，完整日志后再测。

@@ -12,7 +12,7 @@ QLog 权威 /home/qq344/QLog，feat/spsc-ring-opt@a1ba6b4d45a25d60242327b68894c2
 
 ## OversizeBuffer 对齐决定
 
-下一模块采用原oversize_buffer、normal_buffer继承、HEAD_SIZE=128、alignas(8) siso_buffer_obj_及原get_misc_data/proxy/getter/私有初始化接口。已有QLog SpscRingBuffer、LogBuffer句柄、MemoryMapBufferState及std::string按已确定命名适配；不迁回旧TimeZone/Layout/Logger接口。
+下一模块采用原oversize_buffer、normal_buffer继承、HEAD_SIZE=128、alignas(8) siso_buffer_obj_及原get_misc_data/proxy/getter/私有初始化接口。已有QLog siso_ring_buffer、LogBuffer句柄、MemoryMapBufferState及std::string按已确定命名适配；不迁回旧TimeZone/Layout/Logger接口。
 
 普通构造、析构、容量计算、恢复判断及初始化在cpp，原模板/forceinline薄转发留头。构造的is_valid检查和析构的is_valid检查就在所选参考提交中，保留而不误称新增防御。failed且base有效时使用堆SISO(false)；new_created使用SISO(true)并清misc；use_existed先由SISO尝试恢复，成功保留misc，失败按原清前128字节。oversize恢复判断只是查询SISO状态，不自建另一套扫描。
 

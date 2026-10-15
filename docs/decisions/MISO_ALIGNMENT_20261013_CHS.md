@@ -20,7 +20,7 @@ QLog feat/spsc-ring-opt@a1ba6b4d45a25d60242327b68894c23d56c027e0；BQLog main@78
 
 ## MISO本组范围及组织
 
-目标include/qlog/buffer/miso_ring_buffer.hpp与src/buffer/miso_ring_buffer.cpp，namespace qlog::buffer，class alignas(128) miso_ring_buffer；原枚举、union block、chunk_head_def、head、cursors_set、字段顺序、全部public/private声明、原默认/断言/内存序保留。使用现有LogBufferConfig/MemoryMapBufferState/BufferResult/读写handle名称、std::unique_ptr/string及现有utility::round_pow_of_two适配。普通setter移cpp，短getter/模板/cursor_to_block保留类内，不增加Manager/拥有包装或防御断言。
+目标include/qlog/buffer/miso_ring_buffer.hpp与src/buffer/miso_ring_buffer.cpp，namespace qlog::buffer，class alignas(128) miso_ring_buffer；原枚举、union block、chunk_head_def、head、cursors_set、字段顺序、全部public/private声明、原默认/断言/内存序保留。使用现有LogBufferConfig/memory_map_buffer_state/enum_buffer_result_code/读写handle名称、std::unique_ptr/string及现有utility::round_pow_of_two适配。普通setter移cpp，短getter/模板/cursor_to_block保留类内，不增加Manager/拥有包装或防御断言。
 
 本组给齐完整声明/布局和构造、析构、create_memory_map、init_with_memory_map、try_recover_from_exist_memory_map、init_with_memory、set_thread_check_enable。alloc/commit/read/return/discard/traverse及is_thread_check_enable本轮仅保留声明，不提供占位定义。本组所有已给初始化函数的实际依赖闭合；构造/恢复不调用尚未定义的线程检查查询。
 

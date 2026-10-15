@@ -1,5 +1,7 @@
 # FileCompressed 对齐决定（2026-10-15）
 
+> **最新补充：** RSA 已按用户明确确认恢复原零整数复制边界，见下文；其他来源及初次验证数字保留为历史快照。本轮源码、四配置40/40和benchmark复测见[当前记录](../validation/BQLOG_NAMING_RSA_BENCHMARK_20261015_CHS.md)。
+
 用户本轮明确要求补充对齐 file compress，覆盖此前“不自动扩 compressed”的范围限制。此次由助手实现、接库并补常驻测试；旧 Logger/codec/PreparedRecord 不恢复，RawAppender、生产 Decoder 和跨语言接口仍不自动扩项。
 
 ## 来源与模块
@@ -28,7 +30,7 @@ QLog 已确认的内存 RecordHeader/tag/序列化协议不变。压缩器经现
 
 ZigZag 左移先转对应无符号类型，保留所有编码位，避免依赖旧语言版本的负有符号左移规则。原线程模板写入中的断言专用 `real_body_len_size` 标为 `[[maybe_unused]]`，Release执行的VLQ写入不删除。
 
-BQ `rsa.cpp:64-78` 的 `trim_be` 及 `rsa.cpp:428-446` 的 `fixed_limbs_to_min_be` 在全零输入时，把已到末尾的指针再复制1字节。QLog这两处显式返回单字节零，不复制末尾之外的字节。原 encrypt 对首字节零的拒绝仍保留；新回归分别验证零密钥解析被拒、全零密文解出零，不能用“加密零明文成功”作为参考合同。
+BQ `rsa.cpp:64-78` 的 `trim_be` 及 `rsa.cpp:428-446` 的 `fixed_limbs_to_min_be` 在全零输入时，把已到末尾的指针再复制1字节。用户随后单独明确确认接受该越界风险，本轮 QLog 已撤回先前单字节零安全返回，恢复原 `n=1` 后继续范围复制。旧零密钥安全拒绝、全零密文安全解零两条断言已撤回；正常密钥解析、非零回转与原 encrypt 前导零拒绝保留。本条覆盖初次实现时的两处安全修正，不对全零/空输入赋予确定结果或范围安全保证。
 
 ## 保留边界
 

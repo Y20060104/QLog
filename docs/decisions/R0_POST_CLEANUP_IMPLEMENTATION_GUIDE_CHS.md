@@ -396,7 +396,7 @@ UTC0 2023-11-14 22:13:20.007[tid-123 t]\t[I]\tvalue=42
 ```cmake
 add_library(qlog STATIC
     src/version.cpp
-    src/buffer/spsc_ring_buffer.cpp
+    src/buffer/siso_ring_buffer.cpp
     src/buffer/log_buffer_config.cpp
     src/config/property.cpp
     src/config/property_value.cpp

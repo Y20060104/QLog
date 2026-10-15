@@ -1,5 +1,7 @@
 # QLog V1 后续开发路线：统一先对齐 BQLog
 
+> **2026-10-15 当前接续（优先）：** SISO与Buffer公共类型、工程宏/线程名和RSA两处原零整数规则已按用户确认收口；SISO尚有实现差异，详见[当前差异](BQLOG_ALIGNMENT_GAPS_20261015_CHS.md)。本轮已重跑当前QLog与BQ086官方benchmark，1/4生产者各3轮，完整结果见[README](../../README.md)与[验证](../validation/BQLOG_NAMING_RSA_BENCHMARK_20261015_CHS.md)。生产基准仍为78，FAST/新Record读取链未自动迁入；下一项严格对齐先收SISO完整实现，性能方向另行profile。下方保留历史快照。
+
 > **2026-10-15 官方 benchmark 完成（最新）：** 新 benchmark/cpp 只对齐官方普通接口场景，原库与生产源码不改；同级新参考固定 086f2fd831af86fcfa40e90015f89626d498d3d7，原参考脏树保留。用户选择 BQ FAST 单列、QLog 未支持。WSL Release 1/4线程各3轮、12进程、9.6亿名义吞吐调用；GNU恢复后40/40 CTest、原生MSVC严格构建及单线程整套实际运行通过。初批环境故障数据全部排除，正式批次无源码漂移；不计零丢失/耐久性/新参考解码互通验收。结果与复现见[根README](../../README.md)、[机器结果](../validation/BQLOG_BENCHMARK_20261015_RESULTS.json)及[决定](BQLOG_BENCHMARK_ALIGNMENT_20261015_CHS.md)。后续性能优化应先测量定位，不据单项结果改库；FAST接口迁移未授权。下方历史快照。
 
 > **2026-10-15 FileCompressed实际补全（最新）：** 用户明确授权扩入压缩文件模块。原appender_file_binary/compressed、bounded缓存、VLQ/ZigZag、UTF-Mixed和RSA/AES-CBC/Vernam及必要随机/对齐依赖已实现并接库，工厂识别compressed_file；保留v10/.logcompr、原L1/L2及配置/分段规则，Record/Layout/Buffer生产源码不变。已有生产只改CMake与工厂，CR/草稿保留；新RSA两处零整数越界显式修正，std容器/分配与软件UTF适配明示。GNU/Linux57cpp、原生MSVC58cpp Debug/Release各40/40实际CTest，PUBLIC宏逐TU核对；固定参考原解码器对四配置40文件24008记录含加密互通通过。未称新Compress性能/完整损坏恢复/TSAN/ARM验收，Raw/生产Decoder/跨语言仍未扩。见[决定](FILE_COMPRESSED_ALIGNMENT_20261015_CHS.md)及[验证](../validation/FILE_COMPRESSED_ALIGNMENT_20261015_CHS.md)。下方历史快照。
@@ -129,7 +131,7 @@ BQLog实际group_list依赖memory_pool、block_list、NormalBuffer；LogBuffer�
 | --- | --- | --- |
 | block SISO / Record | 单条、批量、恢复、Debug、记录视图与模板序列化已填写；普通 cpp 已接根库 | 不计作 Ring 行为/并发/恢复或完整记录差分验收 |
 | TimeZone / Layout / utility | TimeZone、Layout 软件路径、UTF 与共享字符串 helper 已填写并接根库 | 已有 9 组 Layout/序列化组合回归；local 日历转换使用系统 DST 规则，DST 专项/完整差分/SIMD/性能仍未验收 |
-| 配置、过滤与 Buffer 配置 | Property/PropertyValue、LogLevelBitmap、两个过滤 helper、LogBufferConfig 与树转换均已接根库 | 既有实际公开调用方与定向检查通过；整数越界 double/原字符串仍仅记录、暂不选定 |
+| 配置、过滤与 Buffer 配置 | Property/PropertyValue、LogLevelBitmap、两个过滤 helper、log_buffer_config 与树转换均已接根库 | 既有实际公开调用方与定向检查通过；整数越界 double/原字符串仍仅记录、暂不选定 |
 | 平台存储与完整 Buffer | FileManager/MemoryMap/NormalBuffer/MISO/BlockList/MemoryPool/GroupList/Oversize已接实际根库；LogBuffer声明/TLS及运输待用户填写 | 当前GNU/原生MSVC四配置只编译链接，测试后置；当前[LogBuffer声明/TLS基础](LOG_BUFFER_DECLARATIONS_ALIGNMENT_20261014_CHS.md)，再构造恢复/producer/consumer，不把构建当行为/恢复/并发验收 |
 | Logger/Manager/Worker/Appender/生命周期 | 尚未建立新主链 | 按下方路线后置，不恢复旧接口 |
 
