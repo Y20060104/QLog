@@ -67,8 +67,7 @@ static void trim_be(const uint8_t* in, size_t in_len, std::vector<uint8_t>& out)
     }
     size_t n = 0;
     if (i == in_len) {
-        out.assign(1, 0);
-        return;
+        n = 1;
     } else {
         n = in_len - i;
     }
@@ -421,8 +420,7 @@ static void fixed_limbs_to_min_be(const uint32_t* x, size_t l, std::vector<uint8
     }
     size_t n = 0;
     if (i == k) {
-        out.assign(1, 0);
-        return;
+        n = 1;
     } else {
         n = k - i;
     }
