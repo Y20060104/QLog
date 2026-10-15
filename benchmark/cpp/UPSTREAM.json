@@ -1,0 +1,10 @@
+{
+  "head": "086f2fd831af86fcfa40e90015f89626d498d3d7",
+  "origin": "https://github.com/Tencent/BqLog.git",
+  "files": {
+    "main.cpp": "608cae00877ec319ef267203472ba99a518dbb9c4dd3d1046829fddfd7bb5cd7",
+    "multi_format_templates.h": "766d3b016a67009a46f4e7be42907531da8843cf13a990d7cd37395e6ba60f16",
+    "write_thread_cost.h": "6a1fbdc34f3f5ddfdb3c69519fe592acd57474b006a2daaef8f7081f4530c145",
+    "CMakeLists.txt": "87ab1710003086174bf72afc0e6f1ad1d9eaacdc8972a3320bc19fd56704c606"
+  }
+}
