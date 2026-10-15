@@ -10,8 +10,12 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <type_traits>
+
+#include "qlog/platform/thread.hpp"
+#include "qlog/utility/diagnostics.hpp"
 
 #if defined(__has_include)
 #if __has_include(<sys/prctl.h>)
@@ -217,5 +221,337 @@ std::string get_current_thread_name() {
     return get_thread_name_impl<pthread_t>(pthread_self());
 }
 // CR:SFINAE是什么意思 用来做什么？
+
+struct thread_platform_def {
+    pthread_t thread_handle;
+};
+
+struct thread_platform_processor {
+    static void* thread_process(void* data) {
+        thread* thread_ptr = static_cast<thread*>(data);
+
+        thread_ptr->thread_id_ = thread::get_current_thread_id();
+        thread_ptr->internal_run();
+
+        return nullptr;
+    }
+};
+
+thread::thread(thread_attr attr) : attr_(attr), status_(enum_thread_status::init) {
+    thread_id_ = 0;
+
+    platform_data_ = static_cast<thread_platform_def*>(malloc(sizeof(thread_platform_def)));
+
+    new (platform_data_, qlog::utility::enum_new_dummy::dummy) thread_platform_def();
+}
+
+void thread::internal_run() {
+    while (status_.load() != enum_thread_status::running &&
+           status_.load() != enum_thread_status::pendding_cancel &&
+           status_.load() != enum_thread_status::detached) {
+        cpu_relax();
+    }
+
+    apply_thread_name();
+    run();
+
+    auto expected_status = enum_thread_status::running;
+
+    if (!status_.compare_exchange_strong(expected_status, enum_thread_status::finished,
+                                         memory_order::seq_cst, memory_order::seq_cst)) {
+        expected_status = enum_thread_status::pendding_cancel;
+
+        status_.compare_exchange_strong(expected_status, enum_thread_status::finished,
+                                        memory_order::seq_cst, memory_order::seq_cst);
+    }
+
+    on_finished();
+
+    thread_id_ = 0;
+
+    qlog::utility::util::log_device_console(qlog::LogLevel::info, "thread cancel success");
+
+    status_.store_seq_cst(enum_thread_status::released);
+}
+
+template <typename>
+std::int32_t accept_setname_param_ver1(std::int32_t (*)(pthread_t, const char*, void*));
+template <typename>
+char accept_setname_param_ver1(...);
+
+template <typename>
+std::int32_t accept_setname_param_ver2(std::int32_t (*)(pthread_t, const char*));
+template <typename>
+char accept_setname_param_ver2(...);
+
+template <typename>
+std::int32_t accept_setname_param_ver3(void (*)(pthread_t, const char*));
+template <typename>
+char accept_setname_param_ver3(...);
+
+template <typename>
+std::int32_t accept_setname_param_ver4(std::int32_t (*)(const char*));
+template <typename>
+char accept_setname_param_ver4(...);
+// 1) pthread_setname_np(pthread_t, const char*, void*)
+template <typename U, typename = void>
+struct set_thread_name_func_sfinae1 : std::false_type {};
+#if defined(QLOG_HAVE_PTHREAD_NP)
+template <typename U>
+struct set_thread_name_func_sfinae1<
+    U, std::void_t<std::enable_if_t<
+           std::is_same<decltype(accept_setname_param_ver1<U>(&::pthread_setname_np)),
+                        std::int32_t>::value,
+           std::int32_t>>> : std::true_type {};
+#endif
+// 2) pthread_setname_np(pthread_t, const char*)
+template <typename U, typename = void>
+struct set_thread_name_func_sfinae2 : std::false_type {};
+#if defined(QLOG_HAVE_PTHREAD_NP)
+template <typename U>
+struct set_thread_name_func_sfinae2<
+    U, std::void_t<std::enable_if_t<
+           std::is_same<decltype(accept_setname_param_ver2<U>(&::pthread_setname_np)),
+                        std::int32_t>::value,
+           std::int32_t>>> : std::true_type {};
+#endif
+// 3) pthread_set_name_np(pthread_t, const char*)
+template <typename U, typename = void>
+struct set_thread_name_func_sfinae3 : std::false_type {};
+#if defined(QLOG_HAVE_PTHREAD_NP_UNIX)
+template <typename U>
+struct set_thread_name_func_sfinae3<
+    U, std::void_t<std::enable_if_t<
+           std::is_same<decltype(accept_setname_param_ver3<U>(&::pthread_set_name_np)),
+                        std::int32_t>::value,
+           std::int32_t>>> : std::true_type {};
+#endif
+// 4) pthread_setname_np(const char*)
+template <typename U, typename = void>
+struct set_thread_name_func_sfinae4 : std::false_type {};
+#if defined(QLOG_HAVE_PTHREAD_NP)
+template <typename U>
+struct set_thread_name_func_sfinae4<
+    U, std::void_t<std::enable_if_t<
+           std::is_same<decltype(accept_setname_param_ver4<U>(&::pthread_setname_np)),
+                        std::int32_t>::value,
+           std::int32_t>>> : std::true_type {};
+#endif
+// 5) prctl(PR_SET_NAME)
+template <typename U, typename = void>
+struct set_thread_name_func_sfinae5 : std::false_type {};
+#if defined(QLOG_HAVE_DLFCN)
+template <typename U>
+struct set_thread_name_func_sfinae5<
+    U, std::void_t<std::enable_if_t<
+           std::is_same<decltype(accept_prctl_param<U>(&::prctl)), std::int32_t>::value,
+           std::int32_t>>> : std::true_type {};
+#endif
+#if defined(QLOG_HAVE_PTHREAD_NP)
+template <typename U, std::enable_if_t<set_thread_name_func_sfinae1<U>::value, bool> = true>
+bool set_thread_name_impl(U thread_handle, const std::string& thread_name) {
+    using func_type = std::int32_t (*)(pthread_t, const char*, void*);
+    auto func_ptr = reinterpret_cast<func_type>(reinterpret_cast<void*>(&::pthread_setname_np));
+    std::int32_t set_name_result =
+        func_ptr(thread_handle, "%s", const_cast<char*>(thread_name.c_str()));
+    return set_name_result == 0;
+}
+#endif
+#if defined(QLOG_HAVE_PTHREAD_NP)
+template <typename U, std::enable_if_t<!set_thread_name_func_sfinae1<U>::value &&
+                                           set_thread_name_func_sfinae2<U>::value,
+                                       bool> = true>
+bool set_thread_name_impl(U thread_handle, const std::string& thread_name) {
+    using func_type = std::int32_t (*)(pthread_t, const char*);
+    auto func_ptr = reinterpret_cast<func_type>(reinterpret_cast<void*>(&::pthread_setname_np));
+    std::int32_t set_name_result = func_ptr(thread_handle, thread_name.c_str());
+    return set_name_result == 0;
+}
+#endif
+#if defined(QLOG_HAVE_PTHREAD_NP_UNIX)
+template <typename U, std::enable_if_t<!set_thread_name_func_sfinae1<U>::value &&
+                                           !set_thread_name_func_sfinae2<U>::value &&
+                                           set_thread_name_func_sfinae3<U>::value,
+                                       bool> = true>
+bool set_thread_name_impl(U thread_handle, const std::string& thread_name) {
+    pthread_set_name_np(thread_handle, thread_name.c_str());
+    return true;
+}
+#endif
+#if defined(QLOG_HAVE_PTHREAD_NP)
+template <typename U,
+          std::enable_if_t<
+              !set_thread_name_func_sfinae1<U>::value && !set_thread_name_func_sfinae2<U>::value &&
+                  !set_thread_name_func_sfinae3<U>::value && set_thread_name_func_sfinae4<U>::value,
+              bool> = true>
+bool set_thread_name_impl(U thread_handle, const std::string& thread_name) {
+    (void)thread_handle;
+    assert(thread_handle == pthread_self() &&
+           "pthread_setname_np can only set current thread name!");
+    using func_type = std::int32_t (*)(const char*);
+    func_type func_ptr =
+        reinterpret_cast<func_type>(reinterpret_cast<void*>(&::pthread_setname_np));
+    std::int32_t set_name_result = func_ptr(thread_name.c_str());
+    return set_name_result >= 0;
+}
+#endif
+#if defined(QLOG_HAVE_DLFCN)
+template <typename U,
+          std::enable_if_t<
+              !set_thread_name_func_sfinae1<U>::value && !set_thread_name_func_sfinae2<U>::value &&
+                  !set_thread_name_func_sfinae3<U>::value &&
+                  !set_thread_name_func_sfinae4<U>::value && set_thread_name_func_sfinae5<U>::value,
+              bool> = true>
+bool set_thread_name_impl(U thread_handle, const std::string& thread_name) {
+    (void)thread_handle;
+    assert(thread_handle == pthread_self() &&
+           "prctl(PR_SET_NAME) can only set current thread name!");
+    std::int32_t set_name_result = prctl(PR_SET_NAME, thread_name.c_str());
+    return set_name_result >= 0;
+}
+#endif
+template <typename U, std::enable_if_t<!set_thread_name_func_sfinae1<U>::value &&
+                                           !set_thread_name_func_sfinae2<U>::value &&
+                                           !set_thread_name_func_sfinae3<U>::value &&
+                                           !set_thread_name_func_sfinae4<U>::value &&
+                                           !set_thread_name_func_sfinae5<U>::value,
+                                       bool> = true>
+bool set_thread_name_impl(U thread_handle, const std::string& thread_name) {
+    (void)thread_handle;
+    (void)thread_name;
+    return false;
+}
+
+void thread::set_thread_name(const std::string& thread_name) {
+    thread_name_ = thread_name;
+    if (thread_name_.size() >= 15) {
+        std::string truncated_name = thread_name_.substr(0, 15);
+        qlog::utility::util::log_device_console(
+            qlog::LogLevel::warning,
+            "thread name \"%s\" exceed max length limit of android, the length of thread name can "
+            "not be larger than 15. so it will be truncated to \"%s\"",
+            thread_name_.c_str(), truncated_name.c_str());
+        thread_name_ = truncated_name;
+    }
+    auto current_status = status_.load();
+    if (current_status == enum_thread_status::running) {
+        qlog::utility::util::log_device_console(
+            qlog::LogLevel::warning,
+            "trying to set thread name \"%s\" when thread have already been running, thread id "
+            ":%" PRIu64 ", thread status:%" PRId32,
+            thread_name.c_str(), static_cast<std::uint64_t>(thread_id_),
+            (std::int32_t)current_status);
+    }
+}
+
+void thread::start() {
+    auto current_status = status_.load();
+    if (current_status == enum_thread_status::running) {
+        qlog::utility::util::log_device_console(
+            qlog::LogLevel::warning,
+            "trying to start a thread \"%s\" which is still running, thread id :%" PRIu64
+            ", thread status:%" PRId32,
+            thread_name_.c_str(), static_cast<std::uint64_t>(thread_id_),
+            (std::int32_t)current_status);
+        return;
+    }
+    if (current_status == enum_thread_status::detached) {
+        qlog::utility::util::log_device_console(
+            qlog::LogLevel::fatal,
+            "trying to start a thread \"%s\" which is detached, thread id :%" PRIu64
+            ", thread status:%" PRId32,
+            thread_name_.c_str(), static_cast<std::uint64_t>(thread_id_),
+            (std::int32_t)current_status);
+        assert(false && "trying to start a detached thread");
+        return;
+    }
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setstacksize(&attr, attr_.max_stack_size);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+    auto create_result = pthread_create(&platform_data_->thread_handle, &attr,
+                                        &thread_platform_processor::thread_process, (void*)this);
+    pthread_attr_destroy(&attr);
+    if (create_result == EAGAIN) {
+        qlog::utility::util::log_device_console(qlog::LogLevel::fatal,
+                                                "create thread \"%s\" failed, error code:EAGAIN",
+                                                thread_name_.c_str());
+    } else if (create_result == EINVAL) {
+        qlog::utility::util::log_device_console(qlog::LogLevel::fatal,
+                                                "create thread \"%s\" failed, error code:EINVAL",
+                                                thread_name_.c_str());
+    } else if (create_result == EPERM) {
+        qlog::utility::util::log_device_console(qlog::LogLevel::fatal,
+                                                "create thread \"%s\" failed, error code:EPERM",
+                                                thread_name_.c_str());
+    } else if (create_result != 0) {
+        qlog::utility::util::log_device_console(qlog::LogLevel::fatal,
+                                                "create thread \"%s\" failed, error code:%" PRId32,
+                                                thread_name_.c_str(), create_result);
+    }
+    if (create_result != 0) {
+        return;
+    }
+    thread_id_ = (thread_id)(platform_data_->thread_handle);
+
+    // If the previous status is init or released, we can set it to running.
+    // internal_run() is spinning and waiting for this status change.
+    auto expected_status = enum_thread_status::init;
+    if (!status_.compare_exchange_strong(expected_status, enum_thread_status::running)) {
+        expected_status = enum_thread_status::released;
+        status_.compare_exchange_strong(expected_status, enum_thread_status::running);
+    }
+}
+
+void thread::join() {
+    auto join_result = pthread_join(platform_data_->thread_handle, nullptr);
+    if (ESRCH == join_result) {
+        // maybe thread is not created yet.
+        return;
+    } else if (EINVAL == join_result) {
+        // maybe thread is detached or already joined.
+        return;
+    } else if (0 != join_result) {
+        qlog::utility::util::log_device_console(
+            qlog::LogLevel::error,
+            "join thread \"%s\" failed, thread_id:%" PRIu64 ", error code:%" PRId32,
+            thread_name_.c_str(), static_cast<std::uint64_t>(thread_id_), join_result);
+    }
+}
+
+void thread::detach() {
+    auto current_status = status_.load();
+    if (current_status != enum_thread_status::running) {
+        qlog::utility::util::log_device_console(
+            qlog::LogLevel::warning,
+            "trying to detach a thread \"%s\" which is not running, thread id :%" PRIu64
+            ", thread status:%" PRId32,
+            thread_name_.c_str(), static_cast<std::uint64_t>(thread_id_),
+            (std::int32_t)current_status);
+        return;
+    }
+    auto detach_result = pthread_detach(platform_data_->thread_handle);
+    if (detach_result != 0) {
+        qlog::utility::util::log_device_console(
+            qlog::LogLevel::error,
+            "detach thread \"%s\" failed, thread_id:%" PRIu64 ", error code:%" PRId32,
+            thread_name_.c_str(), static_cast<std::uint64_t>(thread_id_), detach_result);
+    }
+    status_.store_seq_cst(enum_thread_status::detached);
+}
+
+thread::~thread() {
+    // auto current_status = status_.load();
+    // This is not robust when program is exited by error
+    // assert(current_status != enum_thread_status::running && "thread instance is destructed when
+    // thread is still running");
+    platform_data_->~thread_platform_def();
+    free(platform_data_);
+    platform_data_ = nullptr;
+}
+
+void thread::apply_thread_name() {
+    set_thread_name_impl<pthread_t>(pthread_self(), thread_name_);
+}
 
 }  // namespace qlog::platform
