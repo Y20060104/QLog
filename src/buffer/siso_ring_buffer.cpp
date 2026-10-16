@@ -165,7 +165,17 @@ log_buffer_write_handle siso_ring_buffer::alloc_write_chunk(std::uint32_t size) 
                            ? data_bytes_
                            : data_bytes_ + static_cast<std::size_t>(index) * BLOCK_SIZE + 8;
 
-    handle.low_space_flag = std::uint64_t{block_count - free_blocks} * 2U >= block_count;
+    // BQLog 086f2fd8: report only the allocation crossing half-full, then
+    // confirm occupancy with the published reader cursor before waking a worker.
+    const std::uint32_t used_before = block_count - free_blocks;
+    handle.low_space_flag = ((used_before << 1U) < block_count) &&
+                            (((used_before + chunk_blocks) << 1U) >= block_count);
+    if (handle.low_space_flag) {
+        head_->wt_reading_cursor_cache_ = head_->reading_cursor_.load(std::memory_order_acquire);
+        free_blocks = static_cast<std::uint32_t>(head_->wt_reading_cursor_cache_ + block_count -
+                                                 head_->wt_writing_cursor_cache_);
+        handle.low_space_flag = ((block_count - free_blocks + chunk_blocks) << 1U) >= block_count;
+    }
 
     handle.result = enum_buffer_result_code::success;
     return handle;

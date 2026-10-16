@@ -10,7 +10,7 @@ set_tests_properties(qlog.smoke PROPERTIES LABELS "smoke")
 add_executable(qlog_layout_behavior_test layout_behavior_test.cpp)
 target_link_libraries(qlog_layout_behavior_test PRIVATE QLog::qlog)
 qlog_enable_warnings(qlog_layout_behavior_test)
-foreach(group IN ITEMS prefix thread_cache scanner numeric arguments failure reuse
+foreach(group IN ITEMS prefix thread_cache scanner numeric decimal_boundaries arguments failure reuse
                        serialization_mixed serialization_strings serialization_custom)
     add_test(NAME qlog.layout.${group} COMMAND qlog_layout_behavior_test ${group})
     set_tests_properties(qlog.layout.${group} PROPERTIES LABELS "layout")
@@ -86,3 +86,10 @@ add_test(NAME qlog.utility.copy_hash COMMAND qlog_copy_hash_test utility)
 set_tests_properties(qlog.utility.copy_hash PROPERTIES LABELS "utility;hash")
 add_test(NAME qlog.runtime.format_copy_hash COMMAND qlog_copy_hash_test writer)
 set_tests_properties(qlog.runtime.format_copy_hash PROPERTIES TIMEOUT 30 LABELS "runtime;hash")
+
+# SISO notification hints must reflect a half-full crossing and refresh stale cursors.
+add_executable(qlog_siso_low_space_test siso_low_space_test.cpp)
+target_link_libraries(qlog_siso_low_space_test PRIVATE QLog::qlog)
+qlog_enable_warnings(qlog_siso_low_space_test)
+add_test(NAME qlog.buffer.siso.low_space COMMAND qlog_siso_low_space_test)
+set_tests_properties(qlog.buffer.siso.low_space PROPERTIES LABELS "buffer;regression")

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -353,6 +354,67 @@ void numeric_cases() {
     text.string(ArgumentTag::string_utf8_type, "AB");
     body("{:^7}", text, "   AB  ");
 }
+
+template <class T>
+std::string decimal_expected(T value) {
+    char text[32];
+    const auto result = std::to_chars(text, text + sizeof(text), value);
+    check(result.ec == std::errc{}, "independent decimal conversion");
+    return {text, result.ptr};
+}
+void decimal_boundary_cases() {
+    auto signed_case = [](std::int64_t value) {
+        Args args;
+        args.pod(ArgumentTag::int64_type, value);
+        const auto expected = decimal_expected(value);
+        body("{}", args, expected);
+        body(bytes(u"{}"), args, expected, true);
+    };
+    auto unsigned_case = [](std::uint64_t value) {
+        Args args;
+        args.pod(ArgumentTag::uint64_type, value);
+        const auto expected = decimal_expected(value);
+        body("{}", args, expected);
+        body(bytes(u"{}"), args, expected, true);
+    };
+    signed_case(std::numeric_limits<std::int64_t>::min());
+    signed_case(std::numeric_limits<std::int64_t>::max());
+    signed_case(0);
+    unsigned_case(0);
+    unsigned_case(std::numeric_limits<std::uint64_t>::max());
+    for (std::uint64_t power = 1;; power *= 10) {
+        for (const auto value : {power - 1, power, power + 1}) {
+            unsigned_case(value);
+            if (value <= static_cast<std::uint64_t>(std::numeric_limits<std::int64_t>::max())) {
+                signed_case(static_cast<std::int64_t>(value));
+                signed_case(-static_cast<std::int64_t>(value));
+            }
+        }
+        if (power > std::numeric_limits<std::uint64_t>::max() / 10) break;
+    }
+    // Include the workload's small counters and both sides of the former 1e9 threshold.
+    for (const auto value : {std::uint64_t{99}, std::uint64_t{100}, std::uint64_t{999},
+                             std::uint64_t{1000}, std::uint64_t{1999999},
+                             std::uint64_t{999999999}, std::uint64_t{1000000000}}) {
+        unsigned_case(value);
+        signed_case(static_cast<std::int64_t>(value));
+        signed_case(-static_cast<std::int64_t>(value));
+    }
+    std::uint64_t state = 0x7C91D25A309F6BE1ULL;
+    for (unsigned i = 0; i < 2048; ++i) {
+        state = state * 6364136223846793005ULL + 1442695040888963407ULL;
+        unsigned_case(state);
+        std::int64_t signed_value;
+        std::memcpy(&signed_value, &state, sizeof(state));
+        signed_case(signed_value);
+    }
+    Args widths;
+    widths.pod(ArgumentTag::int64_type, std::numeric_limits<std::int64_t>::min());
+    widths.pod(ArgumentTag::uint64_type, std::numeric_limits<std::uint64_t>::max());
+    body("{:>24d}|{:>24d}", widths,
+         "    -9223372036854775808|    18446744073709551615");
+}
+
 void argument_cases() {
     Args a;
     a.null();
@@ -425,6 +487,8 @@ int main(int argc, char** argv) {
             thread_cache_cases();
         else if (group == "scanner")
             scanner_cases();
+        else if (group == "decimal_boundaries")
+            decimal_boundary_cases();
         else if (group == "numeric")
             numeric_cases();
         else if (group == "arguments")

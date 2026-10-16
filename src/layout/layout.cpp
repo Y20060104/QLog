@@ -34,6 +34,39 @@ constexpr auto kDigits3 = [] {
 
     return result;
 }();
+
+static const char digit_pairs[201] = "00010203040506070809"
+                                     "10111213141516171819"
+                                     "20212223242526272829"
+                                     "30313233343536373839"
+                                     "40414243444546474849"
+                                     "50515253545556575859"
+                                     "60616263646566676869"
+                                     "70717273747576777879"
+                                     "80818283848586878889"
+                                     "90919293949596979899";
+
+// writes the base 10 digits of value to dst (room for 20), returns the count
+static qlog_forceinline std::uint32_t write_decimal_digits(std::uint64_t value, char* dst)
+{
+    std::uint32_t count = 1;
+    for (std::uint64_t limit = 10; count < 20 && value >= limit; limit *= 10) {
+        ++count;
+    }
+    char* p = dst + count;
+    while (value >= 100) {
+        const std::uint32_t pair = static_cast<std::uint32_t>(value % 100) * 2;
+        value /= 100;
+        p -= 2;
+        std::memcpy(p, digit_pairs + pair, 2);
+    }
+    if (value >= 10) {
+        std::memcpy(p - 2, digit_pairs + value * 2, 2);
+    } else {
+        *(p - 1) = static_cast<char>('0' + value);
+    }
+    return count;
+}
 }  // namespace
 
 Layout::Layout() {
@@ -482,36 +515,12 @@ std::uint32_t Layout::insert_integral_unsigned(std::uint64_t value, std::uint32_
     const std::uint32_t begin_cursor = format_content_cursor_;
     std::uint32_t e_count = 0;
 
-    if (base == 10U && format_info_.type != 'e' && value >= 1000000000ULL) {
-        const char* const digits3 = kDigits3.data();
-
-        char tmp[20];
-        char* p = tmp + sizeof(tmp);
-
-        while (value >= 1000U) {
-            const std::uint32_t r = static_cast<std::uint32_t>(value % 1000U);
-
-            value /= 1000U;
-            p -= 3;
-            std::memcpy(p, digits3 + r * 3U, 3);
-        }
-
-        const char* d = digits3 + static_cast<std::uint32_t>(value) * 3U;
-        // CR: *3是找到 对应的三位数的开头？
-
-        const std::int32_t start = value >= 100U ? 0 : (value >= 10U ? 1 : 2);
-
-        for (std::int32_t k = 2; k >= start; --k) {
-            *--p = d[k];
-        }
-
-        const std::uint32_t digit_count = static_cast<std::uint32_t>(tmp + sizeof(tmp) - p);
-
-        std::memcpy(format_content_.data() + format_content_cursor_, p, digit_count);
-
-        format_content_cursor_ += digit_count;
+    if (base == 10U && format_info_.type != 'e') {
+        format_content_cursor_ += write_decimal_digits(value, format_content_.data() + format_content_cursor_);
         return format_content_cursor_ - width;
     }
+    // The following CR was written for the former three-digit table.
+        // CR: *3是找到 对应的三位数的开头？
 
     do {
         const std::int32_t digit = static_cast<std::int32_t>(value % base);
@@ -599,38 +608,10 @@ std::uint32_t Layout::insert_integral_signed(std::int64_t value, std::uint32_t b
 
     const std::uint32_t begin_cursor = format_content_cursor_;
     std::uint32_t e_count = 0;
-    if (base == 10U && format_info_.type != 'e' &&
-        (value >= 1000000000LL || value <= -1000000000LL)) {
-        std::uint64_t mag = value < 0 ? std::uint64_t{0} - static_cast<std::uint64_t>(value)
-                                      : static_cast<std::uint64_t>(value);
-
-        const char* const digit3 = kDigits3.data();
-
-        char tmp[20];
-        char* p = tmp + sizeof(tmp);
-
-        while (mag >= 1000U) {
-            const std::uint32_t r = static_cast<std::uint32_t>(mag % 1000U);
-
-            mag /= 1000U;
-            p -= 3;
-
-            std::memcpy(p, digit3 + r * 3U, 3);
-        }
-
-        const char* d = digit3 + static_cast<std::uint32_t>(mag) * 3U;
-
-        const std::int32_t start = mag >= 100U ? 0 : (mag >= 10U ? 1 : 2);
-
-        for (std::int32_t k = 2; k >= start; --k) {
-            *--p = d[k];
-        }
-
-        const std::uint32_t digit_count = static_cast<std::uint32_t>(tmp + sizeof(tmp) - p);
-
-        std::memcpy(format_content_.data() + format_content_cursor_, p, digit_count);
-
-        format_content_cursor_ += digit_count;
+    if (base == 10U && format_info_.type != 'e') {
+        const std::uint64_t magnitude = value < 0 ? std::uint64_t{0} - static_cast<std::uint64_t>(value)
+                                                : static_cast<std::uint64_t>(value);
+        format_content_cursor_ += write_decimal_digits(magnitude, format_content_.data() + format_content_cursor_);
         return format_content_cursor_ - width;
     }
 
