@@ -68,6 +68,8 @@ def main():
     parser.add_argument("--timeout", type=int, default=1200)
     parser.add_argument("--min-host-free-gib", type=float, default=20.0,
                         help="WSL Windows system-drive reserve; checked in addition to guest space")
+    parser.add_argument("--cleanup-output", action="store_true",
+                        help="Hash and remove only each completed run output directory after recording results")
     args = parser.parse_args()
     if args.data_root.exists() or args.evidence_dir.exists():
         parser.error("data-root and evidence-dir must be new directories")
@@ -194,8 +196,19 @@ def main():
                        "max_clock_offset_change_seconds": max(clock_jumps),
                        "free_space_before": space_before, "free_space_after": free_space(),
                        "throughput": throughputs, "latency": latencies, "retained_files": files}
+                row["output_cleanup"] = {"requested": args.cleanup_output, "completed": False}
+                if args.cleanup_output:
+                    for item in files:
+                        item["sha256"] = digest(output / item["path"])
                 raw.append(row)
                 save(args.evidence_dir / "raw-results.json", raw)
+                if args.cleanup_output:
+                    resolved_output = output.resolve()
+                    if output.is_symlink() or resolved_output.parent != args.data_root.resolve():
+                        raise RuntimeError("Run output escaped the explicit data-root")
+                    shutil.rmtree(resolved_output)
+                    row["output_cleanup"]["completed"] = True
+                    save(args.evidence_dir / "raw-results.json", raw)
                 print(json.dumps({"event": "complete", "run": name, "seconds": elapsed,
                                   "retained_bytes": sum(f["bytes"] for f in files)}), flush=True)
     summary = []
