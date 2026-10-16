@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the aligned upstream suites sequentially in isolated output directories."""
+"""Compare the retained QLog Text cases with the complete fixed BQLog suite."""
 import argparse
 import datetime
 import hashlib
@@ -100,6 +100,7 @@ def main():
                    "host_volume": str(host_volume) if host_volume is not None else None,
                    "host_reserve_bytes": int(args.min_host_free_gib * 1024**3),
                    "settings": {"threads": args.threads, "repeats": args.repeats,
+                                "qlog_suite": "text-only", "qlog_throughput_cases": 2,
                                 "logs_per_thread_per_throughput_case": 2000000,
                                 "BENCH_POOL_SIZE": 50000, "latency_iterations": 10000,
                                 "latency_messages_per_iteration": 20}}
@@ -183,7 +184,7 @@ def main():
                         "max_clock_offset_change_seconds": max(clock_jumps), "raw_log": str(logfile)})
                     raise RuntimeError(f"{name} exited {code}: {validation_errors}; see {logfile}")
                 throughputs, latencies = parse(logfile.read_text())
-                assert len(throughputs) == (13 if backend == "qlog" else 19), (name, len(throughputs))
+                assert len(throughputs) == (2 if backend == "qlog" else 19), (name, len(throughputs))
                 assert len(latencies) == ((1 if threads == 1 else 2) * (1 if backend == "qlog" else 2)), (name, latencies)
                 assert all(item["milliseconds"] > 0 for item in throughputs)
                 assert sum(item["milliseconds"] for item in throughputs) <= elapsed * 1000 + 100, (
@@ -213,7 +214,8 @@ def main():
                                   "retained_bytes": sum(f["bytes"] for f in files)}), flush=True)
     summary = []
     for threads in args.threads:
-        cases = raw[[r["threads"] for r in raw].index(threads)]["throughput"]
+        cases = next(run["throughput"] for run in raw
+                     if run["threads"] == threads and run["backend"] == "qlog")
         for case in cases:
             if case["mode"] != "normal":
                 continue

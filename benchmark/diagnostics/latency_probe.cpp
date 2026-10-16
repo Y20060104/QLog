@@ -28,8 +28,8 @@ int main(int argc, char** argv) {
     std::string kind = argc > 1 ? argv[1] : "burst";
     int groups = argc > 2 ? std::atoi(argv[2]) : 10000;
     int wait_us = argc > 3 ? std::atoi(argv[3]) : 2000;
-    if ((kind != "burst" && kind != "compressed") || groups < 1 || wait_us < 0) {
-        std::cerr << "Usage: QLogLatencyProbe burst|compressed [groups=10000] [wait_us=2000] [hp_threshold=1000] [csv_path]\n";
+    if (kind != "burst" || groups < 1 || wait_us < 0) {
+        std::cerr << "Usage: QLogLatencyProbe burst [groups=10000] [wait_us=2000] [hp_threshold=1000] [csv_path]\n";
         return 2;
     }
     std::string config = R"(
@@ -38,7 +38,6 @@ int main(int argc, char** argv) {
       appenders_config.out.file_name=benchmark_output/probe
       appenders_config.out.capacity_limit=1
     )";
-    if (kind == "compressed") config.replace(config.find("text_file"), 9, "compressed_file");
 
     if (argc > 4) config += std::string("\nlog.high_perform_mode_freq_threshold_per_second=") + argv[4] + "\n";
     auto log = logger_type::create_log("write_thread_cost", config.c_str());

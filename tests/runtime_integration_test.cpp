@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "qlog/log.hpp"
+#include "qlog/runtime/appender/appender_base.hpp"
 namespace {
 struct entry {
     std::uint64_t id;
@@ -262,6 +263,58 @@ void queue_policies() {
         }
     }
 }
+void unsupported_compressed() {
+    using appender = qlog::runtime::appender_base;
+    static_assert(appender::console == 0 && appender::text_file == 1 &&
+                  appender::raw_file == 2 && appender::compressed_file == 3 &&
+                  appender::type_count == 4);
+    check(appender::get_config_name_by_type(appender::compressed_file) == "compressed_file",
+          "reserved compressed configuration name");
+
+    const auto output_dir = std::filesystem::temp_directory_path() /
+                            ("qlog-unsupported-compressed-" + std::to_string(
+                                 std::chrono::steady_clock::now().time_since_epoch().count()));
+    const std::string unsupported =
+        "appenders_config.unavailable.type=compressed_file\n"
+        "appenders_config.unavailable.levels=[all]\n"
+        "appenders_config.unavailable.file_name=" + (output_dir / "out").generic_string() + "\n";
+    auto mixed = qlog::log::create_log(
+        "unsupported_compressed", config("sync", unsupported + "snapshot.buffer_size=4096\n"));
+    check(mixed.is_valid(), "unsupported appender does not discard valid siblings");
+    check(mixed.info("console-and-snapshot"), "valid console remains enabled");
+    mixed.force_flush();
+    check(captures.size() == 1 &&
+              captures[0].text.find("console-and-snapshot") != std::string::npos,
+          "console output survives unsupported compressed appender");
+    check(mixed.take_snapshot("UTC").find("console-and-snapshot") != std::string::npos,
+          "snapshot survives unsupported compressed appender");
+    check(!std::filesystem::exists(output_dir), "unsupported appender creates no output files");
+
+    check(qlog::log::reset_config(
+              "unsupported_compressed",
+              "log.thread_mode=sync\nsnapshot.buffer_size=4096\n" + unsupported),
+          "reset follows existing partial-success rule");
+    check(!mixed.info("filtered-without-appender"),
+          "snapshot does not change existing appender-based admission");
+    mixed.force_flush();
+    check(captures.size() == 1, "compressed appender does not fall back to console");
+    const auto retained_snapshot = mixed.take_snapshot("UTC");
+    check(retained_snapshot.find("console-and-snapshot") != std::string::npos &&
+              retained_snapshot.find("filtered-without-appender") == std::string::npos,
+          "snapshot retains earlier data without admitting filtered records");
+
+    auto only = qlog::log::create_log(
+        "compressed_only", "log.thread_mode=sync\nsnapshot.buffer_size=0\n" + unsupported);
+    check(only.is_valid(), "logger initialization keeps existing partial-success rule");
+    check(!only.info("no-output"), "unsupported appender does not enable a fallback sink");
+
+    check(qlog::log::reset_config("unsupported_compressed", config("sync")),
+          "supported appender can be restored");
+    check(mixed.info("console-restored"), "restored console accepts record");
+    mixed.force_flush();
+    check(captures.size() == 2 && captures.back().text.find("console-restored") != std::string::npos,
+          "supported appender works after reset");
+}
 void snapshot_resize() {
     auto log =
         qlog::log::create_log("snapshot_resize", config("sync", "snapshot.buffer_size=4096\n"));
@@ -316,6 +369,8 @@ int main(int argc, char** argv) {
             oversize();
         } else if (group == "queue_policies") {
             queue_policies();
+        } else if (group == "unsupported_compressed") {
+            unsupported_compressed();
         } else if (group == "snapshot_resize") {
             snapshot_resize();
         } else if (group == "stack_console_buffer") {

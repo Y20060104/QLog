@@ -23,12 +23,11 @@ cmake --build build/cost --parallel 4
 ./build/cost/BQLogComponentBenchmark all
 ```
 
-也可以将 `all` 改为 `copy`、`vernam`、`ring` 或 `layout`。输出为每项一行 JSON，包含操作次数、ns/op 和校验值。
+也可以将 `all` 改为 `copy`、`ring` 或 `layout`。输出为每项一行 JSON，包含操作次数、ns/op 和校验值。
 
 | 项目 | 计入的工作 | 用途 |
 | --- | --- | --- |
 | copy | 不同长度和偏移的复制后 hash、融合复制/hash | 判断融合在特定长度和热缓存条件下的收益；不预设融合一定更快 |
-| vernam | 固定 4096 字节密钥、不同块长、自动硬件分派 | 比较加密核心；先按逐字节 XOR 期望值检查，再验证偶数次调用恢复原输入 |
 | ring | 同一线程依次 alloc/commit/read/return，核对序号 | 度量 SISO 原语的顺序往返成本；不作为并发吞吐结果 |
 | layout | 固定前缀的实际 Record，递增序号，计数器和四参数格式 | 排除 Buffer、文件 I/O 和 Worker 调度，判断数字转换和 Layout 成本 |
 
@@ -39,10 +38,10 @@ Layout 循环复用对象、缓存和输出缓冲；`OUTPUT` 是最后一条实�
 参数顺序：
 
 ```text
-QLogLatencyProbe burst|compressed [groups=10000] [wait_us=2000] [hp_threshold=1000] [csv_path]
+QLogLatencyProbe burst [groups=10000] [wait_us=2000] [hp_threshold=1000] [csv_path]
 ```
 
-每组 20 次普通 `info`，组间忙等 `wait_us` 到 `wait_us+200` 微秒；`wait_us=0` 表示连续调用。`burst` 使用文本输出，`compressed` 使用压缩输出。阈值 `0` 按库的真实配置规则禁用 HP，`1` 用于观察尽早进入 HP 的行为。阈值仅用于受控对照，官方 benchmark 仍保留默认 1000。
+每组 20 次普通 `info`，组间忙等 `wait_us` 到 `wait_us+200` 微秒；`wait_us=0` 表示连续调用。`burst` 使用文本输出；本分支不提供压缩输出模式。阈值 `0` 按库的真实配置规则禁用 HP，`1` 用于观察尽早进入 HP 的行为。阈值仅用于受控对照，官方 benchmark 仍保留默认 1000。
 
 ```bash
 mkdir -p build/cost/runs/qlog build/cost/runs/bqlog
@@ -64,7 +63,7 @@ CSV 保存每批耗时除以 20 的值；P50/P95/P99/max 为这些批次平均�
 2. 只改变一个实现或配置；保留所有重复，交替运行顺序。
 3. 对照连续/间歇、默认/禁用 HP，判断差距是否与路由、占用或唤醒相关。
 4. 在独立诊断构建记录 HP/LP、低空间提示、真实通知和重试次数，按批次与延迟关联。分段计时需要校准探针开销；不要把插桩绝对值当成正常接口性能。
-5. 对纯 Layout 或加密负载采样，避免组间忙等淹没热点。WSL 可使用已安装的 `/usr/lib/linux-tools/<version>/perf`；不能仅因 `/usr/bin/perf` 包装器版本不匹配就判定内核不支持。
+5. 对纯 Layout 负载采样，避免组间忙等淹没热点。WSL 可使用已安装的 `/usr/lib/linux-tools/<version>/perf`；不能仅因 `/usr/bin/perf` 包装器版本不匹配就判定内核不支持。
 6. 最后跑 `benchmark/cpp` 完整套件，区分组件 A/B 收益与整条流水线结果。
 
 2026-10-16 的实际方法和证据见 [性能定位报告](../../docs/validation/PERFORMANCE_INVESTIGATION_20261016_CHS.md)。

@@ -4,7 +4,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
     set(QLOG_BUILD_BQLOG_BENCHMARK OFF CACHE BOOL "" FORCE)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../.." "${CMAKE_CURRENT_BINARY_DIR}/qlog-source")
 endif()
-add_executable(QLogBenchmark main.cpp multi_format_templates.h write_thread_cost.h)
+add_executable(QLogBenchmark main.cpp write_thread_cost.h)
 target_link_libraries(QLogBenchmark PRIVATE QLog::qlog)
 qlog_enable_warnings(QLogBenchmark)
 

@@ -12,7 +12,6 @@
 
 #include "qlog/config/filter_config.hpp"
 #include "qlog/runtime/appender/appender_console.hpp"
-#include "qlog/runtime/appender/appender_file_compressed.hpp"
 #include "qlog/runtime/appender/appender_file_text.hpp"
 #include "qlog/runtime/log_snapshot.hpp"
 #include "qlog/runtime/log_types.hpp"
@@ -257,7 +256,10 @@ bool log_imp::add_appender(const string& name, const qlog::runtime::property_val
     } else if (qlog::utility::equals_ignore_case(
                    type_str, appender_base::get_config_name_by_type(
                                  appender_base::appender_type::compressed_file))) {
-        appender = std::make_unique<appender_file_compressed>();
+        qlog::utility::util::log_device_console(
+            qlog::LogLevel::error,
+            "QLog: Appender type compressed_file is not supported in this branch");
+        return false;
     } else {
         qlog::utility::util::log_device_console(
             qlog::LogLevel::error, "bq log error: invalid Appender type : %s", type_str.c_str());

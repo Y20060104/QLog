@@ -63,18 +63,9 @@ set_tests_properties(qlog.platform.thread_runtime PROPERTIES TIMEOUT 30 LABELS "
 add_executable(qlog_runtime_integration_test runtime_integration_test.cpp)
 target_link_libraries(qlog_runtime_integration_test PRIVATE QLog::qlog)
 qlog_enable_warnings(qlog_runtime_integration_test)
-foreach(group IN ITEMS sync async independent filters_reset concurrent text_file stack_console_buffer oversize queue_policies snapshot_resize)
+foreach(group IN ITEMS sync async independent filters_reset concurrent text_file stack_console_buffer oversize queue_policies snapshot_resize unsupported_compressed)
  add_test(NAME qlog.runtime.${group} COMMAND qlog_runtime_integration_test ${group})
  set_tests_properties(qlog.runtime.${group} PROPERTIES TIMEOUT 60 LABELS "runtime;integration")
-endforeach()
-
-# BQLog compressed v10 container, caches, crypto and actual public runtime output.
-add_executable(qlog_compressed_file_test compressed_file_test.cpp)
-target_link_libraries(qlog_compressed_file_test PRIVATE QLog::qlog)
-qlog_enable_warnings(qlog_compressed_file_test)
-foreach(group IN ITEMS primitives scalars sync async independent cache_reset reuse rollover encrypted)
-    add_test(NAME qlog.compressed.${group} COMMAND qlog_compressed_file_test ${group})
-    set_tests_properties(qlog.compressed.${group} PROPERTIES TIMEOUT 90 LABELS "compressed;integration")
 endforeach()
 
 # Fused copy/hash bytes and original BQLog SW/HW vectors, then actual Record writing.

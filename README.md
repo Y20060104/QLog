@@ -1,8 +1,12 @@
 # QLog
 
-QLog 是参考 BQLog 源码重建的 C++ 日志库，提供同步、共享异步与独立 Worker 模式，以及 Console、TextFile、CompressedFile 输出。
+QLog 是参考 BQLog 源码重建的 C++ 日志库，提供同步、共享异步与独立 Worker 模式，以及 Console、TextFile 和 Snapshot。
 
-## Benchmark
+当前开发代号为 **Que（阙）**，分支 `feat/que` 从完整版本 `c1c5e6c` 分出，已移除压缩文件与加密实现。`appender_type::compressed_file` 的枚举值和 `compressed_file` 配置名称仍保留；配置该输出时报告不支持，其他有效 Appender 继续工作。新分支决定见 [压缩与加密移除范围](docs/decisions/NO_COMPRESS_BRANCH_20261016_CHS.md)。
+
+## Benchmark（完整版本历史结果）
+
+以下结果对应分支起点的完整实现，包含本分支已移除的压缩与加密场景；保留原始数据与源码标识。当前分支的 `benchmark/cpp` 仅执行两项普通 Text 吞吐场景及写侧延迟测试；本轮分支裁剪不产生新的性能结论。
 
 测试日期：2026-10-16。入口位于 `benchmark/cpp`，按 BQLog 官方 C++ benchmark 对齐消息、参数、默认配置和计时范围。
 
@@ -121,6 +125,8 @@ python3 benchmark/cpp/run_benchmark.py \
   --evidence-dir build/benchmark-repro/measured \
   --threads 1 4 --repeats 3 --min-host-free-gib 20 --cleanup-output
 ```
+
+当前命令运行本分支的两项 QLog Text 场景；固定 BQLog 仍运行其完整套件，汇总仅比较双方共有的普通 Text 场景。需要复现上方全部历史场景时，应使用完整版本 `c1c5e6c`。
 
 运行器使用 Linux/Python 3，每轮使用新输出目录，并检查磁盘余量与计时时钟。`--cleanup-output` 在记录输出文件哈希后清理该进程生成的目录；原始计时和环境证据保留。
 

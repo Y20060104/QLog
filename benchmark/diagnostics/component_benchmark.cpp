@@ -14,7 +14,6 @@
 #include "bq_log/bq_log.h"
 #include "bq_log/log/layout.h"
 #include "bq_log/types/buffer/siso_ring_buffer.h"
-#include "bq_common/encryption/vernam.h"
 #include "bq_common/utils/util.h"
 using Layout = bq::layout;
 using Zone = bq::time_zone;
@@ -23,14 +22,12 @@ using Entry = bq::log_entry_handle;
 using Tag = bq::log_arg_type_enum;
 using Ring = bq::siso_ring_buffer;
 using BufferResult = bq::enum_buffer_result_code;
-using Vernam = bq::vernam;
 static auto hash_bytes(const void* src, std::size_t len) { return bq::util::get_hash_64(src,len); }
 static auto copy_hash(void* dst,const void* src,std::size_t len) { return bq::util::bq_memcpy_with_hash(dst,src,len); }
 #else
 #include "qlog/layout/layout.hpp"
 #include "qlog/record/argument_tag.hpp"
 #include "qlog/buffer/siso_ring_buffer.hpp"
-#include "qlog/encryption/vernam.hpp"
 #include "qlog/utility/hash.hpp"
 using Layout = qlog::layout::Layout;
 using Zone = qlog::layout::TimeZone;
@@ -39,7 +36,6 @@ using Entry = qlog::record::LogEntryHandle;
 using Tag = qlog::record::ArgumentTag;
 using Ring = qlog::buffer::siso_ring_buffer;
 using BufferResult = qlog::buffer::enum_buffer_result_code;
-using Vernam = qlog::encryption::vernam;
 static auto hash_bytes(const void* src, std::size_t len) { return qlog::utility::get_hash_64(src,len); }
 static auto copy_hash(void* dst,const void* src,std::size_t len) { return qlog::utility::qlog_memcpy_with_hash(dst,src,len); }
 #endif
@@ -66,23 +62,6 @@ void copy_case() {
         require(std::memcmp(dst.data()+((count-1)&31U),src.data()+((count-1)&63U),len)==0,"copy output");
         emit(fused?"copy_hash_fused":"copy_then_hash",len,count,end-begin,sum);
       }
-    }
-}
-void vernam_case() {
-    alignas(32) std::array<std::uint8_t,65536> data{};
-    alignas(32) std::array<std::uint8_t,4096> key{};
-    for(std::size_t i=0;i<key.size();++i)key[i]=static_cast<std::uint8_t>((i*13+7)%256);
-    for(std::size_t len : {std::size_t{32},std::size_t{128},std::size_t{1024},std::size_t{4096},std::size_t{65536}}) {
-      for(std::size_t i=0;i<data.size();++i)data[i]=static_cast<std::uint8_t>(i%256);
-      Vernam::vernam_encrypt_32bytes_aligned(data.data(),len,key.data(),key.size(),0);
-      for(std::size_t i=0;i<len;++i) require(data[i]==static_cast<std::uint8_t>((i%256)^key[i%key.size()]),"Vernam independent XOR oracle");
-      Vernam::vernam_encrypt_32bytes_aligned(data.data(),len,key.data(),key.size(),0);
-      const std::uint64_t count=std::max<std::uint64_t>(4096,268435456/len);
-      const auto begin=Clock::now();
-      for(std::uint64_t i=0;i<count;++i)Vernam::vernam_encrypt_32bytes_aligned(data.data(),len,key.data(),key.size(),0);
-      const auto end=Clock::now();
-      for(std::size_t i=0;i<len;++i) require(data[i]==static_cast<std::uint8_t>(i%256),"Vernam even repetitions restore input");
-      emit("vernam",len,count,end-begin,hash_bytes(data.data(),len));
     }
 }
 struct Memory {
@@ -137,4 +116,21 @@ void layout_case(bool four) {
     emit(four?"layout_four_params":"layout_counter",0,count,Clock::now()-begin,sum);
     std::cout<<"OUTPUT "<<layout.get_formated_str()<<'\n';
 }
-int main(int argc,char** argv) {try { const std::string mode=argc>1?argv[1]:"all";if(mode=="copy"||mode=="all")copy_case();if(mode=="vernam"||mode=="all")vernam_case();if(mode=="ring"||mode=="all")ring_case();if(mode=="layout"||mode=="all"){layout_case(false);layout_case(true);}return 0;}catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}}
+int main(int argc, char** argv) {
+    try {
+        const std::string mode = argc > 1 ? argv[1] : "all";
+        if (mode != "all" && mode != "copy" && mode != "ring" && mode != "layout") {
+            throw std::runtime_error("Usage: QLogComponentBenchmark all|copy|ring|layout");
+        }
+        if (mode == "copy" || mode == "all") copy_case();
+        if (mode == "ring" || mode == "all") ring_case();
+        if (mode == "layout" || mode == "all") {
+            layout_case(false);
+            layout_case(true);
+        }
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << e.what() << '\n';
+        return 1;
+    }
+}

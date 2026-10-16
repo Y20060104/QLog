@@ -1,5 +1,7 @@
 # BQLog 对齐现状与剩余差异（2026-10-15）
 
+> **2026-10-16 当前分支范围（优先）：** `feat/que` 有意移除压缩与加密实现，保留其他输出、压缩类型枚举值及配置名称；这是本分支的功能范围选择，不是待自动补齐的参考缺口。详见[本分支决定](NO_COMPRESS_BRANCH_20261016_CHS.md)。下方完整版本的压缩、RSA 与 benchmark 状态保留为历史材料。
+
 > **2026-10-16 补充（优先）：** 已按参测固定 086f2fd8 对齐 SISO 半满边界通知/读游标确认，以及 Layout 普通十进制两位查表，见[决定](SISO_DECIMAL_PERFORMANCE_ALIGNMENT_20261016_CHS.md)。四配置 44/44、组件 A/B 和完整官方三轮复测完成，见[定位报告](../validation/PERFORMANCE_INVESTIGATION_20261016_CHS.md)。原约 1 µs 的 P50 主因是通知频率；复制/hash 融合未单独消除它。普通接口 HP 内联快路径、块内线程信息复用与 FAST 读取链尚未迁入。下方 2026-10-15 的命名与改动范围为历史记录，不能覆盖这两项后续采纳；SISO 其他差异仍然存在。
 
 本记录以实际 `/home/qq344/QLog` 为准，QLog 起点为 `feat/spsc-ring-opt@ee3ac945397e8a6628192ebef88b4e79e8ec2cd2`，本轮变更尚未提交。生产对齐基准仍是 BQLog `78cbfbef4f87e7558335f0c04bf6dd6894b46451`；`/home/qq344/BqLog` 有 MISO 和构建文件本地修改，比较这些文件时读取固定提交。官方 benchmark 使用独立干净目录 `/home/qq344/BqLog-benchmark-20261015@086f2fd831af86fcfa40e90015f89626d498d3d7`。两个基准各有用途，不能把 benchmark 采用新版本写成生产库已经整体升级。

@@ -46,13 +46,6 @@ add_library(qlog STATIC
     src/runtime/appender/appender_console.cpp
     src/runtime/appender/appender_file_base.cpp
     src/runtime/appender/appender_file_text.cpp
-    src/runtime/appender/appender_file_binary.cpp
-    src/runtime/appender/appender_file_compressed.cpp
-    src/encryption/aes.cpp
-    src/encryption/rsa.cpp
-    src/encryption/vernam.cpp
-    src/utility/random.cpp
-    src/utility/utf_mixed.cpp
     src/record/log_entry_handle.cpp
     src/layout/time_zone.cpp
     src/layout/layout.cpp

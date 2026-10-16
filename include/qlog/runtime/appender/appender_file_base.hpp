@@ -18,7 +18,7 @@ class appender_file_base : public appender_base {
     friend class appender_decoder_base;
 
    protected:
-    static constexpr size_t DEFAULT_BUFFER_ALIGNMENT = 32 /* BQ vernam::DEFAULT_BUFFER_ALIGNMENT */;
+    static constexpr size_t DEFAULT_BUFFER_ALIGNMENT = 32;
 
     struct parse_file_context {
        private:
