@@ -1,5 +1,7 @@
 # BQLog 对齐现状与剩余差异（2026-10-15）
 
+> **2026-10-16 补充（优先）：** 已按参测固定 086f2fd8 对齐 SISO 半满边界通知/读游标确认，以及 Layout 普通十进制两位查表，见[决定](SISO_DECIMAL_PERFORMANCE_ALIGNMENT_20261016_CHS.md)。四配置 44/44、组件 A/B 和完整官方三轮复测完成，见[定位报告](../validation/PERFORMANCE_INVESTIGATION_20261016_CHS.md)。原约 1 µs 的 P50 主因是通知频率；复制/hash 融合未单独消除它。普通接口 HP 内联快路径、块内线程信息复用与 FAST 读取链尚未迁入。下方 2026-10-15 的命名与改动范围为历史记录，不能覆盖这两项后续采纳；SISO 其他差异仍然存在。
+
 本记录以实际 `/home/qq344/QLog` 为准，QLog 起点为 `feat/spsc-ring-opt@ee3ac945397e8a6628192ebef88b4e79e8ec2cd2`，本轮变更尚未提交。生产对齐基准仍是 BQLog `78cbfbef4f87e7558335f0c04bf6dd6894b46451`；`/home/qq344/BqLog` 有 MISO 和构建文件本地修改，比较这些文件时读取固定提交。官方 benchmark 使用独立干净目录 `/home/qq344/BqLog-benchmark-20261015@086f2fd831af86fcfa40e90015f89626d498d3d7`。两个基准各有用途，不能把 benchmark 采用新版本写成生产库已经整体升级。
 
 ## 本轮已经完成
@@ -33,6 +35,10 @@
 
 全零输入会把复制起点推进到输入末尾，再请求复制 1 字节；空输入也可能进入相同的越界范围。因此这两处现在是与参考相同的已知边界，不能再记为 QLog 的安全修复。旧测试中“零密文安全解出零”“零公钥安全拒绝”两条断言已撤回；正常公/私钥解析、非零 RSA 回转及原前导零明文拒绝规则仍保留。CTest 通过不覆盖上述越界路径。
 
+### 格式复制/hash融合（后续已完成）
+
+用户随后授权本项对齐。当前原始 UTF-8/UTF-16 格式写入通过 `qlog::utility::qlog_memcpy_with_hash(dst, src, len)` 复用既有软件/x86 Copy=true 内核，同时完成字节复制和hash写入；`format_str_data == nullptr` 的延后填充仍按参考保留。原CRC核心与数值不变，两个平台Debug/Release各42/42及核心sanitizer通过；见[决定](COPY_HASH_FUSION_20261015_CHS.md)。这项已从下表剩余差异移除。
+
 ## 对固定生产基准仍存在的具体差异
 
 | 范围 | 当前实际差异 | 来源与处理状态 |
@@ -46,7 +52,6 @@
 | UTF / Layout / UTF-Mixed 的 SIMD | 当前主要用已实现的软件路径；尚未迁入 BQ 的专用扫描/转换 SIMD 分派 | 此前允许暂缓。Vernam 的 AVX2/SSE/NEON/标量分派已经实现，不能笼统说全库没有 SIMD |
 | Windows 本地时区名称 | 当前 `get_local_timezone_name` 在 Windows 上返回 `localtime`；固定参考通过 `GetDynamicTimeZoneInformation` 和 UTF-8 转换取得 `TimeZoneKeyName` | 名称获取分支尚未迁齐；本地日历转换本身已经使用 `localtime_s`，DST 路径与参考一致 |
 | TimeZone 输入与失败处理 | 当前保留 `strtol/errno`、`time_t` 范围及日历转换结果检查，扩大年份计算并限制缓存长度；诊断直接写 stderr，参考使用共享 utility 诊断且部分失败检查/长度处理不同 | 早期实现中的显式处理仍存在，本轮未因 RSA 恢复而一并撤销；固定偏移都按有符号秒计算，不能误报为参考仍用无符号毫秒相加 |
-| 格式复制与哈希 | `record_writer.cpp::log_write_begin` 先 `memcpy` 格式，再 `get_hash_64`；BQ 有融合的 `bq_memcpy_with_hash` | 哈希核心与软件原表已对齐；复制/哈希两遍处理仍是成本差异 |
 | Hash-only 内核 | 当前核心通过 `if constexpr (Copy)` 排除空目标地址的复制/指针运算；原 `BQ_GEN_HASH_CORE` 的大块 hash-only 分支仍计算 dummy 空目标的结束地址 | 哈希复用时已明确保留的差异；恢复 RSA 的决定没有同时撤销这一项 |
 | 短写与重叠搬移 | Appender 的三处对应重叠搬移采用 `memmove`，参考用 `memcpy` | 已明示保留的修正，避免依赖重叠 `memcpy` 行为 |
 | 文件清理排序 | `std::sort` 替代原 `qsort` | 当前元素含 `std::tuple/std::string`，不能用字节搬移复制非平凡对象；保留时间排序键，等键次序不承诺 |
@@ -75,7 +80,7 @@ TimeZone 与参考相同的其他边界也不能误记为本轮修复：缓存�
 ## 后续推进顺序
 
 1. 若继续完成固定基准的严格实现对齐，先单独收口 SISO 的原子占位、元数据访问、容量/恢复与完整 Debug，保留用户 CR，再补定向差分。
-2. 性能工作以本轮普通接口对照定位候选，再分别测复制与哈希融合、UTF 软件/SIMD路径；不能根据表中某项耗时直接归因。
+2. 复制与hash融合已接通；后续用新测量评价收益，再根据profile考虑UTF软件/SIMD路径。旧benchmark表明确标识融合前版本，不直接归因为某个实现点。
 3. 升级生产基准到 086f2fd 应作为独立迁移，一起处理新的 Record 读取、FAST 元数据、Buffer 和输出链，避免只加入 FAST 宏而缺少相应生命周期。
 
 本轮构建、测试、源码保护及新 benchmark 证据见 [本轮验证记录](../validation/BQLOG_NAMING_RSA_BENCHMARK_20261015_CHS.md)。正常 benchmark 使用方式与结果见 [README](../../README.md)。

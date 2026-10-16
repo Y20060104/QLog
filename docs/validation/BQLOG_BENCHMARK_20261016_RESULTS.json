@@ -1,0 +1,1122 @@
+{
+  "date": "2026-10-16",
+  "qlog_head": "f643d62fa736ccb3dcda22f7d5c9a163d0014ccc",
+  "reference_head": "086f2fd831af86fcfa40e90015f89626d498d3d7",
+  "source_fingerprint_sha256": "144580a45c351a1fbc9c9d85e6d246b03afe369b998aa4a7132cfb17b6c805be",
+  "qlog_source_manifest": {
+    "include/qlog/buffer/block_list.hpp": "f9715bd6879205bd7eb864d035d18b26432d185df6aea13fafd6f65916859f54",
+    "include/qlog/buffer/group_list.hpp": "3d2b343e5344a135430f1e494230946dc6209d0d048b19dc880c7ab66e812acc",
+    "include/qlog/buffer/log_buffer.hpp": "beaa7c817ab864ee3fc808b7ac54ab09cb86f1b03ab4c543e86be2bea9363bcb",
+    "include/qlog/buffer/log_buffer_config.hpp": "f37f1ecb0e6e23e6a56b4d81ac4da6b3693cca3213fd5f7d426b255b545ea03e",
+    "include/qlog/buffer/log_buffer_defs.hpp": "a5825fa0faec938e2340662bf64354e8519871e8b9f95465fd228cd16ba9740f",
+    "include/qlog/buffer/memory_pool.hpp": "da6be89e43652e39e4cad405ee79b90911a614aa724a074d964b41257502bf8b",
+    "include/qlog/buffer/miso_ring_buffer.hpp": "9c5dbac9117fa106dc5520c696685e30f951b1ddd48afa2f85a01357b4cf1a96",
+    "include/qlog/buffer/normal_buffer.hpp": "40428024c7cb02b328e639a713be3bbb059e3b877ec2bc53598f58a5ae515a7d",
+    "include/qlog/buffer/oversize_buffer.hpp": "3b0dc455d534cf3c0816043358c636cfa6b9e634503e6ee06d2e9ef39c016134",
+    "include/qlog/buffer/siso_ring_buffer.hpp": "393ffc393f102671c28d4e3b9974ba9f3715da116247d97c135b8784e13ee2e4",
+    "include/qlog/config/buffer_config.hpp": "ddfeeb8691192ab553d90acedde52db4e3efcd8dd93d1ddefb3dbcd2fd8d0b8a",
+    "include/qlog/config/filter_config.hpp": "8956c652a1866f05974f1090c624fe3776c4d4b695195b5cb0bf89de8a95f0ff",
+    "include/qlog/config/property.hpp": "d4d278a5fc559c6a6d65e1ed741bfa027f7ca50049907d62f28078e8aedff39b",
+    "include/qlog/config/property_value.hpp": "ca289566b390095f781abbd31bf0db00e6358d4341511a76e13b3e23bd1aa330",
+    "include/qlog/encryption/aes.hpp": "48210eae6122cf1b3e2394c5dc8f70488a9746e3dbcc458346c9b21c44f5e5db",
+    "include/qlog/encryption/rsa.hpp": "6581d92d3e870f9aa470a44ce1f85670a96bd8ee64bf71065dfee58d05a8e730",
+    "include/qlog/encryption/vernam.hpp": "8c0243ec29f6db749f5ff61ce04b144d6d4e1115354ce6529af46d1fad912c96",
+    "include/qlog/global/common_vars.hpp": "29e4d3d75a63ec9bf2f08a13491fc159653efbf813d7084b96ae26d7c6ae5c9a",
+    "include/qlog/global/global_vars.hpp": "98fd5b1ca64774ec5813acc208a0521c0bf082b6f91a5f15b0558e2159f96a76",
+    "include/qlog/global/log_vars.hpp": "b1bb330c649a28c9c5a612cd7bb33c98131d9fdd44d6ffdbec7e28bf6321c028",
+    "include/qlog/io/file_manager.hpp": "f7ba7103acb797b324d31276126708cb06d8f4a096debf8f03dfebbff2ac0dfb",
+    "include/qlog/layout/layout.hpp": "1c797f43df233b01a1842d1439da92d4e0da55599157c76a72c6eb5cad5958d3",
+    "include/qlog/layout/time_zone.hpp": "44e6c0db072ff4b04e4fe8cae8ad4fbb2bd9847a6a0fc502532da041b7bf14db",
+    "include/qlog/log.hpp": "daae3a84f19a19fcf40f080ed641642271116f59a541f4747c3a14008cf4250e",
+    "include/qlog/log_level.hpp": "aededaf65abeb5fb8acc5488db83ce0d703d2f27ee2d9448058eb94028ef50c8",
+    "include/qlog/platform/aligned_memory.hpp": "5eb4417e60e810378ea5157bcf350fcfb7bda3fa2052fb828d70c5a7ad2f7c78",
+    "include/qlog/platform/atomic/_inner_atomic_GNU_C.h": "099205406c67c68a53ab83c68bc05c37b3af948185f088e4ef9ddb205c2ac73c",
+    "include/qlog/platform/atomic/_inner_atomic_msvc.h": "d3c5a1f4e1f09999394e37301ae613124eed69dc5137a4811c61ebb92b3310f6",
+    "include/qlog/platform/atomic/atomic.hpp": "3bd559788ea51496c6abecf7c29f57954bd8e3141e69007170ae44dc24341a92",
+    "include/qlog/platform/condition_variable.hpp": "9c8fad3634b7d176d57a6269d9a9ad3aac916c9de943d1292a666355d347e3ea",
+    "include/qlog/platform/file_defs.hpp": "d2486bc11a40ceb775dbc93d9f981bc8c7e0ea084be690ff7f3a3f218e460585",
+    "include/qlog/platform/file_io.hpp": "0cc68f6b610b2cc80edb3554a3f3e14c9e6b2cff6b656a56e0cde204efa2c97d",
+    "include/qlog/platform/file_path.hpp": "651b972acde18b81f0ce53aabcf8f6c58706cde9d9b099264ba446addcbc1330",
+    "include/qlog/platform/macros.hpp": "9ebf2a6f39ce76ff45cd79a2ba4ea6024116ab31609a123fa57ec099f4b6ced7",
+    "include/qlog/platform/memory_map.hpp": "39875d4f4393dcf4c59936ebe4f8c35c012b7912e8b7eef0857b00236e80214b",
+    "include/qlog/platform/mutex.hpp": "becb1849360f6a4aa95a3096b3df7fefdc0cc57ea5e9d966b5dc22575dcf4b78",
+    "include/qlog/platform/posix/file_defs.hpp": "b5dcbdc622d846804a8269e35170eec8a876af08b0af2ce0547bf40b56201339",
+    "include/qlog/platform/posix/memory_map.hpp": "c6b35c13b3a6f4ec034b34a3ec1d37c734eb3dfd3b75760086096454aea47e7d",
+    "include/qlog/platform/spin_lock.hpp": "9f48ff470207e62c698be326e2d6c0f46155a01aacdb2082a4362898ef32e679",
+    "include/qlog/platform/stack_trace.hpp": "b370474a1f5b903d5aa7e112cb2264c2b3b2bd0a384476110edccf73b2ae65e6",
+    "include/qlog/platform/thread.hpp": "9409af0634fe3ace6ad869e4203d21b1a6437f5001d130279b2d650f0a009b96",
+    "include/qlog/platform/thread_ops.hpp": "739d9d532c5b9d393d01f273f09ab818d1ccb377354655e06a0022e2adf45a98",
+    "include/qlog/platform/time_ops.hpp": "4b6ffc6c2276b9de069f45e75986148d2c149da5e8eac0b02d6430336c905e93",
+    "include/qlog/platform/windows/file_defs.hpp": "00f5bbd48395d1a28bb66ffd960f798f1e5c1b0f1a0c7a2df4d9e9a1dabe324d",
+    "include/qlog/platform/windows/file_path_internal.hpp": "51524d6bc11419f6b5a7ef0195c2c162cb028f755712e35d4604c646d58081f4",
+    "include/qlog/platform/windows/memory_map.hpp": "3cd3206aaf5cdf5d5cd816efe04f1cfe57b00894924341aa4d7d14706049c954",
+    "include/qlog/platform/windows/system_api.hpp": "5b5335cd9b7649a2b2509169c3606a7861672102285dff9160a67346c489d83f",
+    "include/qlog/record/argument_serialization.hpp": "384245f48bcf2bc52c4ed7a8db90724fefb6896c01da03c8f9334da9901898f0",
+    "include/qlog/record/argument_tag.hpp": "746c290ba9251c98ca7b06c7a8426a305a54cc40a96bd2bd1f15456ed0c9d7ba",
+    "include/qlog/record/log_entry_handle.hpp": "3a8c753847e0c6c1758785fa84fdb3388c9d721a3be33091a9d1c8e0b8478dce",
+    "include/qlog/record/record_header.hpp": "c82001e2a6394e042c9b861e34e29c1d80484e9971cc9547cf44a84c5a01034e",
+    "include/qlog/record/record_limits.hpp": "aaae2c925ebb6310b19946f8bac88db7f070cfd1d243e6e8d3811be934ab8640",
+    "include/qlog/runtime/appender/appender_base.hpp": "7c914b1d1b7449f56b57db16d103ba717ee155bc1a8d4159ca7d9a2c70490459",
+    "include/qlog/runtime/appender/appender_console.hpp": "6babce5d28f7b9cd68dc0e461fd1433e62f3c408556a557879388492a9fa466e",
+    "include/qlog/runtime/appender/appender_file_base.hpp": "aa4bb613c07ec041f1571b534d2d57468050ddf2ec922e5314bcc7b5c2d87066",
+    "include/qlog/runtime/appender/appender_file_binary.hpp": "65486f589933e90a77f5bbb9f15155163f361809c58796ae6ea7b90c50ff523d",
+    "include/qlog/runtime/appender/appender_file_compressed.hpp": "ae98bc58ccb58e22bbffaaad7a436bb21f3391bef315b118c1246253cdf0d723",
+    "include/qlog/runtime/appender/appender_file_text.hpp": "1a19d1c54c46af1fab6cdee01686188fe31c55110343d402cbd827b4f53f0498",
+    "include/qlog/runtime/log_imp.hpp": "03a2f6760c115b0c268340cbf64c767c8c425204afe327dc24753995af65d872",
+    "include/qlog/runtime/log_level_bitmap.hpp": "ad299d861e083ab10cc4075f69c0656a91477a9c26b6fed3a3d28fec31cec5ce",
+    "include/qlog/runtime/log_manager.hpp": "f450d4c497b196a9dc2df5e2d9074ec9a12fb8b7d2075a506250bde6945027af",
+    "include/qlog/runtime/log_snapshot.hpp": "6c6c4a1906f5dad923d80f3c48911418679f6c41c11b56ee790480cd26c4e883",
+    "include/qlog/runtime/log_types.hpp": "29ea58b052e5408f8329b8c82a636892d4ba15eb8b2835e3f57682d43fe05485",
+    "include/qlog/runtime/log_worker.hpp": "2ead9c0ff9c37ecb46e4eef01e5d808a10a3f9b7a56158fa8de64c08db574001",
+    "include/qlog/runtime/record_writer.hpp": "17b86039d0a393916ecde7d8edae11b948fedfd4630f4f927081c19016f1f154",
+    "include/qlog/utility/aligned_allocator.hpp": "42e230aaf8b735b74de27e9458ec3afbf83d7be67a4a73728201f96153fcd9af",
+    "include/qlog/utility/alignment.hpp": "93d9253cb8fe36ac5a5f37dd58354f2978647ce1e17f082affa2e1d9f112b608",
+    "include/qlog/utility/allocator.hpp": "1f1f4d618919431f3658407fb06faf1a037e71ff4ed192e46d514edd106663da",
+    "include/qlog/utility/bounded_hash_cache.hpp": "01092a3d6965ac5fc23ff06e40d247a7d420c881af61bed6d24ba9098672b808",
+    "include/qlog/utility/checked_size.hpp": "20c68bb448ce26e28544cea230276b4dba0bc2ba24e8828d06d5e49027969ecf",
+    "include/qlog/utility/diagnostics.hpp": "08a3e5e68c5554b19c618830c2c0ab829f1598ac1b7db3b9ef166208b658f0b1",
+    "include/qlog/utility/hash.hpp": "e79e5fe4d8d599dd9ac5752f0b2eeb7abdacf26e6a51ed7fa3b37bf92905d587",
+    "include/qlog/utility/hash_map.hpp": "5c497e440844f410f69708317860ec1a8232e930acd649aff8ec3390f6d32b32",
+    "include/qlog/utility/hash_map_def.hpp": "1ff1f12e42d597963b8acc0ef37cb591a37ea7729320dc3161a72eadf82720ba",
+    "include/qlog/utility/hash_map_impl.hpp": "c130b9ad9e6ca68b53b5cb2d75af8db8db2a1ed172127981b015aab4af55bafb",
+    "include/qlog/utility/log_utils.hpp": "9d0fbbbbab06b463a920677891146c0764b557fb5b284dfa3a421d7ae17aa2d4",
+    "include/qlog/utility/random.hpp": "78350320519af23a0bc6903b786dec0641c01d206dcf143054a40848dec5b8a1",
+    "include/qlog/utility/string_utils.hpp": "5fbc3af17178d562b60d4b9a050a6ab5b8243e505c2999e89b0815949e4f55ef",
+    "include/qlog/utility/type_tools.hpp": "4dc5917d682701d43238f86b8a96ed77a8c83c9744f5bee48b72084966e6d914",
+    "include/qlog/utility/type_traits.hpp": "59af7193e809331937a9d503a018ed2348561daf3bc33689e32775054847bb6a",
+    "include/qlog/utility/utf_conversion.hpp": "cd96fc09994934483a15adfaa6bbbbc28a1e65a86b1e5055dad3071470176ea7",
+    "include/qlog/utility/utf_mixed.hpp": "9d8386bf64697c41c04eeab8f8aef4acfe88fe2e82f154a732ded8428a49b2dc",
+    "include/qlog/utility/utility.hpp": "ceed2a9fc687c01e516b1da36a343366c6880d25c1470f5b0a0ce0772ac88d90",
+    "include/qlog/utility/utility_types.hpp": "545da63203a61d183cc866feea6f4389f3c2f5cd70302d5e98b356776259aecb",
+    "include/qlog/version.hpp": "2ed4fa04ee7def8ebdaeadfb1e45cc27ef22f0b0285835a0def4bab321623f0c",
+    "src/buffer/block_list.cpp": "10852704702b0b011dcb5692eb628cc28bf637ec0108362a7b91be6f0454487d",
+    "src/buffer/group_list.cpp": "66dbee9ef8612f53bbdb8b207198ff227d26501f7f57c4b51109efe2ef704bda",
+    "src/buffer/log_buffer.cpp": "e6a046e883640f92ddee835a83a08ea1e3b076e20e5f9d63a40dbca9ba990763",
+    "src/buffer/log_buffer_config.cpp": "3662cd58afd04a2d3f17b38bcc3f116d5515ef6ac5b7e0068bfb15e49a753c39",
+    "src/buffer/miso_ring_buffer.cpp": "69078a61c7c9c054bd0fbbe7861c8dfc6f5965e0bf2bd4de9afe2d434983a588",
+    "src/buffer/normal_buffer.cpp": "0010c3695e6b89d115ca3ce939a86ee9d3a38d03b0ea6a5d3ec76a31d2467ac6",
+    "src/buffer/oversize_buffer.cpp": "893dfb1f0202fed982f910379ddb738ebfb990fc55cc0f0c37344855016acda9",
+    "src/buffer/siso_ring_buffer.cpp": "c3d7da4ac07452e25cf7d02fb765f36f111d1a0e041bbda720035787c6e73770",
+    "src/config/buffer_config.cpp": "d447adc261a6e6ae348fbfafdd0f20c2e9fd38249c445eac1657789dd27b2165",
+    "src/config/filter_config.cpp": "ea04ab1950927a660c072111f7fcfaa22ea7e741fa80243c8d73ecb889b0d236",
+    "src/config/property.cpp": "ec9b28316588acbcfea38c81823939ee9079bbf9437af5dcbfbbcf67a00005ef",
+    "src/config/property_value.cpp": "2867c02bf6ec8d8536f41bff357f853b34494c50709c30008de351c547dbb36b",
+    "src/encryption/aes.cpp": "0762dc229fe60b39cb3d6cf2bc261fe3be5f614cc224cffebd901c4e485aed37",
+    "src/encryption/rsa.cpp": "3bd50a2b4543fb4ee71f9ac4e730ff1197bac68ce371cd75c65b982a30991193",
+    "src/encryption/vernam.cpp": "9a98de4439cfce89d3b2883675bb72d805c77287b9cb9cacfc0359ee158639c3",
+    "src/global/common_vars.cpp": "9251211a2293dc42dac431f829b557eaeef08be5324b266f34d5b0cbfde9abc1",
+    "src/global/global_vars.cpp": "44fa08668aaa954fef958ffa5fce8dc421fb7f589adb858fb4e2cd6cbfbd9059",
+    "src/global/log_vars.cpp": "fe8f070a6a83c108b419d786dde8f82b01b6e632b1c8a84ce69623b01f6e1d1e",
+    "src/io/file_manager.cpp": "a9212f514deb653f3e496986274d7775f5e2ab6644c639c6d184a3291ef87ee7",
+    "src/layout/layout.cpp": "da0fb902576dbd05d8eadb162066128f036eb2b872dfd9a5c974c4dcd08cf4d5",
+    "src/layout/time_zone.cpp": "f26902314ef8c1c963f64886e526abbad0d714c477b5f7580587d38eab6c18a4",
+    "src/log.cpp": "c91adf352b8c4442414f52011881a9190953031a403b25c9d2f13d04d7e30840",
+    "src/platform/file_defs.cpp": "003fe5e0d8f52202f2ce15b9ac46583829f2116ee319f1603b6564d2dd3c7330",
+    "src/platform/file_path.cpp": "f062013da22f2226dca2ed8fed53b606074164ec1bcc2177ea657cab1de9b2dc",
+    "src/platform/memory_map.cpp": "8fd8be69447cdbce522d3ad6ac6c95433a3a05f276570dd5a1a209e6a0237f60",
+    "src/platform/posix/aligned_memory.cpp": "1556d46cef15605dcc7ca0102817c6f36569ffec25a4b252b698081470938f68",
+    "src/platform/posix/condition_variable.cpp": "46280ccbaafcee60af427ecae6aab9594ea4db2ec256ecd1cdf5facd32d08a84",
+    "src/platform/posix/file_io.cpp": "37b8c0e2183f05ebf3c0a0f931c06e85426168e857a9bff4cc982cb89ea40c30",
+    "src/platform/posix/file_path.cpp": "bc5e7969403662c99372aa78378674a4393ef1689df780b989ad504a69ae698f",
+    "src/platform/posix/memory_map.cpp": "4b00039f041c348391246ee8677b6335e96d1ce9fb8633ba24e51c992c9caf5a",
+    "src/platform/posix/mutex_posix.cpp": "0f6ac9c1641fe05bf6782fe9f001236b4db06a7b70f425e2a9a56f866ece81d8",
+    "src/platform/posix/stack_trace.cpp": "c55b130b69dcbeca2998b0b849f1e3f926cbfbc02ce3e76953670fd56c90cd51",
+    "src/platform/posix/thread_ops.cpp": "8763ee0c66e6628d994ff410331de02476a63bc9446c0098398dd03a8ca7c037",
+    "src/platform/posix/time_ops.cpp": "7e737397ede580d9cb15d296a287918bc36b7bab4614b826b0ab040d2ef339e7",
+    "src/platform/thread.cpp": "43892693c9585fb689c759c3b793e5efc7ae109438f40e7934373f8880ec8a03",
+    "src/platform/windows/aligned_memory.cpp": "92080717ab3b974b540259d13bea86ba41e0c1eb5ddbd4f61a00484172441693",
+    "src/platform/windows/condition_variable.cpp": "37b7709c3456505fb5453dfd46ce5a83197eaade6cc80d2457fd6f76d7afbdec",
+    "src/platform/windows/file_io.cpp": "e85a347d124d4754c22e1d17b3dd706877568f38c207e967ab4bfe57d0548f8f",
+    "src/platform/windows/file_path.cpp": "b8d5a026b15e99125424e15d1d4872fa894dd401885cc48f6cd5d965ae1a991e",
+    "src/platform/windows/memory_map.cpp": "ee1f3f12ae6cb20b2848569b53e25b82245bc3e1ae8500807ba105117905389a",
+    "src/platform/windows/mutex_win64.cpp": "5c0b7e789ed5bdaf13c74bc0c47af72318a3bf5c0244080fcdd95255e2c6dd46",
+    "src/platform/windows/stack_trace.cpp": "d7b37112b42d8bc60c2a8ec664b9539069663e08c096cee2d44bb9067e64e357",
+    "src/platform/windows/system_api.cpp": "6f9241df44f4b56ddd77dece3af760364f90d0362418356a82667aa06c7e2aac",
+    "src/platform/windows/thread_ops.cpp": "c6acc363bf6d12920112ebfb2fe4a4a633b6c88201936ed4f26a7da5db1a3e68",
+    "src/platform/windows/time_ops.cpp": "725a63c6f549eeb349fc2a1dd6d5adfa6128a1671850068516057764f2e6ebfd",
+    "src/record/log_entry_handle.cpp": "26de26b1b749dd7206ebd6e6c878966c5832c4244c87a6f3198d1a091bd4ef82",
+    "src/runtime/appender/appender_base.cpp": "4d189d405515e3014d565dcff6ea1fc36b01cb3298712fc865a7bf0c23879108",
+    "src/runtime/appender/appender_console.cpp": "d506919e8907227d2aeafd4130b861e89621a88891c1e97d24c8646e5a48284d",
+    "src/runtime/appender/appender_file_base.cpp": "295ebb1fb1fc343489bb4a78caba6a0184659439eddc77714ba8c7449d4631ed",
+    "src/runtime/appender/appender_file_binary.cpp": "8f04e33597c7cefc9883edae51e4fd9c874421ebf411674f7ea9e6e4ac199b20",
+    "src/runtime/appender/appender_file_compressed.cpp": "e612deb76218c24466c32d55b6431415e362ce2e833ae896e87256e75514c9c5",
+    "src/runtime/appender/appender_file_text.cpp": "417f0a35e70f9b1fa00b1060bb9447d2e14f65f3642e8f8b9be6641ec4bbabb1",
+    "src/runtime/log_imp.cpp": "6b06eae15ac66aa42a23bb5037ebe333223a633e815214a1dbf5ed56e33dd943",
+    "src/runtime/log_level_bitmap.cpp": "bc351de5df15795ef3913ac6c936d3f40330470e9538bc55835cd6898e4b82a7",
+    "src/runtime/log_manager.cpp": "e0b6ae75a40f0a70432a28433700db1d8faa633f053574b4dc828ab393ff23f6",
+    "src/runtime/log_snapshot.cpp": "7feede28a6cd63a179eae815ec697775d8b68d832f9502677b750e60abd9bb9a",
+    "src/runtime/log_worker.cpp": "5858a8c68918324494b72afd7244e7c80fd8896f64cd3c8fc53f7ab6ab5c71da",
+    "src/runtime/record_writer.cpp": "305218070bffc5b2cbd05b18e7b808af85cbb3fc039344a87287e46d25aac16f",
+    "src/utility/diagnostics.cpp": "519dbd433f76a6f7d626436442587d88664afd97a11f35577815f277516ec2dd",
+    "src/utility/hash.cpp": "d4d2785b32a893145722b0085527873a353a4f22802ff8b85e096bf062873b42",
+    "src/utility/hash_core.hpp": "4b85a1c616731a1f8445f55d6cc2a3c262892d4ba33579cbad6804ea8c7362f3",
+    "src/utility/hash_software.cpp": "e1a958ef890b3119880445b99b89b9ac4317234c74261b49616b7c45f676527b",
+    "src/utility/hash_x86_crc32c.cpp": "ebff89795072870db4968698688396660c79357fada9d3017add7b2588fcf171",
+    "src/utility/random.cpp": "7d1288716c8304f39ef161f92fa987cd3ae8f4f7f1371020a877212a95f1e275",
+    "src/utility/string_utils.cpp": "81a9092e405fb2e268323821bb66e4a34073b9757472483748a3f7c2095744c1",
+    "src/utility/utf_conversion.cpp": "0100073eef4c334c8c427cc8c4c662ab455c532f9c992d59e3ae655cd3d8f820",
+    "src/utility/utf_mixed.cpp": "c12d17c4df50145fa953719f187b5862abe5a7bba46a3d6bfaa408735571b42f",
+    "src/version.cpp": "ed8582a915e35ba881192f3d92e2d8a15ee45a1bf9a3bb99c7c36ee968591172",
+    "benchmark/cpp/CMakeLists.txt": "41a5e8d923b393d08150dfb0cd3bc707f02f60343482bec45ee5273c51e4cba7",
+    "benchmark/cpp/UPSTREAM.json": "9917821e9859ce6266cc42c5daff81fa0217b8a262ab0dc6638f0cea16ac6887",
+    "benchmark/cpp/main.cpp": "5bea4a41eb87e42f0075978a03c37d799af36e98c4f4d01a7dc4c1d7bba1f6d2",
+    "benchmark/cpp/multi_format_templates.h": "d57433ef8bdb5a865c056bbc7ceb41d8acea6723d721c9fcaec9f5cc52541736",
+    "benchmark/cpp/run_benchmark.py": "c00367fdcfb4c55e4ac4eb73da3aebe67a9bc1d6ae722db710e6ef26a5a35333",
+    "benchmark/cpp/write_thread_cost.h": "9f9958217f8cd04834eb703817a170bc48146d836ac4a4ff8cd6bb3354b0013f",
+    "CMakeLists.txt": "c1c601eca452a1586a1a6f159392e4858ca7f3f1105031cd4777908c8a3afd9e"
+  },
+  "binary_sha256": {
+    "qlog": "c939ee279fcc3c6189b68d56f90b5a1c2e6888d0909173435da78c8469ca3928",
+    "bqlog": "2090e98362de3722b5d9306c3187259d7e53637348eda01276367e619ba15dbc"
+  },
+  "settings": {
+    "threads": [
+      1,
+      4
+    ],
+    "repeats": 3,
+    "logs_per_thread_per_throughput_case": 2000000,
+    "BENCH_POOL_SIZE": 50000,
+    "latency_iterations": 10000,
+    "latency_messages_per_iteration": 20
+  },
+  "throughput": [
+    {
+      "threads": 1,
+      "case": "Begin Test Compressed File Log ASCII UTF8",
+      "qlog": {
+        "milliseconds": [
+          696,
+          717,
+          700
+        ],
+        "median_ms": 700,
+        "min_ms": 696,
+        "max_ms": 717,
+        "nominal_million_calls_per_second": 2.857142857142857
+      },
+      "bqlog": {
+        "milliseconds": [
+          482,
+          559,
+          541
+        ],
+        "median_ms": 541,
+        "min_ms": 482,
+        "max_ms": 559,
+        "nominal_million_calls_per_second": 3.696857670979667
+      },
+      "qlog_bqlog_throughput_ratio": 0.7728571428571429
+    },
+    {
+      "threads": 1,
+      "case": "Begin Test Compressed File Log ASCII UTF16",
+      "qlog": {
+        "milliseconds": [
+          1151,
+          1869,
+          1195
+        ],
+        "median_ms": 1195,
+        "min_ms": 1151,
+        "max_ms": 1869,
+        "nominal_million_calls_per_second": 1.6736401673640167
+      },
+      "bqlog": {
+        "milliseconds": [
+          1060,
+          1014,
+          910
+        ],
+        "median_ms": 1014,
+        "min_ms": 910,
+        "max_ms": 1060,
+        "nominal_million_calls_per_second": 1.9723865877712032
+      },
+      "qlog_bqlog_throughput_ratio": 0.8485355648535565
+    },
+    {
+      "threads": 1,
+      "case": "Begin Test Compressed File Log CHINESE UTF16",
+      "qlog": {
+        "milliseconds": [
+          1486,
+          1627,
+          1121
+        ],
+        "median_ms": 1486,
+        "min_ms": 1121,
+        "max_ms": 1627,
+        "nominal_million_calls_per_second": 1.3458950201884254
+      },
+      "bqlog": {
+        "milliseconds": [
+          1174,
+          1191,
+          1285
+        ],
+        "median_ms": 1191,
+        "min_ms": 1174,
+        "max_ms": 1285,
+        "nominal_million_calls_per_second": 1.6792611251049538
+      },
+      "qlog_bqlog_throughput_ratio": 0.8014804845222072
+    },
+    {
+      "threads": 1,
+      "case": "Begin Test Compressed File Log MIXED(ASCII + CHINESE) UTF16",
+      "qlog": {
+        "milliseconds": [
+          1485,
+          1412,
+          1296
+        ],
+        "median_ms": 1412,
+        "min_ms": 1296,
+        "max_ms": 1485,
+        "nominal_million_calls_per_second": 1.41643059490085
+      },
+      "bqlog": {
+        "milliseconds": [
+          1564,
+          1338,
+          1337
+        ],
+        "median_ms": 1338,
+        "min_ms": 1337,
+        "max_ms": 1564,
+        "nominal_million_calls_per_second": 1.4947683109118086
+      },
+      "qlog_bqlog_throughput_ratio": 0.9475920679886686
+    },
+    {
+      "threads": 1,
+      "case": "Begin Compressed File Log Test 1, 4 params========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          303,
+          332,
+          280
+        ],
+        "median_ms": 303,
+        "min_ms": 280,
+        "max_ms": 332,
+        "nominal_million_calls_per_second": 6.600660066006601
+      },
+      "bqlog": {
+        "milliseconds": [
+          198,
+          198,
+          197
+        ],
+        "median_ms": 198,
+        "min_ms": 197,
+        "max_ms": 198,
+        "nominal_million_calls_per_second": 10.1010101010101
+      },
+      "qlog_bqlog_throughput_ratio": 0.6534653465346535
+    },
+    {
+      "threads": 1,
+      "case": "Begin Encrypted Compressed File Log Test 1, 4 params========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          330,
+          426,
+          353
+        ],
+        "median_ms": 353,
+        "min_ms": 330,
+        "max_ms": 426,
+        "nominal_million_calls_per_second": 5.6657223796034
+      },
+      "bqlog": {
+        "milliseconds": [
+          196,
+          229,
+          206
+        ],
+        "median_ms": 206,
+        "min_ms": 196,
+        "max_ms": 229,
+        "nominal_million_calls_per_second": 9.70873786407767
+      },
+      "qlog_bqlog_throughput_ratio": 0.5835694050991501
+    },
+    {
+      "threads": 1,
+      "case": "Begin Text File Log Test 2, 4 params============ (log.info)",
+      "qlog": {
+        "milliseconds": [
+          1003,
+          1235,
+          824
+        ],
+        "median_ms": 1003,
+        "min_ms": 824,
+        "max_ms": 1235,
+        "nominal_million_calls_per_second": 1.9940179461615155
+      },
+      "bqlog": {
+        "milliseconds": [
+          802,
+          775,
+          827
+        ],
+        "median_ms": 802,
+        "min_ms": 775,
+        "max_ms": 827,
+        "nominal_million_calls_per_second": 2.493765586034913
+      },
+      "qlog_bqlog_throughput_ratio": 0.7996011964107677
+    },
+    {
+      "threads": 1,
+      "case": "Begin Compressed File Log Test 3, no param========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          200,
+          221,
+          180
+        ],
+        "median_ms": 200,
+        "min_ms": 180,
+        "max_ms": 221,
+        "nominal_million_calls_per_second": 10.0
+      },
+      "bqlog": {
+        "milliseconds": [
+          112,
+          113,
+          105
+        ],
+        "median_ms": 112,
+        "min_ms": 105,
+        "max_ms": 113,
+        "nominal_million_calls_per_second": 17.857142857142858
+      },
+      "qlog_bqlog_throughput_ratio": 0.56
+    },
+    {
+      "threads": 1,
+      "case": "Begin Encrypted Compressed File Log Test 3, no param========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          199,
+          238,
+          176
+        ],
+        "median_ms": 199,
+        "min_ms": 176,
+        "max_ms": 238,
+        "nominal_million_calls_per_second": 10.050251256281406
+      },
+      "bqlog": {
+        "milliseconds": [
+          117,
+          147,
+          107
+        ],
+        "median_ms": 117,
+        "min_ms": 107,
+        "max_ms": 147,
+        "nominal_million_calls_per_second": 17.094017094017094
+      },
+      "qlog_bqlog_throughput_ratio": 0.5879396984924623
+    },
+    {
+      "threads": 1,
+      "case": "Begin Text File Log Test 4, no param============ (log.info)",
+      "qlog": {
+        "milliseconds": [
+          480,
+          468,
+          389
+        ],
+        "median_ms": 468,
+        "min_ms": 389,
+        "max_ms": 480,
+        "nominal_million_calls_per_second": 4.273504273504273
+      },
+      "bqlog": {
+        "milliseconds": [
+          449,
+          310,
+          373
+        ],
+        "median_ms": 373,
+        "min_ms": 310,
+        "max_ms": 449,
+        "nominal_million_calls_per_second": 5.361930294906166
+      },
+      "qlog_bqlog_throughput_ratio": 0.7970085470085471
+    },
+    {
+      "threads": 1,
+      "case": "Begin Compressed Multi-Format Test: SINGLE template",
+      "qlog": {
+        "milliseconds": [
+          354,
+          407,
+          311
+        ],
+        "median_ms": 354,
+        "min_ms": 311,
+        "max_ms": 407,
+        "nominal_million_calls_per_second": 5.649717514124294
+      },
+      "bqlog": {
+        "milliseconds": [
+          183,
+          249,
+          251
+        ],
+        "median_ms": 249,
+        "min_ms": 183,
+        "max_ms": 251,
+        "nominal_million_calls_per_second": 8.032128514056225
+      },
+      "qlog_bqlog_throughput_ratio": 0.7033898305084746
+    },
+    {
+      "threads": 1,
+      "case": "Begin Compressed Multi-Format Test: ROUND-ROBIN (no locality)",
+      "qlog": {
+        "milliseconds": [
+          354,
+          281,
+          253
+        ],
+        "median_ms": 281,
+        "min_ms": 253,
+        "max_ms": 354,
+        "nominal_million_calls_per_second": 7.117437722419929
+      },
+      "bqlog": {
+        "milliseconds": [
+          210,
+          210,
+          178
+        ],
+        "median_ms": 210,
+        "min_ms": 178,
+        "max_ms": 210,
+        "nominal_million_calls_per_second": 9.523809523809524
+      },
+      "qlog_bqlog_throughput_ratio": 0.7473309608540926
+    },
+    {
+      "threads": 1,
+      "case": "Begin Compressed Multi-Format Test: HOT-WINDOW (locality)",
+      "qlog": {
+        "milliseconds": [
+          268,
+          255,
+          365
+        ],
+        "median_ms": 268,
+        "min_ms": 255,
+        "max_ms": 365,
+        "nominal_million_calls_per_second": 7.462686567164179
+      },
+      "bqlog": {
+        "milliseconds": [
+          170,
+          201,
+          159
+        ],
+        "median_ms": 170,
+        "min_ms": 159,
+        "max_ms": 201,
+        "nominal_million_calls_per_second": 11.76470588235294
+      },
+      "qlog_bqlog_throughput_ratio": 0.6343283582089553
+    },
+    {
+      "threads": 4,
+      "case": "Begin Test Compressed File Log ASCII UTF8",
+      "qlog": {
+        "milliseconds": [
+          807,
+          973,
+          960
+        ],
+        "median_ms": 960,
+        "min_ms": 807,
+        "max_ms": 973,
+        "nominal_million_calls_per_second": 8.333333333333334
+      },
+      "bqlog": {
+        "milliseconds": [
+          1112,
+          1024,
+          914
+        ],
+        "median_ms": 1024,
+        "min_ms": 914,
+        "max_ms": 1112,
+        "nominal_million_calls_per_second": 7.8125
+      },
+      "qlog_bqlog_throughput_ratio": 1.0666666666666667
+    },
+    {
+      "threads": 4,
+      "case": "Begin Test Compressed File Log ASCII UTF16",
+      "qlog": {
+        "milliseconds": [
+          999,
+          1225,
+          1293
+        ],
+        "median_ms": 1225,
+        "min_ms": 999,
+        "max_ms": 1293,
+        "nominal_million_calls_per_second": 6.530612244897959
+      },
+      "bqlog": {
+        "milliseconds": [
+          1142,
+          1252,
+          1260
+        ],
+        "median_ms": 1252,
+        "min_ms": 1142,
+        "max_ms": 1260,
+        "nominal_million_calls_per_second": 6.389776357827476
+      },
+      "qlog_bqlog_throughput_ratio": 1.0220408163265307
+    },
+    {
+      "threads": 4,
+      "case": "Begin Test Compressed File Log CHINESE UTF16",
+      "qlog": {
+        "milliseconds": [
+          1328,
+          1269,
+          1327
+        ],
+        "median_ms": 1327,
+        "min_ms": 1269,
+        "max_ms": 1328,
+        "nominal_million_calls_per_second": 6.028636021100225
+      },
+      "bqlog": {
+        "milliseconds": [
+          1323,
+          1330,
+          1290
+        ],
+        "median_ms": 1323,
+        "min_ms": 1290,
+        "max_ms": 1330,
+        "nominal_million_calls_per_second": 6.046863189720332
+      },
+      "qlog_bqlog_throughput_ratio": 0.9969856819894499
+    },
+    {
+      "threads": 4,
+      "case": "Begin Test Compressed File Log MIXED(ASCII + CHINESE) UTF16",
+      "qlog": {
+        "milliseconds": [
+          1239,
+          1191,
+          1336
+        ],
+        "median_ms": 1239,
+        "min_ms": 1191,
+        "max_ms": 1336,
+        "nominal_million_calls_per_second": 6.45682001614205
+      },
+      "bqlog": {
+        "milliseconds": [
+          1208,
+          1160,
+          1249
+        ],
+        "median_ms": 1208,
+        "min_ms": 1160,
+        "max_ms": 1249,
+        "nominal_million_calls_per_second": 6.622516556291391
+      },
+      "qlog_bqlog_throughput_ratio": 0.9749798224374495
+    },
+    {
+      "threads": 4,
+      "case": "Begin Compressed File Log Test 1, 4 params========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          889,
+          718,
+          987
+        ],
+        "median_ms": 889,
+        "min_ms": 718,
+        "max_ms": 987,
+        "nominal_million_calls_per_second": 8.998875140607424
+      },
+      "bqlog": {
+        "milliseconds": [
+          1083,
+          811,
+          977
+        ],
+        "median_ms": 977,
+        "min_ms": 811,
+        "max_ms": 1083,
+        "nominal_million_calls_per_second": 8.18833162743091
+      },
+      "qlog_bqlog_throughput_ratio": 1.0989876265466816
+    },
+    {
+      "threads": 4,
+      "case": "Begin Encrypted Compressed File Log Test 1, 4 params========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          814,
+          819,
+          927
+        ],
+        "median_ms": 819,
+        "min_ms": 814,
+        "max_ms": 927,
+        "nominal_million_calls_per_second": 9.768009768009767
+      },
+      "bqlog": {
+        "milliseconds": [
+          987,
+          968,
+          920
+        ],
+        "median_ms": 968,
+        "min_ms": 920,
+        "max_ms": 987,
+        "nominal_million_calls_per_second": 8.264462809917354
+      },
+      "qlog_bqlog_throughput_ratio": 1.181929181929182
+    },
+    {
+      "threads": 4,
+      "case": "Begin Text File Log Test 2, 4 params============ (log.info)",
+      "qlog": {
+        "milliseconds": [
+          3671,
+          4092,
+          4044
+        ],
+        "median_ms": 4044,
+        "min_ms": 3671,
+        "max_ms": 4092,
+        "nominal_million_calls_per_second": 1.9782393669634024
+      },
+      "bqlog": {
+        "milliseconds": [
+          4573,
+          3959,
+          4015
+        ],
+        "median_ms": 4015,
+        "min_ms": 3959,
+        "max_ms": 4573,
+        "nominal_million_calls_per_second": 1.9925280199252802
+      },
+      "qlog_bqlog_throughput_ratio": 0.9928288822947576
+    },
+    {
+      "threads": 4,
+      "case": "Begin Compressed File Log Test 3, no param========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          393,
+          471,
+          500
+        ],
+        "median_ms": 471,
+        "min_ms": 393,
+        "max_ms": 500,
+        "nominal_million_calls_per_second": 16.985138004246284
+      },
+      "bqlog": {
+        "milliseconds": [
+          586,
+          436,
+          549
+        ],
+        "median_ms": 549,
+        "min_ms": 436,
+        "max_ms": 586,
+        "nominal_million_calls_per_second": 14.571948998178506
+      },
+      "qlog_bqlog_throughput_ratio": 1.1656050955414012
+    },
+    {
+      "threads": 4,
+      "case": "Begin Encrypted Compressed File Log Test 3, no param========= (log.info)",
+      "qlog": {
+        "milliseconds": [
+          450,
+          467,
+          464
+        ],
+        "median_ms": 464,
+        "min_ms": 450,
+        "max_ms": 467,
+        "nominal_million_calls_per_second": 17.241379310344826
+      },
+      "bqlog": {
+        "milliseconds": [
+          473,
+          490,
+          508
+        ],
+        "median_ms": 490,
+        "min_ms": 473,
+        "max_ms": 508,
+        "nominal_million_calls_per_second": 16.3265306122449
+      },
+      "qlog_bqlog_throughput_ratio": 1.0560344827586208
+    },
+    {
+      "threads": 4,
+      "case": "Begin Text File Log Test 4, no param============ (log.info)",
+      "qlog": {
+        "milliseconds": [
+          2101,
+          1908,
+          2213
+        ],
+        "median_ms": 2101,
+        "min_ms": 1908,
+        "max_ms": 2213,
+        "nominal_million_calls_per_second": 3.8077106139933368
+      },
+      "bqlog": {
+        "milliseconds": [
+          2053,
+          2057,
+          1951
+        ],
+        "median_ms": 2053,
+        "min_ms": 1951,
+        "max_ms": 2057,
+        "nominal_million_calls_per_second": 3.896736483195324
+      },
+      "qlog_bqlog_throughput_ratio": 0.97715373631604
+    },
+    {
+      "threads": 4,
+      "case": "Begin Compressed Multi-Format Test: SINGLE template",
+      "qlog": {
+        "milliseconds": [
+          640,
+          671,
+          667
+        ],
+        "median_ms": 667,
+        "min_ms": 640,
+        "max_ms": 671,
+        "nominal_million_calls_per_second": 11.994002998500749
+      },
+      "bqlog": {
+        "milliseconds": [
+          1114,
+          1243,
+          752
+        ],
+        "median_ms": 1114,
+        "min_ms": 752,
+        "max_ms": 1243,
+        "nominal_million_calls_per_second": 7.1813285457809695
+      },
+      "qlog_bqlog_throughput_ratio": 1.6701649175412294
+    },
+    {
+      "threads": 4,
+      "case": "Begin Compressed Multi-Format Test: ROUND-ROBIN (no locality)",
+      "qlog": {
+        "milliseconds": [
+          737,
+          814,
+          742
+        ],
+        "median_ms": 742,
+        "min_ms": 737,
+        "max_ms": 814,
+        "nominal_million_calls_per_second": 10.78167115902965
+      },
+      "bqlog": {
+        "milliseconds": [
+          1279,
+          949,
+          824
+        ],
+        "median_ms": 949,
+        "min_ms": 824,
+        "max_ms": 1279,
+        "nominal_million_calls_per_second": 8.429926238145416
+      },
+      "qlog_bqlog_throughput_ratio": 1.278975741239892
+    },
+    {
+      "threads": 4,
+      "case": "Begin Compressed Multi-Format Test: HOT-WINDOW (locality)",
+      "qlog": {
+        "milliseconds": [
+          668,
+          751,
+          680
+        ],
+        "median_ms": 680,
+        "min_ms": 668,
+        "max_ms": 751,
+        "nominal_million_calls_per_second": 11.76470588235294
+      },
+      "bqlog": {
+        "milliseconds": [
+          1212,
+          1825,
+          879
+        ],
+        "median_ms": 1212,
+        "min_ms": 879,
+        "max_ms": 1825,
+        "nominal_million_calls_per_second": 6.600660066006601
+      },
+      "qlog_bqlog_throughput_ratio": 1.7823529411764707
+    }
+  ],
+  "latency": [
+    {
+      "threads": 1,
+      "backend": "qlog",
+      "mode": "normal",
+      "p50": 95.0,
+      "p99": 2055.0,
+      "p999": 3322.5,
+      "worst": 18035.0,
+      "samples": [
+        {
+          "50th": 105.0,
+          "75th": 120.2,
+          "90th": 310.0,
+          "95th": 1580.0,
+          "99th": 2075.0,
+          "99.9th": 3322.5,
+          "worst": 9229.6
+        },
+        {
+          "50th": 95.0,
+          "75th": 125.0,
+          "90th": 425.0,
+          "95th": 1370.0,
+          "99th": 2055.0,
+          "99.9th": 3430.0,
+          "worst": 18035.0
+        },
+        {
+          "50th": 90.0,
+          "75th": 95.0,
+          "90th": 210.0,
+          "95th": 1230.0,
+          "99th": 1560.0,
+          "99.9th": 2365.0,
+          "worst": 3840.0
+        }
+      ]
+    },
+    {
+      "threads": 1,
+      "backend": "bqlog",
+      "mode": "normal",
+      "p50": 70.0,
+      "p99": 2115.0,
+      "p999": 2865.0,
+      "worst": 9880.0,
+      "samples": [
+        {
+          "50th": 70.0,
+          "75th": 90.0,
+          "90th": 195.0,
+          "95th": 1485.0,
+          "99th": 2115.0,
+          "99.9th": 3215.0,
+          "worst": 9880.0
+        },
+        {
+          "50th": 75.0,
+          "75th": 90.0,
+          "90th": 190.0,
+          "95th": 1565.0,
+          "99th": 2115.0,
+          "99.9th": 2865.0,
+          "worst": 7590.0
+        },
+        {
+          "50th": 55.0,
+          "75th": 60.0,
+          "90th": 90.0,
+          "95th": 1150.0,
+          "99th": 1345.0,
+          "99.9th": 1955.0,
+          "worst": 8235.0
+        }
+      ]
+    },
+    {
+      "threads": 1,
+      "backend": "bqlog",
+      "mode": "fast",
+      "p50": 20.0,
+      "p99": 95.0,
+      "p999": 155.0,
+      "worst": 6485.0,
+      "samples": [
+        {
+          "50th": 20.0,
+          "75th": 30.0,
+          "90th": 50.0,
+          "95th": 65.0,
+          "99th": 95.0,
+          "99.9th": 155.0,
+          "worst": 6070.0
+        },
+        {
+          "50th": 20.0,
+          "75th": 30.0,
+          "90th": 60.0,
+          "95th": 90.0,
+          "99th": 135.0,
+          "99.9th": 520.0,
+          "worst": 6485.0
+        },
+        {
+          "50th": 15.0,
+          "75th": 20.0,
+          "90th": 25.0,
+          "95th": 30.0,
+          "99th": 60.0,
+          "99.9th": 150.0,
+          "worst": 6350.0
+        }
+      ]
+    },
+    {
+      "threads": 4,
+      "backend": "qlog",
+      "mode": "normal",
+      "p50": 110.0,
+      "p99": 1570.0,
+      "p999": 2270.0,
+      "worst": 32280.0,
+      "samples": [
+        {
+          "50th": 115.0,
+          "75th": 145.0,
+          "90th": 170.0,
+          "95th": 210.0,
+          "99th": 1570.0,
+          "99.9th": 2270.0,
+          "worst": 32280.0
+        },
+        {
+          "50th": 110.0,
+          "75th": 150.0,
+          "90th": 170.0,
+          "95th": 210.0,
+          "99th": 1690.0,
+          "99.9th": 2285.0,
+          "worst": 6395.0
+        },
+        {
+          "50th": 105.0,
+          "75th": 145.0,
+          "90th": 155.0,
+          "95th": 180.0,
+          "99th": 1565.0,
+          "99.9th": 2120.0,
+          "worst": 32205.0
+        }
+      ]
+    },
+    {
+      "threads": 4,
+      "backend": "bqlog",
+      "mode": "normal",
+      "p50": 75.0,
+      "p99": 1515.0,
+      "p999": 2035.0,
+      "worst": 19205.0,
+      "samples": [
+        {
+          "50th": 65.0,
+          "75th": 95.0,
+          "90th": 100.0,
+          "95th": 105.0,
+          "99th": 1315.0,
+          "99.9th": 1605.0,
+          "worst": 7375.0
+        },
+        {
+          "50th": 75.0,
+          "75th": 100.0,
+          "90th": 120.0,
+          "95th": 145.0,
+          "99th": 1610.0,
+          "99.9th": 2290.0,
+          "worst": 11645.0
+        },
+        {
+          "50th": 75.0,
+          "75th": 95.0,
+          "90th": 110.0,
+          "95th": 130.0,
+          "99th": 1515.0,
+          "99.9th": 2035.0,
+          "worst": 19205.0
+        }
+      ]
+    },
+    {
+      "threads": 4,
+      "backend": "bqlog",
+      "mode": "fast",
+      "p50": 20.0,
+      "p99": 55.0,
+      "p999": 90.0,
+      "worst": 9085.0,
+      "samples": [
+        {
+          "50th": 20.0,
+          "75th": 25.0,
+          "90th": 30.0,
+          "95th": 30.0,
+          "99th": 45.0,
+          "99.9th": 75.0,
+          "worst": 2670.0
+        },
+        {
+          "50th": 20.0,
+          "75th": 30.0,
+          "90th": 40.0,
+          "95th": 50.0,
+          "99th": 70.0,
+          "99.9th": 115.0,
+          "worst": 3065.0
+        },
+        {
+          "50th": 20.0,
+          "75th": 25.0,
+          "90th": 35.0,
+          "95th": 40.0,
+          "99th": 55.0,
+          "99.9th": 90.0,
+          "worst": 9085.0
+        }
+      ]
+    }
+  ],
+  "raw_evidence_dir": "/mnt/d/qq344/Documents/qlog-perf-investigation-20261016-01/official-final",
+  "measured_with_profiling_active": false,
+  "qlog_extra_build_flags": "-Werror -g -fno-omit-frame-pointer",
+  "processes": 12,
+  "nominal_throughput_calls": 960000000
+}

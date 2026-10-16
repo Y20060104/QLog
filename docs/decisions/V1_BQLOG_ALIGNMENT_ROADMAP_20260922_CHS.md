@@ -1,5 +1,9 @@
 # QLog V1 后续开发路线：统一先对齐 BQLog
 
+> **2026-10-16 性能定位已完成（优先）：** 复现并通过单变量 A/B 定位 SISO 持续低空间提示引起的频繁通知；按固定 086f2fd8 对齐边界提示与普通十进制两位查表。四配置 44/44、官方 12 进程三轮复测和组件/实际加密调用诊断完成；普通接口单生产者 P50 中位 95/70 ns（Q/BQ）。生产未整体升级，新 HP 元数据与 FAST 链留待独立迁移。见[决定](SISO_DECIMAL_PERFORMANCE_ALIGNMENT_20261016_CHS.md)和[报告](../validation/PERFORMANCE_INVESTIGATION_20261016_CHS.md)。下方为历史快照。
+
+> **2026-10-15 融合复制/hash已完成（优先）：** 原始UTF8/UTF16格式写入已复用现有Copy=true核心，公开入口及Record真实集成、四配置42/42与定向sanitizer通过；见[本项决定](COPY_HASH_FUSION_20261015_CHS.md)。原性能表标识融合接入前；后续固定基准的严格实现对齐仍优先SISO，新测量和UTF/SIMD优化单独推进。下方历史快照。
+
 > **2026-10-15 当前接续（优先）：** SISO与Buffer公共类型、工程宏/线程名和RSA两处原零整数规则已按用户确认收口；SISO尚有实现差异，详见[当前差异](BQLOG_ALIGNMENT_GAPS_20261015_CHS.md)。本轮已重跑当前QLog与BQ086官方benchmark，1/4生产者各3轮，完整结果见[README](../../README.md)与[验证](../validation/BQLOG_NAMING_RSA_BENCHMARK_20261015_CHS.md)。生产基准仍为78，FAST/新Record读取链未自动迁入；下一项严格对齐先收SISO完整实现，性能方向另行profile。下方保留历史快照。
 
 > **2026-10-15 官方 benchmark 完成（最新）：** 新 benchmark/cpp 只对齐官方普通接口场景，原库与生产源码不改；同级新参考固定 086f2fd831af86fcfa40e90015f89626d498d3d7，原参考脏树保留。用户选择 BQ FAST 单列、QLog 未支持。WSL Release 1/4线程各3轮、12进程、9.6亿名义吞吐调用；GNU恢复后40/40 CTest、原生MSVC严格构建及单线程整套实际运行通过。初批环境故障数据全部排除，正式批次无源码漂移；不计零丢失/耐久性/新参考解码互通验收。结果与复现见[根README](../../README.md)、[机器结果](../validation/BQLOG_BENCHMARK_20261015_RESULTS.json)及[决定](BQLOG_BENCHMARK_ALIGNMENT_20261015_CHS.md)。后续性能优化应先测量定位，不据单项结果改库；FAST接口迁移未授权。下方历史快照。
